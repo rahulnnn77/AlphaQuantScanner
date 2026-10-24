@@ -153,7 +153,7 @@ class DhanClientService:
                 data = res.get("data", res)
                 return {
                     "client_id": data.get("dhanClientId", client_id),
-                    "user_name": data.get("userName", "Dhan Trader"),
+                    "user_name": data.get("userName", "Trading Account"),
                     "active_products": data.get("activeProducts", ["CNC", "INTRADAY", "MARGIN", "MTF"]),
                     "enabled_exchanges": data.get("enabledExchanges", ["NSE", "BSE", "NFO"]),
                     "token_validity": data.get("tokenValidity", "Active"),
