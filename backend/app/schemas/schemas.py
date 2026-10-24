@@ -49,6 +49,8 @@ class UserResponse(BaseModel):
     role: str
     is_active: bool
     created_at: datetime
+    telegram_chat_id: Optional[str] = None
+    telegram_alerts_enabled: Optional[bool] = True
     
     class Config:
         from_attributes = True
