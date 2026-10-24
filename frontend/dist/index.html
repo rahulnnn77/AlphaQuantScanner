@@ -2392,21 +2392,49 @@
         }
       };
 
+      const [isSubmitting, setIsSubmitting] = useState(false);
+
       useEffect(() => { fetchUsers(); }, []);
 
       const handleAdd = async (e) => {
         e.preventDefault();
         setError('');
         setSuccess('');
+
+        if (!uName.trim()) {
+          setError('Please provide a username');
+          return;
+        }
+        if (!pwd || pwd.length < 4) {
+          setError('Password must be at least 4 characters');
+          return;
+        }
+
+        setIsSubmitting(true);
         try {
-          await api.post('/users', { username: uName, password: pwd, email: email || null, role });
-          setUName('');
-          setPwd('');
-          setEmail('');
-          setSuccess('User created successfully');
-          fetchUsers();
+          const payload = {
+            username: uName.trim(),
+            password: pwd,
+            email: email.trim() || null,
+            role: role
+          };
+          const res = await api.post('/users/', payload);
+          if (res.data) {
+            setUName('');
+            setPwd('');
+            setEmail('');
+            setSuccess(`User "${res.data.username}" created successfully`);
+            fetchUsers();
+          }
         } catch (e) {
-          setError(e.response?.data?.detail || 'Failed to create user');
+          const detail = e.response?.data?.detail;
+          if (Array.isArray(detail)) {
+            setError(detail.map(d => d.msg || d).join(', '));
+          } else {
+            setError(detail || e.message || 'Failed to create user');
+          }
+        } finally {
+          setIsSubmitting(false);
         }
       };
 
@@ -2498,8 +2526,12 @@
                 </select>
               </div>
               <div className="flex items-end">
-                <button type="submit" className="w-full py-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs rounded-lg transition-colors shadow-sm">
-                  + Create User
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="w-full py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-semibold text-xs rounded-lg transition-colors shadow-sm"
+                >
+                  {isSubmitting ? 'Creating...' : '+ Create User'}
                 </button>
               </div>
             </form>
