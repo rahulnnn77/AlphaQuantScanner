@@ -1,0 +1,1283 @@
+{
+  "last_updated": "2026-10-25 02:34:42 IST",
+  "results": {
+    "4h": [
+      {
+        "status": "BROKEN_BELOW",
+        "action": "Bearish Breakdown",
+        "ltp": 194.3,
+        "diff_pct": -0.22,
+        "symbol": "CASTROLIND",
+        "name": "Castrol India Ltd.",
+        "industry": "Oil Gas & Consumable Fuels",
+        "is_fo": false
+      },
+      {
+        "status": "BROKEN_BELOW",
+        "action": "Bearish Breakdown",
+        "ltp": 10488.0,
+        "diff_pct": -2.29,
+        "symbol": "CRAFTSMAN",
+        "name": "Craftsman Automation Ltd.",
+        "industry": "Automobile and Auto Components",
+        "is_fo": false
+      },
+      {
+        "status": "BROKEN_ABOVE",
+        "action": "Bullish Breakout",
+        "ltp": 380.0,
+        "diff_pct": 0.18,
+        "symbol": "INDUSTOWER",
+        "name": "Indus Towers Ltd.",
+        "industry": "Telecommunication",
+        "is_fo": true
+      },
+      {
+        "status": "BROKEN_ABOVE",
+        "action": "Bullish Breakout",
+        "ltp": 1953.3,
+        "diff_pct": 2.14,
+        "symbol": "IPCALAB",
+        "name": "Ipca Laboratories Ltd.",
+        "industry": "Healthcare",
+        "is_fo": false
+      },
+      {
+        "status": "BROKEN_ABOVE",
+        "action": "Bullish Breakout",
+        "ltp": 116.98,
+        "diff_pct": 0.7,
+        "symbol": "JSWCEMENT",
+        "name": "JSW Cement Ltd.",
+        "industry": "Construction Materials",
+        "is_fo": false
+      },
+      {
+        "status": "BROKEN_ABOVE",
+        "action": "Bullish Breakout",
+        "ltp": 289.2,
+        "diff_pct": 0.19,
+        "symbol": "JAINREC",
+        "name": "Jain Resource Recycling Ltd.",
+        "industry": "Metals & Mining",
+        "is_fo": false
+      },
+      {
+        "status": "BROKEN_ABOVE",
+        "action": "Bullish Breakout",
+        "ltp": 109.67,
+        "diff_pct": 0.48,
+        "symbol": "LEMONTREE",
+        "name": "Lemon Tree Hotels Ltd.",
+        "industry": "Consumer Services",
+        "is_fo": false
+      },
+      {
+        "status": "BROKEN_ABOVE",
+        "action": "Bullish Breakout",
+        "ltp": 23455.0,
+        "diff_pct": 0.19,
+        "symbol": "PTCIL",
+        "name": "PTC Industries Ltd.",
+        "industry": "Capital Goods",
+        "is_fo": false
+      },
+      {
+        "status": "BROKEN_ABOVE",
+        "action": "Bullish Breakout",
+        "ltp": 22735.0,
+        "diff_pct": 0.57,
+        "symbol": "SHREECEM",
+        "name": "Shree Cement Ltd.",
+        "industry": "Construction Materials",
+        "is_fo": true
+      },
+      {
+        "status": "BROKEN_ABOVE",
+        "action": "Bullish Breakout",
+        "ltp": 37.68,
+        "diff_pct": 7.92,
+        "symbol": "TTML",
+        "name": "Tata Teleservices (Maharashtra) Ltd.",
+        "industry": "Telecommunication",
+        "is_fo": false
+      },
+      {
+        "status": "BROKEN_ABOVE",
+        "action": "Bullish Breakout",
+        "ltp": 11050.0,
+        "diff_pct": 0.87,
+        "symbol": "ULTRACEMCO",
+        "name": "UltraTech Cement Ltd.",
+        "industry": "Construction Materials",
+        "is_fo": true
+      }
+    ],
+    "daily": [
+      {
+        "status": "BROKEN_BELOW",
+        "action": "Bearish Breakdown",
+        "ltp": 3137.7,
+        "diff_pct": -2.24,
+        "symbol": "ACUTAAS",
+        "name": "Acutaas Chemicals Ltd.",
+        "industry": "Healthcare",
+        "is_fo": false
+      },
+      {
+        "status": "BROKEN_BELOW",
+        "action": "Bearish Breakdown",
+        "ltp": 1702.7,
+        "diff_pct": -2.28,
+        "symbol": "ADANIPORTS",
+        "name": "Adani Ports and Special Economic Zone Ltd.",
+        "industry": "Services",
+        "is_fo": true
+      },
+      {
+        "status": "BROKEN_BELOW",
+        "action": "Bearish Breakdown",
+        "ltp": 805.1,
+        "diff_pct": -2.22,
+        "symbol": "BBOX",
+        "name": "Black Box Ltd.",
+        "industry": "Information Technology",
+        "is_fo": false
+      },
+      {
+        "status": "BROKEN_BELOW",
+        "action": "Bearish Breakdown",
+        "ltp": 1499.0,
+        "diff_pct": -3.75,
+        "symbol": "BLUESTARCO",
+        "name": "Blue Star Ltd.",
+        "industry": "Consumer Durables",
+        "is_fo": true
+      },
+      {
+        "status": "BROKEN_BELOW",
+        "action": "Bearish Breakdown",
+        "ltp": 222.02,
+        "diff_pct": -0.29,
+        "symbol": "CUB",
+        "name": "City Union Bank Ltd.",
+        "industry": "Financial Services",
+        "is_fo": false
+      },
+      {
+        "status": "BROKEN_ABOVE",
+        "action": "Bullish Breakout",
+        "ltp": 317.4,
+        "diff_pct": 0.93,
+        "symbol": "ETERNAL",
+        "name": "Eternal Ltd.",
+        "industry": "Consumer Services",
+        "is_fo": true
+      },
+      {
+        "status": "BROKEN_ABOVE",
+        "action": "Bullish Breakout",
+        "ltp": 1370.7,
+        "diff_pct": 0.95,
+        "symbol": "GABRIEL",
+        "name": "Gabriel India Ltd.",
+        "industry": "Automobile and Auto Components",
+        "is_fo": false
+      },
+      {
+        "status": "BROKEN_BELOW",
+        "action": "Bearish Breakdown",
+        "ltp": 4725.0,
+        "diff_pct": -0.64,
+        "symbol": "HAL",
+        "name": "Hindustan Aeronautics Ltd.",
+        "industry": "Capital Goods",
+        "is_fo": true
+      },
+      {
+        "status": "BROKEN_BELOW",
+        "action": "Bearish Breakdown",
+        "ltp": 1592.0,
+        "diff_pct": -1.05,
+        "symbol": "ICICIGI",
+        "name": "ICICI Lombard General Insurance Company Ltd.",
+        "industry": "Financial Services",
+        "is_fo": true
+      },
+      {
+        "status": "BROKEN_BELOW",
+        "action": "Bearish Breakdown",
+        "ltp": 156.25,
+        "diff_pct": -2.79,
+        "symbol": "ITCHOTELS",
+        "name": "ITC Hotels Ltd.",
+        "industry": "Consumer Services",
+        "is_fo": false
+      },
+      {
+        "status": "BROKEN_BELOW",
+        "action": "Bearish Breakdown",
+        "ltp": 837.15,
+        "diff_pct": -0.8,
+        "symbol": "INDIANB",
+        "name": "Indian Bank",
+        "industry": "Financial Services",
+        "is_fo": true
+      },
+      {
+        "status": "BROKEN_BELOW",
+        "action": "Bearish Breakdown",
+        "ltp": 380.0,
+        "diff_pct": -0.09,
+        "symbol": "INDUSTOWER",
+        "name": "Indus Towers Ltd.",
+        "industry": "Telecommunication",
+        "is_fo": true
+      },
+      {
+        "status": "BROKEN_BELOW",
+        "action": "Bearish Breakdown",
+        "ltp": 4134.0,
+        "diff_pct": -2.03,
+        "symbol": "LTM",
+        "name": "LTM Ltd.",
+        "industry": "Information Technology",
+        "is_fo": true
+      },
+      {
+        "status": "BROKEN_BELOW",
+        "action": "Bearish Breakdown",
+        "ltp": 108.94,
+        "diff_pct": -0.49,
+        "symbol": "LEMONTREE",
+        "name": "Lemon Tree Hotels Ltd.",
+        "industry": "Consumer Services",
+        "is_fo": false
+      },
+      {
+        "status": "BROKEN_BELOW",
+        "action": "Bearish Breakdown",
+        "ltp": 1089.1,
+        "diff_pct": -3.22,
+        "symbol": "PNBHOUSING",
+        "name": "PNB Housing Finance Ltd.",
+        "industry": "Financial Services",
+        "is_fo": true
+      },
+      {
+        "status": "BROKEN_BELOW",
+        "action": "Bearish Breakdown",
+        "ltp": 286.3,
+        "diff_pct": -0.22,
+        "symbol": "PETRONET",
+        "name": "Petronet LNG Ltd.",
+        "industry": "Oil Gas & Consumable Fuels",
+        "is_fo": true
+      },
+      {
+        "status": "BROKEN_BELOW",
+        "action": "Bearish Breakdown",
+        "ltp": 1872.3,
+        "diff_pct": -1.55,
+        "symbol": "PHOENIXLTD",
+        "name": "Phoenix Mills Ltd.",
+        "industry": "Realty",
+        "is_fo": true
+      },
+      {
+        "status": "BROKEN_BELOW",
+        "action": "Bearish Breakdown",
+        "ltp": 359.1,
+        "diff_pct": -0.56,
+        "symbol": "REDINGTON",
+        "name": "Redington Ltd.",
+        "industry": "Services",
+        "is_fo": false
+      },
+      {
+        "status": "BROKEN_BELOW",
+        "action": "Bearish Breakdown",
+        "ltp": 1129.4,
+        "diff_pct": -0.16,
+        "symbol": "ZYDUSLIFE",
+        "name": "Zydus Lifesciences Ltd.",
+        "industry": "Healthcare",
+        "is_fo": true
+      }
+    ],
+    "weekly": [
+      {
+        "status": "BROKEN_BELOW",
+        "action": "Bearish Breakdown",
+        "ltp": 6140.0,
+        "diff_pct": -4.98,
+        "symbol": "ABB",
+        "name": "ABB India Ltd.",
+        "industry": "Capital Goods",
+        "is_fo": true
+      },
+      {
+        "status": "BROKEN_BELOW",
+        "action": "Bearish Breakdown",
+        "ltp": 932.9,
+        "diff_pct": -1.32,
+        "symbol": "AUBANK",
+        "name": "AU Small Finance Bank Ltd.",
+        "industry": "Financial Services",
+        "is_fo": true
+      },
+      {
+        "status": "BROKEN_BELOW",
+        "action": "Bearish Breakdown",
+        "ltp": 427.55,
+        "diff_pct": -6.71,
+        "symbol": "AARTIIND",
+        "name": "Aarti Industries Ltd.",
+        "industry": "Chemicals",
+        "is_fo": false
+      },
+      {
+        "status": "BROKEN_BELOW",
+        "action": "Bearish Breakdown",
+        "ltp": 1000.1,
+        "diff_pct": -4.1,
+        "symbol": "ACE",
+        "name": "Action Construction Equipment Ltd.",
+        "industry": "Capital Goods",
+        "is_fo": false
+      },
+      {
+        "status": "BROKEN_BELOW",
+        "action": "Bearish Breakdown",
+        "ltp": 1220.0,
+        "diff_pct": -1.75,
+        "symbol": "ADANIENSOL",
+        "name": "Adani Energy Solutions Ltd.",
+        "industry": "Power",
+        "is_fo": true
+      },
+      {
+        "status": "BROKEN_BELOW",
+        "action": "Bearish Breakdown",
+        "ltp": 2477.0,
+        "diff_pct": -6.31,
+        "symbol": "ADANIENT",
+        "name": "Adani Enterprises Ltd.",
+        "industry": "Metals & Mining",
+        "is_fo": true
+      },
+      {
+        "status": "BROKEN_BELOW",
+        "action": "Bearish Breakdown",
+        "ltp": 1185.1,
+        "diff_pct": -2.85,
+        "symbol": "ADANIGREEN",
+        "name": "Adani Green Energy Ltd.",
+        "industry": "Power",
+        "is_fo": true
+      },
+      {
+        "status": "BROKEN_BELOW",
+        "action": "Bearish Breakdown",
+        "ltp": 889.05,
+        "diff_pct": -4.04,
+        "symbol": "ABSLAMC",
+        "name": "Aditya Birla Sun Life AMC Ltd.",
+        "industry": "Financial Services",
+        "is_fo": false
+      },
+      {
+        "status": "BROKEN_BELOW",
+        "action": "Bearish Breakdown",
+        "ltp": 242.7,
+        "diff_pct": -3.0,
+        "symbol": "AEGISVOPAK",
+        "name": "Aegis Vopak Terminals Ltd.",
+        "industry": "Oil Gas & Consumable Fuels",
+        "is_fo": false
+      },
+      {
+        "status": "BROKEN_BELOW",
+        "action": "Bearish Breakdown",
+        "ltp": 279.0,
+        "diff_pct": -0.98,
+        "symbol": "ANGELONE",
+        "name": "Angel One Ltd.",
+        "industry": "Financial Services",
+        "is_fo": true
+      },
+      {
+        "status": "BROKEN_BELOW",
+        "action": "Bearish Breakdown",
+        "ltp": 496.75,
+        "diff_pct": -2.8,
+        "symbol": "AIIL",
+        "name": "Authum Investment & Infrastructure Ltd.",
+        "industry": "Financial Services",
+        "is_fo": false
+      },
+      {
+        "status": "BROKEN_BELOW",
+        "action": "Bearish Breakdown",
+        "ltp": 1217.5,
+        "diff_pct": -2.21,
+        "symbol": "AXISBANK",
+        "name": "Axis Bank Ltd.",
+        "industry": "Financial Services",
+        "is_fo": true
+      },
+      {
+        "status": "BROKEN_BELOW",
+        "action": "Bearish Breakdown",
+        "ltp": 928.95,
+        "diff_pct": -3.26,
+        "symbol": "BAJFINANCE",
+        "name": "Bajaj Finance Ltd.",
+        "industry": "Financial Services",
+        "is_fo": true
+      },
+      {
+        "status": "BROKEN_BELOW",
+        "action": "Bearish Breakdown",
+        "ltp": 1711.2,
+        "diff_pct": -2.17,
+        "symbol": "BHARATFORG",
+        "name": "Bharat Forge Ltd.",
+        "industry": "Automobile and Auto Components",
+        "is_fo": true
+      },
+      {
+        "status": "BROKEN_BELOW",
+        "action": "Bearish Breakdown",
+        "ltp": 1028.8,
+        "diff_pct": -0.74,
+        "symbol": "CARBORUNIV",
+        "name": "Carborundum Universal Ltd.",
+        "industry": "Capital Goods",
+        "is_fo": false
+      },
+      {
+        "status": "BROKEN_BELOW",
+        "action": "Bearish Breakdown",
+        "ltp": 686.65,
+        "diff_pct": -4.85,
+        "symbol": "CHOICEIN",
+        "name": "Choice International Ltd.",
+        "industry": "Financial Services",
+        "is_fo": false
+      },
+      {
+        "status": "BROKEN_BELOW",
+        "action": "Bearish Breakdown",
+        "ltp": 397.45,
+        "diff_pct": -2.27,
+        "symbol": "COALINDIA",
+        "name": "Coal India Ltd.",
+        "industry": "Oil Gas & Consumable Fuels",
+        "is_fo": true
+      },
+      {
+        "status": "BROKEN_BELOW",
+        "action": "Bearish Breakdown",
+        "ltp": 657.0,
+        "diff_pct": -0.1,
+        "symbol": "DLF",
+        "name": "DLF Ltd.",
+        "industry": "Realty",
+        "is_fo": true
+      },
+      {
+        "status": "BROKEN_BELOW",
+        "action": "Bearish Breakdown",
+        "ltp": 1136.5,
+        "diff_pct": -13.57,
+        "symbol": "DEEPAKFERT",
+        "name": "Deepak Fertilisers & Petrochemicals Corp. Ltd.",
+        "industry": "Chemicals",
+        "is_fo": false
+      },
+      {
+        "status": "BROKEN_BELOW",
+        "action": "Bearish Breakdown",
+        "ltp": 1229.5,
+        "diff_pct": -0.2,
+        "symbol": "DRREDDY",
+        "name": "Dr. Reddy's Laboratories Ltd.",
+        "industry": "Healthcare",
+        "is_fo": true
+      },
+      {
+        "status": "BROKEN_BELOW",
+        "action": "Bearish Breakdown",
+        "ltp": 416.2,
+        "diff_pct": -12.62,
+        "symbol": "ELECON",
+        "name": "Elecon Engineering Co. Ltd.",
+        "industry": "Capital Goods",
+        "is_fo": false
+      },
+      {
+        "status": "BROKEN_BELOW",
+        "action": "Bearish Breakdown",
+        "ltp": 512.85,
+        "diff_pct": -6.97,
+        "symbol": "ELGIEQUIP",
+        "name": "Elgi Equipments Ltd.",
+        "industry": "Capital Goods",
+        "is_fo": false
+      },
+      {
+        "status": "BROKEN_BELOW",
+        "action": "Bearish Breakdown",
+        "ltp": 16400.0,
+        "diff_pct": -6.02,
+        "symbol": "FORCEMOT",
+        "name": "Force Motors Ltd.",
+        "industry": "Automobile and Auto Components",
+        "is_fo": true
+      },
+      {
+        "status": "BROKEN_BELOW",
+        "action": "Bearish Breakdown",
+        "ltp": 3700.0,
+        "diff_pct": -0.96,
+        "symbol": "GVT&D",
+        "name": "GE Vernova T&D India Ltd.",
+        "industry": "Capital Goods",
+        "is_fo": true
+      },
+      {
+        "status": "BROKEN_BELOW",
+        "action": "Bearish Breakdown",
+        "ltp": 541.85,
+        "diff_pct": -6.55,
+        "symbol": "GALLANTT",
+        "name": "Gallantt Ispat Ltd.",
+        "industry": "Capital Goods",
+        "is_fo": false
+      },
+      {
+        "status": "BROKEN_BELOW",
+        "action": "Bearish Breakdown",
+        "ltp": 2404.7,
+        "diff_pct": -5.28,
+        "symbol": "GLAXO",
+        "name": "Glaxosmithkline Pharmaceuticals Ltd.",
+        "industry": "Healthcare",
+        "is_fo": false
+      },
+      {
+        "status": "BROKEN_BELOW",
+        "action": "Bearish Breakdown",
+        "ltp": 5047.0,
+        "diff_pct": -0.46,
+        "symbol": "HEROMOTOCO",
+        "name": "Hero MotoCorp Ltd.",
+        "industry": "Automobile and Auto Components",
+        "is_fo": true
+      },
+      {
+        "status": "BROKEN_ABOVE",
+        "action": "Bullish Breakout",
+        "ltp": 590.8,
+        "diff_pct": 1.02,
+        "symbol": "HEXT",
+        "name": "Hexaware Technologies Ltd.",
+        "industry": "Information Technology",
+        "is_fo": false
+      },
+      {
+        "status": "BROKEN_BELOW",
+        "action": "Bearish Breakdown",
+        "ltp": 492.0,
+        "diff_pct": -15.05,
+        "symbol": "HSCL",
+        "name": "Himadri Speciality Chemical Ltd.",
+        "industry": "Chemicals",
+        "is_fo": false
+      },
+      {
+        "status": "BROKEN_BELOW",
+        "action": "Bearish Breakdown",
+        "ltp": 869.85,
+        "diff_pct": -3.98,
+        "symbol": "HINDALCO",
+        "name": "Hindalco Industries Ltd.",
+        "industry": "Metals & Mining",
+        "is_fo": true
+      },
+      {
+        "status": "BROKEN_BELOW",
+        "action": "Bearish Breakdown",
+        "ltp": 399.05,
+        "diff_pct": -12.13,
+        "symbol": "HINDCOPPER",
+        "name": "Hindustan Copper Ltd.",
+        "industry": "Metals & Mining",
+        "is_fo": false
+      },
+      {
+        "status": "BROKEN_BELOW",
+        "action": "Bearish Breakdown",
+        "ltp": 26300.0,
+        "diff_pct": -1.91,
+        "symbol": "POWERINDIA",
+        "name": "Hitachi Energy India Ltd.",
+        "industry": "Capital Goods",
+        "is_fo": true
+      },
+      {
+        "status": "BROKEN_BELOW",
+        "action": "Bearish Breakdown",
+        "ltp": 72.3,
+        "diff_pct": -5.73,
+        "symbol": "IDFCFIRSTB",
+        "name": "IDFC First Bank Ltd.",
+        "industry": "Financial Services",
+        "is_fo": true
+      },
+      {
+        "status": "BROKEN_BELOW",
+        "action": "Bearish Breakdown",
+        "ltp": 59.28,
+        "diff_pct": -9.99,
+        "symbol": "IFCI",
+        "name": "IFCI Ltd.",
+        "industry": "Financial Services",
+        "is_fo": false
+      },
+      {
+        "status": "BROKEN_BELOW",
+        "action": "Bearish Breakdown",
+        "ltp": 1186.5,
+        "diff_pct": -1.56,
+        "symbol": "NAUKRI",
+        "name": "Info Edge (India) Ltd.",
+        "industry": "Consumer Services",
+        "is_fo": true
+      },
+      {
+        "status": "BROKEN_ABOVE",
+        "action": "Bullish Breakout",
+        "ltp": 381.15,
+        "diff_pct": 7.73,
+        "symbol": "IGIL",
+        "name": "International Gemological Institute Ltd.",
+        "industry": "Services",
+        "is_fo": false
+      },
+      {
+        "status": "BROKEN_BELOW",
+        "action": "Bearish Breakdown",
+        "ltp": 1618.0,
+        "diff_pct": -3.63,
+        "symbol": "IKS",
+        "name": "Inventurus Knowledge Solutions Ltd.",
+        "industry": "Information Technology",
+        "is_fo": false
+      },
+      {
+        "status": "BROKEN_BELOW",
+        "action": "Bearish Breakdown",
+        "ltp": 1185.5,
+        "diff_pct": -0.26,
+        "symbol": "JSWSTEEL",
+        "name": "JSW Steel Ltd.",
+        "industry": "Metals & Mining",
+        "is_fo": true
+      },
+      {
+        "status": "BROKEN_BELOW",
+        "action": "Bearish Breakdown",
+        "ltp": 113.09,
+        "diff_pct": -13.58,
+        "symbol": "J&KBANK",
+        "name": "Jammu & Kashmir Bank Ltd.",
+        "industry": "Financial Services",
+        "is_fo": false
+      },
+      {
+        "status": "BROKEN_BELOW",
+        "action": "Bearish Breakdown",
+        "ltp": 232.15,
+        "diff_pct": -3.67,
+        "symbol": "JINDALSAW",
+        "name": "Jindal Saw Ltd.",
+        "industry": "Capital Goods",
+        "is_fo": false
+      },
+      {
+        "status": "BROKEN_BELOW",
+        "action": "Bearish Breakdown",
+        "ltp": 687.4,
+        "diff_pct": -5.05,
+        "symbol": "JSL",
+        "name": "Jindal Stainless Ltd.",
+        "industry": "Metals & Mining",
+        "is_fo": false
+      },
+      {
+        "status": "BROKEN_BELOW",
+        "action": "Bearish Breakdown",
+        "ltp": 1024.6,
+        "diff_pct": -0.08,
+        "symbol": "KPRMILL",
+        "name": "K.P.R. Mill Ltd.",
+        "industry": "Textiles",
+        "is_fo": false
+      },
+      {
+        "status": "BROKEN_BELOW",
+        "action": "Bearish Breakdown",
+        "ltp": 379.85,
+        "diff_pct": -5.13,
+        "symbol": "LTFOODS",
+        "name": "LT Foods Ltd.",
+        "industry": "Fast Moving Consumer Goods",
+        "is_fo": false
+      },
+      {
+        "status": "BROKEN_BELOW",
+        "action": "Bearish Breakdown",
+        "ltp": 286.1,
+        "diff_pct": -3.69,
+        "symbol": "MANAPPURAM",
+        "name": "Manappuram Finance Ltd.",
+        "industry": "Financial Services",
+        "is_fo": true
+      },
+      {
+        "status": "BROKEN_BELOW",
+        "action": "Bearish Breakdown",
+        "ltp": 766.5,
+        "diff_pct": -0.82,
+        "symbol": "MARICO",
+        "name": "Marico Ltd.",
+        "industry": "Fast Moving Consumer Goods",
+        "is_fo": true
+      },
+      {
+        "status": "BROKEN_BELOW",
+        "action": "Bearish Breakdown",
+        "ltp": 600.65,
+        "diff_pct": -0.79,
+        "symbol": "MINDACORP",
+        "name": "Minda Corporation Ltd.",
+        "industry": "Automobile and Auto Components",
+        "is_fo": false
+      },
+      {
+        "status": "BROKEN_BELOW",
+        "action": "Bearish Breakdown",
+        "ltp": 301.75,
+        "diff_pct": -6.39,
+        "symbol": "NATIONALUM",
+        "name": "National Aluminium Co. Ltd.",
+        "industry": "Metals & Mining",
+        "is_fo": true
+      },
+      {
+        "status": "BROKEN_BELOW",
+        "action": "Bearish Breakdown",
+        "ltp": 922.6,
+        "diff_pct": -5.95,
+        "symbol": "NAM-INDIA",
+        "name": "Nippon Life India Asset Management Ltd.",
+        "industry": "Financial Services",
+        "is_fo": true
+      },
+      {
+        "status": "BROKEN_BELOW",
+        "action": "Bearish Breakdown",
+        "ltp": 330.6,
+        "diff_pct": -2.42,
+        "symbol": "NUVOCO",
+        "name": "Nuvoco Vistas Corporation Ltd.",
+        "industry": "Construction Materials",
+        "is_fo": false
+      },
+      {
+        "status": "BROKEN_ABOVE",
+        "action": "Bullish Breakout",
+        "ltp": 447.85,
+        "diff_pct": 0.32,
+        "symbol": "OIL",
+        "name": "Oil India Ltd.",
+        "industry": "Oil Gas & Consumable Fuels",
+        "is_fo": true
+      },
+      {
+        "status": "BROKEN_BELOW",
+        "action": "Bearish Breakdown",
+        "ltp": 133.57,
+        "diff_pct": -4.53,
+        "symbol": "PARADEEP",
+        "name": "Paradeep Phosphates Ltd.",
+        "industry": "Chemicals",
+        "is_fo": false
+      },
+      {
+        "status": "BROKEN_BELOW",
+        "action": "Bearish Breakdown",
+        "ltp": 1487.7,
+        "diff_pct": -0.78,
+        "symbol": "PIDILITIND",
+        "name": "Pidilite Industries Ltd.",
+        "industry": "Chemicals",
+        "is_fo": true
+      },
+      {
+        "status": "BROKEN_BELOW",
+        "action": "Bearish Breakdown",
+        "ltp": 7440.0,
+        "diff_pct": -7.21,
+        "symbol": "POLYCAB",
+        "name": "Polycab India Ltd.",
+        "industry": "Capital Goods",
+        "is_fo": true
+      },
+      {
+        "status": "BROKEN_BELOW",
+        "action": "Bearish Breakdown",
+        "ltp": 413.0,
+        "diff_pct": -5.97,
+        "symbol": "POONAWALLA",
+        "name": "Poonawalla Fincorp Ltd.",
+        "industry": "Financial Services",
+        "is_fo": false
+      },
+      {
+        "status": "BROKEN_BELOW",
+        "action": "Bearish Breakdown",
+        "ltp": 591.1,
+        "diff_pct": -5.57,
+        "symbol": "RKFORGE",
+        "name": "Ramkrishna Forgings Ltd.",
+        "industry": "Automobile and Auto Components",
+        "is_fo": false
+      },
+      {
+        "status": "BROKEN_BELOW",
+        "action": "Bearish Breakdown",
+        "ltp": 237.8,
+        "diff_pct": -8.39,
+        "symbol": "SCI",
+        "name": "Shipping Corporation of India Ltd.",
+        "industry": "Services",
+        "is_fo": false
+      },
+      {
+        "status": "BROKEN_BELOW",
+        "action": "Bearish Breakdown",
+        "ltp": 865.0,
+        "diff_pct": -5.32,
+        "symbol": "SHRIRAMFIN",
+        "name": "Shriram Finance Ltd.",
+        "industry": "Financial Services",
+        "is_fo": true
+      },
+      {
+        "status": "BROKEN_BELOW",
+        "action": "Bearish Breakdown",
+        "ltp": 3245.2,
+        "diff_pct": -7.54,
+        "symbol": "SIEMENS",
+        "name": "Siemens Ltd.",
+        "industry": "Capital Goods",
+        "is_fo": true
+      },
+      {
+        "status": "BROKEN_BELOW",
+        "action": "Bearish Breakdown",
+        "ltp": 1654.4,
+        "diff_pct": -3.16,
+        "symbol": "TATACOMM",
+        "name": "Tata Communications Ltd.",
+        "industry": "Telecommunication",
+        "is_fo": false
+      },
+      {
+        "status": "BROKEN_BELOW",
+        "action": "Bearish Breakdown",
+        "ltp": 657.35,
+        "diff_pct": -7.41,
+        "symbol": "TATATECH",
+        "name": "Tata Technologies Ltd.",
+        "industry": "Information Technology",
+        "is_fo": false
+      },
+      {
+        "status": "BROKEN_BELOW",
+        "action": "Bearish Breakdown",
+        "ltp": 1723.5,
+        "diff_pct": -1.15,
+        "symbol": "TEGA",
+        "name": "Tega Industries Ltd.",
+        "industry": "Capital Goods",
+        "is_fo": false
+      },
+      {
+        "status": "BROKEN_BELOW",
+        "action": "Bearish Breakdown",
+        "ltp": 159.8,
+        "diff_pct": -7.22,
+        "symbol": "NIACL",
+        "name": "The New India Assurance Company Ltd.",
+        "industry": "Financial Services",
+        "is_fo": false
+      },
+      {
+        "status": "BROKEN_BELOW",
+        "action": "Bearish Breakdown",
+        "ltp": 1252.0,
+        "diff_pct": -8.59,
+        "symbol": "UNITDSPR",
+        "name": "United Spirits Ltd.",
+        "industry": "Fast Moving Consumer Goods",
+        "is_fo": true
+      },
+      {
+        "status": "BROKEN_BELOW",
+        "action": "Bearish Breakdown",
+        "ltp": 11.36,
+        "diff_pct": -3.81,
+        "symbol": "IDEA",
+        "name": "Vodafone Idea Ltd.",
+        "industry": "Telecommunication",
+        "is_fo": true
+      },
+      {
+        "status": "BROKEN_BELOW",
+        "action": "Bearish Breakdown",
+        "ltp": 1493.8,
+        "diff_pct": -6.96,
+        "symbol": "ZENTEC",
+        "name": "Zen Technologies Ltd.",
+        "industry": "Capital Goods",
+        "is_fo": false
+      },
+      {
+        "status": "BROKEN_BELOW",
+        "action": "Bearish Breakdown",
+        "ltp": 463.35,
+        "diff_pct": -2.91,
+        "symbol": "ZYDUSWELL",
+        "name": "Zydus Wellness Ltd.",
+        "industry": "Fast Moving Consumer Goods",
+        "is_fo": false
+      }
+    ],
+    "monthly": [
+      {
+        "status": "BROKEN_BELOW",
+        "action": "Bearish Breakdown",
+        "ltp": 3157.7,
+        "diff_pct": -15.75,
+        "symbol": "DMART",
+        "name": "Avenue Supermarts Ltd.",
+        "industry": "Consumer Services",
+        "is_fo": true
+      },
+      {
+        "status": "BROKEN_BELOW",
+        "action": "Bearish Breakdown",
+        "ltp": 323.5,
+        "diff_pct": -3.66,
+        "symbol": "BIOCON",
+        "name": "Biocon Ltd.",
+        "industry": "Healthcare",
+        "is_fo": true
+      },
+      {
+        "status": "BROKEN_BELOW",
+        "action": "Bearish Breakdown",
+        "ltp": 547.6,
+        "diff_pct": -2.41,
+        "symbol": "BRIGADE",
+        "name": "Brigade Enterprises Ltd.",
+        "industry": "Realty",
+        "is_fo": false
+      },
+      {
+        "status": "BROKEN_BELOW",
+        "action": "Bearish Breakdown",
+        "ltp": 4537.9,
+        "diff_pct": -2.74,
+        "symbol": "BRITANNIA",
+        "name": "Britannia Industries Ltd.",
+        "industry": "Fast Moving Consumer Goods",
+        "is_fo": true
+      },
+      {
+        "status": "BROKEN_BELOW",
+        "action": "Bearish Breakdown",
+        "ltp": 351.55,
+        "diff_pct": -7.9,
+        "symbol": "CIEINDIA",
+        "name": "CIE Automotive India Ltd.",
+        "industry": "Automobile and Auto Components",
+        "is_fo": false
+      },
+      {
+        "status": "BROKEN_BELOW",
+        "action": "Bearish Breakdown",
+        "ltp": 363.95,
+        "diff_pct": -5.13,
+        "symbol": "CHAMBLFERT",
+        "name": "Chambal Fertilizers & Chemicals Ltd.",
+        "industry": "Chemicals",
+        "is_fo": false
+      },
+      {
+        "status": "BROKEN_BELOW",
+        "action": "Bearish Breakdown",
+        "ltp": 1027.4,
+        "diff_pct": -8.37,
+        "symbol": "CREDITACC",
+        "name": "CreditAccess Grameen Ltd.",
+        "industry": "Financial Services",
+        "is_fo": false
+      },
+      {
+        "status": "BROKEN_ABOVE",
+        "action": "Bullish Breakout",
+        "ltp": 1233.0,
+        "diff_pct": 9.58,
+        "symbol": "CYIENT",
+        "name": "Cyient Ltd.",
+        "industry": "Information Technology",
+        "is_fo": false
+      },
+      {
+        "status": "BROKEN_BELOW",
+        "action": "Bearish Breakdown",
+        "ltp": 2627.0,
+        "diff_pct": -2.45,
+        "symbol": "ESCORTS",
+        "name": "Escorts Kubota Ltd.",
+        "industry": "Capital Goods",
+        "is_fo": false
+      },
+      {
+        "status": "BROKEN_ABOVE",
+        "action": "Bullish Breakout",
+        "ltp": 7220.0,
+        "diff_pct": 2.72,
+        "symbol": "GILLETTE",
+        "name": "Gillette India Ltd.",
+        "industry": "Fast Moving Consumer Goods",
+        "is_fo": false
+      },
+      {
+        "status": "BROKEN_BELOW",
+        "action": "Bearish Breakdown",
+        "ltp": 146.02,
+        "diff_pct": -1.99,
+        "symbol": "HUDCO",
+        "name": "Housing & Urban Development Corporation Ltd.",
+        "industry": "Financial Services",
+        "is_fo": false
+      },
+      {
+        "status": "BROKEN_BELOW",
+        "action": "Bearish Breakdown",
+        "ltp": 215.38,
+        "diff_pct": -6.31,
+        "symbol": "ITI",
+        "name": "ITI Ltd.",
+        "industry": "Telecommunication",
+        "is_fo": false
+      },
+      {
+        "status": "BROKEN_BELOW",
+        "action": "Bearish Breakdown",
+        "ltp": 487.15,
+        "diff_pct": -9.91,
+        "symbol": "JBMA",
+        "name": "JBM Auto Ltd.",
+        "industry": "Automobile and Auto Components",
+        "is_fo": false
+      },
+      {
+        "status": "BROKEN_BELOW",
+        "action": "Bearish Breakdown",
+        "ltp": 309.15,
+        "diff_pct": -0.06,
+        "symbol": "JKTYRE",
+        "name": "JK Tyre & Industries Ltd.",
+        "industry": "Automobile and Auto Components",
+        "is_fo": false
+      },
+      {
+        "status": "BROKEN_BELOW",
+        "action": "Bearish Breakdown",
+        "ltp": 12.67,
+        "diff_pct": -5.06,
+        "symbol": "JPPOWER",
+        "name": "Jaiprakash Power Ventures Ltd.",
+        "industry": "Power",
+        "is_fo": false
+      },
+      {
+        "status": "BROKEN_ABOVE",
+        "action": "Bullish Breakout",
+        "ltp": 3910.3,
+        "diff_pct": 4.54,
+        "symbol": "LTTS",
+        "name": "L&T Technology Services Ltd.",
+        "industry": "Information Technology",
+        "is_fo": false
+      },
+      {
+        "status": "BROKEN_BELOW",
+        "action": "Bearish Breakdown",
+        "ltp": 490.0,
+        "diff_pct": -1.82,
+        "symbol": "LICHSGFIN",
+        "name": "LIC Housing Finance Ltd.",
+        "industry": "Financial Services",
+        "is_fo": true
+      },
+      {
+        "status": "BROKEN_ABOVE",
+        "action": "Bullish Breakout",
+        "ltp": 2480.0,
+        "diff_pct": 13.1,
+        "symbol": "MPHASIS",
+        "name": "MphasiS Ltd.",
+        "industry": "Information Technology",
+        "is_fo": true
+      },
+      {
+        "status": "BROKEN_BELOW",
+        "action": "Bearish Breakdown",
+        "ltp": 67.9,
+        "diff_pct": -8.69,
+        "symbol": "NBCC",
+        "name": "NBCC (India) Ltd.",
+        "industry": "Construction",
+        "is_fo": true
+      },
+      {
+        "status": "BROKEN_BELOW",
+        "action": "Bearish Breakdown",
+        "ltp": 955.7,
+        "diff_pct": -10.59,
+        "symbol": "OLECTRA",
+        "name": "Olectra Greentech Ltd.",
+        "industry": "Automobile and Auto Components",
+        "is_fo": false
+      },
+      {
+        "status": "BROKEN_ABOVE",
+        "action": "Bullish Breakout",
+        "ltp": 1395.7,
+        "diff_pct": 8.73,
+        "symbol": "PVRINOX",
+        "name": "PVR INOX Ltd.",
+        "industry": "Media Entertainment & Publication",
+        "is_fo": false
+      },
+      {
+        "status": "BROKEN_BELOW",
+        "action": "Bearish Breakdown",
+        "ltp": 1444.0,
+        "diff_pct": -3.28,
+        "symbol": "POLYMED",
+        "name": "Poly Medicure Ltd.",
+        "industry": "Healthcare",
+        "is_fo": false
+      },
+      {
+        "status": "BROKEN_BELOW",
+        "action": "Bearish Breakdown",
+        "ltp": 189.4,
+        "diff_pct": -6.87,
+        "symbol": "RITES",
+        "name": "RITES Ltd.",
+        "industry": "Construction",
+        "is_fo": false
+      },
+      {
+        "status": "BROKEN_BELOW",
+        "action": "Bearish Breakdown",
+        "ltp": 2310.0,
+        "diff_pct": -0.35,
+        "symbol": "SRF",
+        "name": "SRF Ltd.",
+        "industry": "Chemicals",
+        "is_fo": true
+      },
+      {
+        "status": "BROKEN_BELOW",
+        "action": "Bearish Breakdown",
+        "ltp": 824.6,
+        "diff_pct": -7.1,
+        "symbol": "TECHNOE",
+        "name": "Techno Electric & Engineering Company Ltd.",
+        "industry": "Construction",
+        "is_fo": false
+      },
+      {
+        "status": "BROKEN_BELOW",
+        "action": "Bearish Breakdown",
+        "ltp": 3096.0,
+        "diff_pct": -0.38,
+        "symbol": "THERMAX",
+        "name": "Thermax Ltd.",
+        "industry": "Capital Goods",
+        "is_fo": false
+      },
+      {
+        "status": "BROKEN_BELOW",
+        "action": "Bearish Breakdown",
+        "ltp": 2730.1,
+        "diff_pct": -2.4,
+        "symbol": "TIMKEN",
+        "name": "Timken India Ltd.",
+        "industry": "Capital Goods",
+        "is_fo": false
+      },
+      {
+        "status": "BROKEN_BELOW",
+        "action": "Bearish Breakdown",
+        "ltp": 663.35,
+        "diff_pct": -4.17,
+        "symbol": "TITAGARH",
+        "name": "Titagarh Rail Systems Ltd.",
+        "industry": "Capital Goods",
+        "is_fo": false
+      },
+      {
+        "status": "BROKEN_BELOW",
+        "action": "Bearish Breakdown",
+        "ltp": 445.05,
+        "diff_pct": -0.68,
+        "symbol": "TRITURBINE",
+        "name": "Triveni Turbine Ltd.",
+        "industry": "Capital Goods",
+        "is_fo": false
+      },
+      {
+        "status": "BROKEN_BELOW",
+        "action": "Bearish Breakdown",
+        "ltp": 817.05,
+        "diff_pct": -5.44,
+        "symbol": "UTIAMC",
+        "name": "UTI Asset Management Company Ltd.",
+        "industry": "Financial Services",
+        "is_fo": false
+      },
+      {
+        "status": "BROKEN_BELOW",
+        "action": "Bearish Breakdown",
+        "ltp": 11.36,
+        "diff_pct": -6.34,
+        "symbol": "IDEA",
+        "name": "Vodafone Idea Ltd.",
+        "industry": "Telecommunication",
+        "is_fo": true
+      }
+    ]
+  }
+}
