@@ -1,0 +1,3154 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AlphaQuant Terminal | Indian Equity Intelligence</title>
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              navy: '#0A0E17',
+              surface: '#0F1523',
+              card: '#131B2E',
+              row: '#101726',
+              border: '#1E293B',
+              borderLight: '#2A374F',
+              accent: '#3B82F6',
+              accentHover: '#2563EB',
+              emerald: '#10B981',
+              rose: '#F43F5E',
+              amber: '#F59E0B',
+            }
+          },
+          fontFamily: {
+            sans: ['-apple-system', 'BlinkMacSystemFont', '"SF Pro Display"', '"SF Pro Text"', '"SF Pro"', 'Helvetica Neue', 'Helvetica', 'Arial', 'sans-serif'],
+            mono: ['"SF Mono"', 'SFMono-Regular', 'ui-monospace', 'Menlo', 'Monaco', 'monospace']
+          }
+        }
+      }
+    }
+  </script>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+  <style>
+    body {
+      background-color: #0A0E17;
+      color: #E2E8F0;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "SF Pro", "Helvetica Neue", Helvetica, Arial, sans-serif;
+      letter-spacing: -0.015em;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+    
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: #0A0E17; }
+    ::-webkit-scrollbar-thumb { background: #26334D; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #3B4D70; }
+
+    @keyframes marqueeScroll {
+      0% {
+        transform: translate3d(0, 0, 0);
+      }
+      100% {
+        transform: translate3d(-50%, 0, 0);
+      }
+    }
+    @-webkit-keyframes marqueeScroll {
+      0% {
+        -webkit-transform: translate3d(0, 0, 0);
+      }
+      100% {
+        -webkit-transform: translate3d(-50%, 0, 0);
+      }
+    }
+    .ticker-track {
+      display: inline-flex;
+      white-space: nowrap;
+      width: max-content;
+      will-change: transform;
+      animation: marqueeScroll 85s linear infinite;
+      -webkit-animation: marqueeScroll 85s linear infinite;
+    }
+    .tabular-nums {
+      font-variant-numeric: tabular-nums;
+    }
+  </style>
+</head>
+<body class="bg-[#0A0E17] text-slate-100 min-h-screen overflow-hidden select-none">
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useMemo } = React;
+
+    const api = axios.create({ baseURL: '/api/v1' });
+    api.interceptors.request.use((cfg) => {
+      const token = localStorage.getItem('alphaquant_token');
+      if (token) cfg.headers.Authorization = `Bearer ${token}`;
+      return cfg;
+    });
+
+    const formatPrice = (val) => Number(val).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const formatVolShort = (val) => {
+      const num = Number(val);
+      if (num >= 10000000) return (num / 10000000).toFixed(2) + ' Cr';
+      if (num >= 100000) return (num / 100000).toFixed(2) + ' L';
+      if (num >= 1000) return (num / 1000).toFixed(1) + ' K';
+      return num.toLocaleString('en-IN');
+    };
+
+    function Sparkline({ isBull, points = [30, 28, 35, 32, 40, 38, 48, 45, 55, 52, 60] }) {
+      const min = Math.min(...points);
+      const max = Math.max(...points);
+      const range = max - min || 1;
+      const height = 20;
+      const width = 56;
+      const step = width / (points.length - 1);
+      
+      const polyPoints = points.map((p, idx) => {
+        const x = idx * step;
+        const y = height - ((p - min) / range) * (height - 4) - 2;
+        return `${x.toFixed(1)},${y.toFixed(1)}`;
+      }).join(' ');
+
+      const strokeColor = isBull ? '#10B981' : '#F43F5E';
+      return (
+        <svg width={width} height={height} className="overflow-visible opacity-90 inline-block">
+          <polyline
+            fill="none"
+            stroke={strokeColor}
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            points={polyPoints}
+          />
+        </svg>
+      );
+    }
+
+    function App() {
+      const [user, setUser] = useState(() => {
+        const saved = localStorage.getItem('alphaquant_user');
+        return saved ? JSON.parse(saved) : null;
+      });
+      const [activeNav, setActiveNav] = useState('breadth');
+      const [brokerSession, setBrokerSession] = useState({ authenticated: false, client_id: null, market_open: false, loading: true });
+      const [selectedStock, setSelectedStock] = useState(null);
+      const [isPaused, setIsPaused] = useState(false);
+
+      const [indices] = useState([
+        { symbol: "RELIANCE", ltp: 2980.50, change: 14.20, change_pct: 0.48 },
+        { symbol: "TCS", ltp: 4150.00, change: 25.10, change_pct: 0.61 },
+        { symbol: "HDFCBANK", ltp: 1640.20, change: -8.40, change_pct: -0.51 },
+        { symbol: "INFY", ltp: 1820.75, change: -12.40, change_pct: -0.68 },
+        { symbol: "ICICIBANK", ltp: 1210.40, change: 18.20, change_pct: 1.52 },
+        { symbol: "BHARTIARTL", ltp: 1425.80, change: 10.30, change_pct: 0.73 },
+        { symbol: "SBIN", ltp: 815.10, change: 6.40, change_pct: 0.79 },
+        { symbol: "ITC", ltp: 492.30, change: -1.20, change_pct: -0.24 },
+        { symbol: "HINDUNILVR", ltp: 2540.20, change: 5.60, change_pct: 0.22 },
+        { symbol: "LT", ltp: 3540.60, change: 32.10, change_pct: 0.91 },
+        { symbol: "BAJFINANCE", ltp: 6840.20, change: -45.60, change_pct: -0.66 },
+        { symbol: "TATAMOTORS", ltp: 960.50, change: 14.80, change_pct: 1.56 },
+        { symbol: "SUNPHARMA", ltp: 1740.20, change: 12.30, change_pct: 0.71 },
+        { symbol: "MARUTI", ltp: 12150.00, change: 140.00, change_pct: 1.17 },
+        { symbol: "AXISBANK", ltp: 1180.40, change: 8.20, change_pct: 0.70 },
+        { symbol: "NTPC", ltp: 412.30, change: -2.40, change_pct: -0.58 },
+        { symbol: "TITAN", ltp: 3420.50, change: 15.60, change_pct: 0.46 },
+        { symbol: "ONGC", ltp: 290.40, change: 3.20, change_pct: 1.11 },
+        { symbol: "POWERGRID", ltp: 325.60, change: 1.80, change_pct: 0.56 },
+        { symbol: "ADANIENT", ltp: 3150.40, change: -18.20, change_pct: -0.57 },
+        { symbol: "ADANIPORTS", ltp: 1340.20, change: 24.10, change_pct: 1.83 },
+        { symbol: "COALINDIA", ltp: 485.20, change: 5.10, change_pct: 1.06 },
+        { symbol: "KOTAKBANK", ltp: 1780.20, change: -7.60, change_pct: -0.42 },
+        { symbol: "M&M", ltp: 2890.40, change: 35.20, change_pct: 1.23 },
+        { symbol: "TATASTEEL", ltp: 155.40, change: 2.10, change_pct: 1.37 },
+        { symbol: "WIPRO", ltp: 520.40, change: -3.80, change_pct: -0.73 }
+      ]);
+
+      const checkBrokerStatus = async () => {
+        try {
+          const res = await api.get('/auth/session-status');
+          setBrokerSession({ ...res.data, loading: false });
+        } catch (e) {
+          setBrokerSession(prev => ({ ...prev, loading: false }));
+        }
+      };
+
+      useEffect(() => {
+        checkBrokerStatus();
+        const t = setInterval(checkBrokerStatus, 30000);
+        return () => clearInterval(t);
+      }, []);
+
+      const handleLoginSuccess = (userData, token) => {
+        localStorage.setItem('alphaquant_token', token);
+        localStorage.setItem('alphaquant_user', JSON.stringify(userData));
+        setUser(userData);
+        checkBrokerStatus();
+      };
+
+      const handleLogout = () => {
+        localStorage.removeItem('alphaquant_token');
+        localStorage.removeItem('alphaquant_user');
+        setUser(null);
+      };
+
+      if (!user) {
+        return <LoginScreen onLoginSuccess={handleLoginSuccess} />;
+      }
+
+      return (
+        <div className="flex flex-col h-screen bg-[#0A0E17] text-slate-100 font-sans">
+          
+          {/* Top Running Market Ticker Bar (Nifty 50 Constituents) */}
+          <div className="h-8 bg-[#070A10] border-b border-[#161F30] flex items-center px-3 overflow-hidden select-none text-[11px] font-mono shrink-0 ticker-bar z-30">
+            <div className="flex items-center space-x-2 mr-3 pr-3 border-r border-[#1E293B] shrink-0 text-cyan-400">
+              <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse"></span>
+              <span className="font-sans font-bold text-[10px] tracking-wider text-slate-300 uppercase">NIFTY 50</span>
+              <button 
+                onClick={() => setIsPaused(!isPaused)} 
+                title={isPaused ? "Play marquee" : "Pause marquee"}
+                className="text-slate-500 hover:text-slate-300 transition-colors ml-1"
+              >
+                {isPaused ? '▶' : '⏸'}
+              </button>
+            </div>
+
+            <div className="overflow-hidden flex-1 flex">
+              <div 
+                className="ticker-track flex items-center space-x-7 tabular-nums"
+                style={{ animationPlayState: isPaused ? 'paused' : 'running' }}
+              >
+                {[...indices, ...indices, ...indices].map((item, idx) => {
+                  const isBull = item.change >= 0;
+                  return (
+                    <div key={idx} className="flex items-center space-x-1.5 shrink-0 px-1 font-medium">
+                      <span className="text-slate-300 font-semibold">{item.symbol}</span>
+                      <span className="text-white font-mono">{item.ltp.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                      <span className={`inline-flex items-center font-mono font-semibold ${isBull ? 'text-emerald-400' : 'text-rose-400'}`}>
+                        <span>{isBull ? `+${item.change.toFixed(2)}` : item.change.toFixed(2)}</span>
+                        <span className="ml-1">({isBull ? `+${item.change_pct.toFixed(2)}%` : `${item.change_pct.toFixed(2)}%`})</span>
+                        <span className="ml-1 text-[9px]">{isBull ? '▲' : '▼'}</span>
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+            {/* Top Right Quick Session Badges */}
+            <div className="hidden md:flex items-center space-x-4 pl-4 border-l border-[#161F30] shrink-0 font-mono text-[11px]">
+              <div className="flex items-center space-x-1.5">
+                <span className={`w-1.5 h-1.5 rounded-full ${brokerSession.authenticated ? 'bg-emerald-400' : 'bg-amber-400'}`}></span>
+                <span className="text-slate-400">Live Feed:</span>
+                <span className="text-slate-200 font-semibold">{brokerSession.authenticated ? 'Connected' : 'Syncing'}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* App Body: Left Sidebar + Main Content Viewport */}
+          <div className="flex flex-1 min-h-0 overflow-hidden">
+            {/* Left Navigation Sidebar */}
+            <aside className="w-60 bg-[#0C121E] border-r border-[#1A2538] flex flex-col justify-between shrink-0 select-none z-20">
+              <div>
+                {/* Brand Logo Header */}
+                <div 
+                  onClick={() => setActiveNav('breadth')}
+                  className="p-4 border-b border-[#1A2538] flex items-center space-x-3 cursor-pointer"
+                >
+                  <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-blue-600 to-indigo-500 p-[1px] shadow-md shadow-blue-500/20">
+                    <div className="w-full h-full bg-[#0C121E] rounded-[7px] flex items-center justify-center font-bold text-blue-400 text-xs tracking-wider">
+                      AQ
+                    </div>
+                  </div>
+                  <div>
+                    <h1 className="font-bold text-xs tracking-tight text-white flex items-center space-x-1.5">
+                      <span>ALPHAQUANT</span>
+                      <span className="text-[9px] font-mono px-1 py-0.2 rounded bg-blue-500/10 border border-blue-500/30 text-blue-400">PRO</span>
+                    </h1>
+                    <p className="text-[10px] text-slate-500 font-mono">Indian Equity Terminal</p>
+                  </div>
+                </div>
+
+                {/* Left Sidebar Navigation Links */}
+                <nav className="p-3 space-y-1.5 text-xs">
+                  <button
+                    onClick={() => setActiveNav('breadth')}
+                    className={`w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg font-semibold transition-all ${
+                      activeNav === 'breadth'
+                        ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20'
+                        : 'text-slate-400 hover:text-slate-200 hover:bg-[#131B2E]'
+                    }`}
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
+                    <span>Market Breadth Analyser</span>
+                  </button>
+
+                  <button
+                    onClick={() => setActiveNav('screener')}
+                    className={`w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg font-semibold transition-all ${
+                      activeNav === 'screener'
+                        ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20'
+                        : 'text-slate-400 hover:text-slate-200 hover:bg-[#131B2E]'
+                    }`}
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" /></svg>
+                    <span>Screener Tools</span>
+                  </button>
+
+                  <button
+                    onClick={() => setActiveNav('hps')}
+                    className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg font-semibold transition-all ${
+                      activeNav === 'hps'
+                        ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20'
+                        : 'text-slate-400 hover:text-slate-200 hover:bg-[#131B2E]'
+                    }`}
+                  >
+                    <div className="flex items-center space-x-3">
+                      <svg className="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>
+                      <span>HPS Stocks</span>
+                    </div>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-300 font-mono font-bold">
+                      HPS
+                    </span>
+                  </button>
+
+                  <button
+                    onClick={() => setActiveNav('hps_mean_reversion')}
+                    className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg font-semibold transition-all ${
+                      activeNav === 'hps_mean_reversion'
+                        ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20'
+                        : 'text-slate-400 hover:text-slate-200 hover:bg-[#131B2E]'
+                    }`}
+                  >
+                    <div className="flex items-center space-x-3">
+                      <svg className="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
+                      <span>HPS Mean Reversion</span>
+                    </div>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-mono font-bold">
+                      Levels
+                    </span>
+                  </button>
+
+                  {user.role === 'admin' && (
+                    <>
+                      <button
+                        onClick={() => setActiveNav('rules')}
+                        className={`w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg font-semibold transition-all ${
+                          activeNav === 'rules'
+                            ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20'
+                            : 'text-slate-400 hover:text-slate-200 hover:bg-[#131B2E]'
+                        }`}
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" /></svg>
+                        <span>Screener Rules</span>
+                      </button>
+
+                      <button
+                        onClick={() => setActiveNav('users')}
+                        className={`w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg font-semibold transition-all ${
+                          activeNav === 'users'
+                            ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20'
+                            : 'text-slate-400 hover:text-slate-200 hover:bg-[#131B2E]'
+                        }`}
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+                        <span>Team Accounts</span>
+                      </button>
+
+                      <button
+                        onClick={() => setActiveNav('broker_auth')}
+                        className={`w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg font-semibold transition-all ${
+                          activeNav === 'broker_auth'
+                            ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20'
+                            : 'text-slate-400 hover:text-slate-200 hover:bg-[#131B2E]'
+                        }`}
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" /></svg>
+                        <span>Broker Connect</span>
+                      </button>
+
+                      <button
+                        onClick={() => setActiveNav('telegram_alerts')}
+                        className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg font-semibold transition-all ${
+                          activeNav === 'telegram_alerts'
+                            ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20'
+                            : 'text-slate-400 hover:text-slate-200 hover:bg-[#131B2E]'
+                        }`}
+                      >
+                        <div className="flex items-center space-x-3">
+                          <svg className="w-4 h-4 text-sky-400" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 00-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.75-.55 2.92-1.27 4.86-2.11 5.83-2.51 2.78-1.16 3.35-1.36 3.73-1.36.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .38z"/>
+                          </svg>
+                          <span>Telegram Alerts</span>
+                        </div>
+                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-sky-500/20 text-sky-300 font-mono font-bold">
+                          Live
+                        </span>
+                      </button>
+                    </>
+                  )}
+
+                  <button
+                    onClick={() => setActiveNav('profile')}
+                    className={`w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg font-semibold transition-all ${
+                      activeNav === 'profile'
+                        ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20'
+                        : 'text-slate-400 hover:text-slate-200 hover:bg-[#131B2E]'
+                    }`}
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                    <span>My Account & Alerts</span>
+                  </button>
+                </nav>
+              </div>
+
+              {/* Sidebar Footer: User Details & Logout */}
+              <div className="p-3 border-t border-[#1A2538]">
+                <div className="flex items-center justify-between p-2 rounded-lg bg-[#080D17] border border-[#1A2538]">
+                  <div className="flex items-center space-x-2.5 truncate">
+                    <div className="w-7 h-7 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center font-bold text-[11px] text-slate-200 shrink-0">
+                      {user.username[0].toUpperCase()}
+                    </div>
+                    <div className="truncate">
+                      <p className="text-xs font-semibold text-white truncate">{user.username}</p>
+                      <span className="text-[10px] uppercase font-mono text-blue-400">
+                        {user.role}
+                      </span>
+                    </div>
+                  </div>
+                  <button
+                    onClick={handleLogout}
+                    title="Sign Out"
+                    className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-[#131B2E] rounded-md transition-colors shrink-0"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+                  </button>
+                </div>
+              </div>
+            </aside>
+
+            {/* Main Content Viewport */}
+            <div className="flex-1 flex flex-col min-w-0 overflow-hidden bg-[#0A0E17]">
+              {/* Main Content Area */}
+              <main className="flex-1 overflow-y-auto p-5 space-y-6">
+                {activeNav === 'breadth' && (
+                  <MarketBreadthSection onSelectStock={setSelectedStock} />
+                )}
+                {activeNav === 'screener' && (
+                  <TerminalScreener onSelectStock={setSelectedStock} />
+                )}
+                {activeNav === 'hps' && (
+                  <HpsScreenerSection onSelectStock={setSelectedStock} />
+                )}
+                {activeNav === 'hps_mean_reversion' && (
+                  <HpsMeanReversionSection onSelectStock={setSelectedStock} />
+                )}
+                {activeNav === 'rules' && <RulesManager onBack={() => setActiveNav('breadth')} />}
+                {activeNav === 'users' && <UsersManager onBack={() => setActiveNav('breadth')} />}
+                {activeNav === 'broker_auth' && <BrokerAuthView onConnected={checkBrokerStatus} onBack={() => setActiveNav('breadth')} />}
+                {activeNav === 'telegram_alerts' && <TelegramAlertsView onBack={() => setActiveNav('breadth')} />}
+                {activeNav === 'profile' && <ProfileView onBack={() => setActiveNav('breadth')} />}
+              </main>
+            </div>
+          </div>
+
+          {selectedStock && (
+            <StockDetailDrawer stock={selectedStock} onClose={() => setSelectedStock(null)} />
+          )}
+        </div>
+      );
+    }
+
+    // ----------------- FEATURE 1: MARKET BREADTH SECTION ----------------- //
+    function MarketBreadthSection({ onSelectStock }) {
+      const defaultBreadth = {
+        candle_time: "Friday 23rd Oct Close (3:30pm)",
+        indices: [
+          { symbol: "NIFTY 50", name: "Nifty 50 Benchmark", ltp: 22600.00, change: -87.65, change_pct: -0.39 },
+          { symbol: "BANK NIFTY", name: "Nifty Bank", ltp: 54287.35, change: 142.10, change_pct: 0.29 },
+          { symbol: "FINNIFTY", name: "Nifty Financial Services", ltp: 24150.20, change: 85.30, change_pct: 0.35 },
+          { symbol: "NIFTY IT", name: "Nifty IT Sector", ltp: 31995.50, change: -210.80, change_pct: -0.56 },
+          { symbol: "NIFTY AUTO", name: "Nifty Auto Sector", ltp: 24862.30, change: 185.40, change_pct: 0.84 },
+          { symbol: "NIFTY FMCG", name: "Nifty FMCG Sector", ltp: 42680.70, change: 45.30, change_pct: 0.08 },
+          { symbol: "NIFTY METAL", name: "Nifty Metal Sector", ltp: 8940.60, change: 112.50, change_pct: 1.27 },
+          { symbol: "NIFTY PHARMA", name: "Nifty Pharma Sector", ltp: 21850.40, change: 94.20, change_pct: 0.43 },
+          { symbol: "NIFTY PSU BANK", name: "Nifty PSU Bank", ltp: 6780.15, change: 85.10, change_pct: 1.27 },
+          { symbol: "NIFTY PVT BANK", name: "Nifty Private Bank", ltp: 26656.30, change: -75.40, change_pct: -0.28 },
+          { symbol: "NIFTY REALTY", name: "Nifty Realty Sector", ltp: 1045.30, change: 22.40, change_pct: 2.19 },
+          { symbol: "NIFTY MEDIA", name: "Nifty Media Sector", ltp: 2085.10, change: -18.20, change_pct: -0.87 },
+          { symbol: "NIFTY ENERGY", name: "Nifty Energy Sector", ltp: 38920.40, change: 140.20, change_pct: 0.36 },
+          { symbol: "NIFTY INFRA", name: "Nifty Infrastructure", ltp: 8450.80, change: 62.10, change_pct: 0.74 },
+          { symbol: "NIFTY COMMODITIES", name: "Nifty Commodities", ltp: 8920.50, change: 45.20, change_pct: 0.51 },
+          { symbol: "NIFTY CONSUMPTION", name: "Nifty Consumption", ltp: 10420.10, change: 38.60, change_pct: 0.37 },
+          { symbol: "NIFTY OIL & GAS", name: "Nifty Oil and Gas", ltp: 11840.25, change: 52.10, change_pct: 0.44 },
+          { symbol: "NIFTY HEALTHCARE", name: "Nifty Healthcare", ltp: 14210.60, change: 68.40, change_pct: 0.48 },
+          { symbol: "NIFTY CONSR DURBL", name: "Consumer Durables", ltp: 39540.20, change: 180.50, change_pct: 0.46 },
+          { symbol: "NIFTY DEFENCE", name: "India Defence", ltp: 7820.40, change: 145.20, change_pct: 1.89 },
+          { symbol: "NIFTY EV", name: "EV & New Age Auto", ltp: 11240.30, change: 110.10, change_pct: 0.99 },
+          { symbol: "NIFTY INDIA MFG", name: "India Manufacturing", ltp: 13950.50, change: 85.30, change_pct: 0.61 },
+          { symbol: "NIFTY DIGITAL", name: "India Digital", ltp: 8120.40, change: -42.10, change_pct: -0.52 },
+          { symbol: "INDIA VIX", name: "India Volatility", ltp: 16.86, change: 1.10, change_pct: 6.98 }
+        ],
+        top_gainers: [
+          { symbol: "SSWL", name: "Steel Strips Wheels", change_pct: 19.99, ltp: 468.75 },
+          { symbol: "SVGLOBAL", name: "SV Global Mill", change_pct: 15.33, ltp: 147.92 },
+          { symbol: "ANTELOPUS", name: "Antelopus Energy", change_pct: 13.00, ltp: 1136.40 },
+          { symbol: "JINDALPOLY", name: "Jindal Poly Films", change_pct: 11.23, ltp: 739.35 },
+          { symbol: "BCONCEPTS", name: "Brand Concepts", change_pct: 11.05, ltp: 148.51 },
+          { symbol: "ALUFLUOR", name: "Alufluoride Ltd", change_pct: 9.13, ltp: 537.15 },
+          { symbol: "NOVARTIND", name: "Novartis India", change_pct: 8.31, ltp: 1824.50 },
+          { symbol: "IGIL", name: "International Gemmological", change_pct: 7.91, ltp: 381.15 },
+          { symbol: "MAZDOCK", name: "Mazagon Dock Ship", change_pct: 6.85, ltp: 4320.00 },
+          { symbol: "TRENT", name: "Trent Ltd", change_pct: 2.45, ltp: 8140.00 }
+        ],
+        top_losers: [
+          { symbol: "GEOJITFSL", name: "Geojit Financial", change_pct: -9.84, ltp: 112.40 },
+          { symbol: "RANEHOLDIN", name: "Rane Holdings", change_pct: -7.62, ltp: 1490.10 },
+          { symbol: "DELTACORP", name: "Delta Corp Ltd", change_pct: -6.45, ltp: 122.30 },
+          { symbol: "ZEEL", name: "Zee Entertainment", change_pct: -5.92, ltp: 134.80 },
+          { symbol: "TATAINVEST", name: "Tata Investment Corp", change_pct: -5.18, ltp: 6780.00 },
+          { symbol: "IDEA", name: "Vodafone Idea Ltd", change_pct: -4.85, ltp: 7.85 },
+          { symbol: "BANDHANBNK", name: "Bandhan Bank Ltd", change_pct: -4.21, ltp: 178.60 },
+          { symbol: "PAYTM", name: "One97 Communications", change_pct: -3.89, ltp: 712.50 },
+          { symbol: "YESBANK", name: "Yes Bank Ltd", change_pct: -3.42, ltp: 21.15 },
+          { symbol: "IRCTC", name: "IRCTC Ltd", change_pct: -2.95, ltp: 862.40 }
+        ],
+        breadth_summary: { advances: 54, declines: 46 }
+      };
+
+      const [breadthData, setBreadthData] = useState(defaultBreadth);
+      const [lastUpdatedTime, setLastUpdatedTime] = useState(new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
+
+      const fetchBreadth = async () => {
+        try {
+          const res = await api.get('/screener/breadth');
+          if (res.data && res.data.indices) {
+            setBreadthData(res.data);
+            setLastUpdatedTime(new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
+          }
+        } catch (e) {
+          console.error("Breadth live polling fallback:", e);
+        }
+      };
+
+      useEffect(() => {
+        fetchBreadth();
+        const t = setInterval(fetchBreadth, 5000);
+        return () => clearInterval(t);
+      }, []);
+
+      // Filter mode for Top Gainers & Losers: 'fo' for F&O Stocks, 'nifty500' for Nifty 500
+      const [stockUniverseFilter, setStockUniverseFilter] = useState('fo');
+
+      // Filter mode for Advance & Decline: 'nifty500' for Nifty 500, 'fo' for Nifty F&O
+      const [adUniverseFilter, setAdUniverseFilter] = useState('nifty500');
+
+      const indices = breadthData.indices;
+      const topGainers = stockUniverseFilter === 'fo' ? (breadthData.fo_top_gainers || breadthData.top_gainers) : breadthData.top_gainers;
+      const topLosers = stockUniverseFilter === 'fo' ? (breadthData.fo_top_losers || breadthData.top_losers) : breadthData.top_losers;
+      const candleTime = breadthData.candle_time;
+
+      // Sort directions for Top Gainers and Top Losers % chg
+      const [gainerSortAsc, setGainerSortAsc] = useState(false);
+      const [loserSortAsc, setLoserSortAsc] = useState(false);
+
+      const sortedGainers = useMemo(() => {
+        return [...topGainers].sort((a, b) => gainerSortAsc ? a.change_pct - b.change_pct : b.change_pct - a.change_pct);
+      }, [topGainers, gainerSortAsc]);
+
+      const sortedLosers = useMemo(() => {
+        return [...topLosers].sort((a, b) => loserSortAsc ? a.change_pct - b.change_pct : b.change_pct - a.change_pct);
+      }, [topLosers, loserSortAsc]);
+
+      // State for viewing index underlying constituent stocks
+      const [selectedIndexModal, setSelectedIndexModal] = useState(null);
+      const [indexStocks, setIndexStocks] = useState([]);
+      const [indexStocksLoading, setIndexStocksLoading] = useState(false);
+      const [stockSortAsc, setStockSortAsc] = useState(false);
+
+      const handleIndexClick = async (idx) => {
+        setSelectedIndexModal(idx);
+        setIndexStocksLoading(true);
+        try {
+          const res = await api.get(`/screener/index-stocks?index=${encodeURIComponent(idx.symbol)}`);
+          setIndexStocks(res.data.stocks || []);
+        } catch (e) {
+          console.error("Failed to load index stocks:", e);
+          setIndexStocks([]);
+        } finally {
+          setIndexStocksLoading(false);
+        }
+      };
+
+      const sortedIndexStocks = useMemo(() => {
+        return [...indexStocks].sort((a, b) => stockSortAsc ? a.change_pct - b.change_pct : b.change_pct - a.change_pct);
+      }, [indexStocks, stockSortAsc]);
+
+      // Helper to compute heat map gradient colors based on change_pct matching TradingView/Finviz palette
+      const getHeatmapStyle = (pct, isSelected) => {
+        // Range mapping: -3.5% or lower is deepest red, +3.5% or higher is highest vibrant green
+        const val = Math.max(-4, Math.min(4, pct));
+        let bg, border, text, badgeBg, shadow;
+        
+        if (val > 0) {
+          // Green gradients: from deep emerald to vibrant electric green for top gainers
+          if (val >= 2.5) {
+            bg = 'linear-gradient(145deg, #00873E 0%, #005F2B 100%)';
+            border = isSelected ? '#34D399' : '#00A84D';
+            text = '#FFFFFF';
+            badgeBg = 'rgba(0, 0, 0, 0.35)';
+            shadow = '0 4px 14px rgba(0, 168, 77, 0.35)';
+          } else if (val >= 1.5) {
+            bg = 'linear-gradient(145deg, #056A36 0%, #034824 100%)';
+            border = isSelected ? '#34D399' : '#0D8A47';
+            text = '#FFFFFF';
+            badgeBg = 'rgba(0, 0, 0, 0.3)';
+            shadow = '0 2px 10px rgba(13, 138, 71, 0.25)';
+          } else if (val >= 0.75) {
+            bg = 'linear-gradient(145deg, #0A522C 0%, #06391E 100%)';
+            border = isSelected ? '#34D399' : '#146C38';
+            text = '#E6F4EA';
+            badgeBg = 'rgba(0, 0, 0, 0.25)';
+            shadow = 'none';
+          } else {
+            bg = 'linear-gradient(145deg, #0D3E24 0%, #092817 100%)';
+            border = isSelected ? '#34D399' : '#17512D';
+            text = '#D1E7DD';
+            badgeBg = 'rgba(0, 0, 0, 0.2)';
+            shadow = 'none';
+          }
+        } else if (val < 0) {
+          // Red gradients: from dark burgundy to vivid crimson red for deep losers
+          const absVal = Math.abs(val);
+          if (absVal >= 2.5) {
+            bg = 'linear-gradient(145deg, #C51D24 0%, #870D12 100%)';
+            border = isSelected ? '#FB7185' : '#E5232B';
+            text = '#FFFFFF';
+            badgeBg = 'rgba(0, 0, 0, 0.35)';
+            shadow = '0 4px 14px rgba(229, 35, 43, 0.35)';
+          } else if (absVal >= 1.5) {
+            bg = 'linear-gradient(145deg, #9C141A 0%, #690B0F 100%)';
+            border = isSelected ? '#FB7185' : '#BD1920';
+            text = '#FFFFFF';
+            badgeBg = 'rgba(0, 0, 0, 0.3)';
+            shadow = '0 2px 10px rgba(189, 25, 32, 0.25)';
+          } else if (absVal >= 0.75) {
+            bg = 'linear-gradient(145deg, #781318 0%, #4F090D 100%)';
+            border = isSelected ? '#FB7185' : '#94191F';
+            text = '#FCE8E6';
+            badgeBg = 'rgba(0, 0, 0, 0.25)';
+            shadow = 'none';
+          } else {
+            bg = 'linear-gradient(145deg, #571317 0%, #380B0E 100%)';
+            border = isSelected ? '#FB7185' : '#6E1B20';
+            text = '#F8D7DA';
+            badgeBg = 'rgba(0, 0, 0, 0.2)';
+            shadow = 'none';
+          }
+        } else {
+          // Neutral grey/slate
+          bg = '#161E2E';
+          border = isSelected ? '#3B82F6' : '#26334D';
+          text = '#94A3B8';
+          badgeBg = 'rgba(0, 0, 0, 0.2)';
+          shadow = 'none';
+        }
+
+        return { bg, border, text, badgeBg, shadow };
+      };
+
+      const [heatmapSort, setHeatmapSort] = useState('performance'); // 'performance' | 'default'
+
+      const displayIndices = useMemo(() => {
+        if (heatmapSort === 'performance') {
+          return [...indices].sort((a, b) => b.change_pct - a.change_pct);
+        }
+        return indices;
+      }, [indices, heatmapSort]);
+
+      return (
+        <section className="space-y-4">
+          {/* Section Header */}
+          <div className="flex items-center justify-between pb-2 border-b border-[#1A2538]">
+            <div className="flex items-center space-x-2.5">
+              <span className="w-2 h-2 rounded-sm bg-blue-500"></span>
+              <h2 className="text-sm font-bold text-white tracking-wide uppercase">Market Breadth Analyser</h2>
+            </div>
+            <div className="text-[11px] font-mono text-slate-400">
+              {breadthData?.candle_time || "Friday 23rd Oct Close"}
+            </div>
+          </div>
+
+          {/* Top Row: All Major Indian Indices Performance Heat Map */}
+          <div>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2.5">
+              <div className="flex items-center space-x-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                <span className="text-[11px] font-mono font-semibold text-slate-300 uppercase tracking-wider">
+                  Sectoral Performance Heat Map ({displayIndices.length} Sectors)
+                </span>
+                <span className="text-[10px] font-mono text-slate-400 hidden md:inline">
+                  (Highest Green ➔ Lowest Red)
+                </span>
+              </div>
+              
+              {/* Heat Map Controls */}
+              <div className="flex items-center space-x-2 text-xs">
+                <div className="flex items-center space-x-1 bg-[#0A0F1A] border border-[#1C273C] p-0.5 rounded-md font-mono text-[10px]">
+                  <button
+                    onClick={() => setHeatmapSort('performance')}
+                    className={`px-2 py-0.5 rounded transition-all ${
+                      heatmapSort === 'performance' ? 'bg-blue-600 text-white font-semibold' : 'text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    Rank by % Chg
+                  </button>
+                  <button
+                    onClick={() => setHeatmapSort('default')}
+                    className={`px-2 py-0.5 rounded transition-all ${
+                      heatmapSort === 'default' ? 'bg-blue-600 text-white font-semibold' : 'text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    Standard
+                  </button>
+                </div>
+                <div className="flex items-center space-x-1.5 text-[10px] font-mono text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>
+                  <span>Live Feed • {lastUpdatedTime}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Heat Map Grid */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-2.5">
+              {displayIndices.map((idx) => {
+                const isBull = idx.change >= 0;
+                const isSelected = selectedIndexModal?.symbol === idx.symbol;
+                const heat = getHeatmapStyle(idx.change_pct, isSelected);
+
+                return (
+                  <div 
+                    key={idx.symbol} 
+                    onClick={() => handleIndexClick(idx)}
+                    style={{
+                      background: heat.bg,
+                      borderColor: heat.border,
+                      boxShadow: isSelected ? '0 0 18px rgba(59, 130, 246, 0.6)' : heat.shadow
+                    }}
+                    className={`border p-3 rounded-lg transition-all cursor-pointer group hover:scale-[1.03] transform duration-150 relative overflow-hidden flex flex-col justify-between min-h-[92px]`}
+                  >
+                    {/* Top Sector Header */}
+                    <div className="flex items-center justify-between gap-1">
+                      <div className="text-[11px] font-mono font-bold text-white tracking-tight truncate drop-shadow-sm">
+                        {idx.symbol}
+                      </div>
+                      <span className="text-[10px] text-white/70 group-hover:text-white transition-opacity font-bold">↗</span>
+                    </div>
+
+                    {/* Heat Indicator Percentage: Big, high contrast numbers */}
+                    <div className="my-1">
+                      <div className="text-sm font-black font-mono tracking-tight text-white drop-shadow-md">
+                        {isBull ? `+${idx.change_pct.toFixed(2)}%` : `${idx.change_pct.toFixed(2)}%`}
+                      </div>
+                    </div>
+
+                    {/* LTP and constituent count */}
+                    <div className="flex items-center justify-between text-[10px] font-mono text-white/90">
+                      <span className="tabular-nums font-semibold">
+                        ₹{idx.ltp.toLocaleString('en-IN', { minimumFractionDigits: 1 })}
+                      </span>
+                      <span 
+                        style={{ backgroundColor: heat.badgeBg }}
+                        className="px-1.5 py-0.5 rounded text-[9px] font-bold text-white uppercase tracking-wider backdrop-blur-sm"
+                      >
+                        {isBull ? '▲ GAIN' : '▼ DROP'}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Underlying Constituent Stocks Viewer (Appears when any Index is clicked) */}
+          {selectedIndexModal && (
+            <div className="bg-[#0E1524] border border-blue-500/40 rounded-xl overflow-hidden shadow-lg animate-fadeIn">
+              <div className="p-3.5 bg-[#0A0F1A] border-b border-[#1A2538] flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></div>
+                  <div>
+                    <h3 className="text-sm font-bold text-white flex items-center space-x-2">
+                      <span>{selectedIndexModal.symbol} Constituent Stocks</span>
+                      <span className="text-xs font-mono font-normal text-slate-400">({indexStocks.length} Stocks)</span>
+                    </h3>
+                    <p className="text-[11px] text-slate-400 font-mono mt-0.5">
+                      Index LTP: ₹{selectedIndexModal.ltp.toLocaleString('en-IN', { minimumFractionDigits: 2 })} ({selectedIndexModal.change_pct >= 0 ? `+${selectedIndexModal.change_pct.toFixed(2)}%` : `${selectedIndexModal.change_pct.toFixed(2)}%`})
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <span className="text-[11px] text-slate-400 font-mono hidden sm:inline">Click stock to inspect</span>
+                  <button 
+                    onClick={() => setSelectedIndexModal(null)}
+                    className="px-2.5 py-1 text-xs rounded bg-[#182338] text-slate-300 hover:text-white hover:bg-[#223250] transition-colors border border-[#263756]"
+                  >
+                    Close ✕
+                  </button>
+                </div>
+              </div>
+
+              {/* Constituents Table */}
+              <div className="overflow-x-auto max-h-[360px] overflow-y-auto">
+                {indexStocksLoading ? (
+                  <div className="py-12 text-center text-xs font-mono text-slate-400">
+                    Loading constituent stocks for {selectedIndexModal.symbol}...
+                  </div>
+                ) : indexStocks.length === 0 ? (
+                  <div className="py-12 text-center text-xs font-mono text-slate-400">
+                    No constituent stocks found for this index.
+                  </div>
+                ) : (
+                  <table className="w-full text-left text-xs font-mono tabular-nums">
+                    <thead className="bg-[#090F1B] text-slate-400 text-[11px] font-semibold sticky top-0 border-b border-[#1A2538] z-10">
+                      <tr>
+                        <th className="py-2.5 px-4 font-medium text-slate-300">Symbol</th>
+                        <th className="py-2.5 px-4 font-medium text-slate-300">Company Name</th>
+                        <th 
+                          onClick={() => setStockSortAsc(!stockSortAsc)}
+                          className="py-2.5 px-4 text-center font-medium text-white cursor-pointer hover:bg-[#152238] transition-colors select-none"
+                          title="Click to sort % chg"
+                        >
+                          <span className="inline-flex items-center space-x-1 font-semibold text-slate-200">
+                            <span>% chg</span>
+                            <span className="text-[10px] text-blue-400 ml-1">{stockSortAsc ? '▲' : '▼'}</span>
+                          </span>
+                        </th>
+                        <th className="py-2.5 px-4 text-right font-medium text-slate-300">LTP (₹)</th>
+                        <th className="py-2.5 px-4 text-right font-medium text-slate-300">Day High</th>
+                        <th className="py-2.5 px-4 text-right font-medium text-slate-300">Day Low</th>
+                        <th className="py-2.5 px-4 text-right font-medium text-slate-300">Volume</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-[#151F33]">
+                      {sortedIndexStocks.map((stock, i) => {
+                        const isBull = stock.change_pct >= 0;
+                        return (
+                          <tr 
+                            key={stock.symbol}
+                            onClick={() => onSelectStock(stock)}
+                            className={`hover:bg-[#18253D] cursor-pointer transition-colors ${
+                              i % 2 === 0 ? 'bg-[#0E1524]' : 'bg-[#0B111D]'
+                            }`}
+                          >
+                            <td className="py-2.5 px-4 font-bold text-blue-400 text-[13px] tracking-wide">
+                              {stock.symbol}
+                            </td>
+                            <td className="py-2.5 px-4 text-slate-300 text-xs">
+                              {stock.name}
+                            </td>
+                            <td className={`py-2.5 px-4 text-center font-bold text-xs bg-[#0C1424]/60 ${isBull ? 'text-emerald-400' : 'text-rose-400'}`}>
+                              {isBull ? `+${stock.change_pct.toFixed(2)}%` : `${stock.change_pct.toFixed(2)}%`}
+                            </td>
+                            <td className="py-2.5 px-4 text-right font-semibold text-white text-xs">
+                              ₹{stock.ltp.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                            </td>
+                            <td className="py-2.5 px-4 text-right text-slate-300 text-xs">
+                              ₹{stock.high ? stock.high.toLocaleString('en-IN', { minimumFractionDigits: 2 }) : '-'}
+                            </td>
+                            <td className="py-2.5 px-4 text-right text-slate-400 text-xs">
+                              ₹{stock.low ? stock.low.toLocaleString('en-IN', { minimumFractionDigits: 2 }) : '-'}
+                            </td>
+                            <td className="py-2.5 px-4 text-right text-slate-400 text-xs">
+                              {stock.volume ? (stock.volume >= 100000 ? (stock.volume / 100000).toFixed(2) + ' L' : stock.volume.toLocaleString('en-IN')) : '-'}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Bottom Row: Top Gainers % and Top Losers % Tables Matching Reference Screenshot */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
+            
+            {/* Top Gainers % Card */}
+            <div className="bg-[#0E1524] border border-[#1A2538] rounded-xl overflow-hidden shadow-sm">
+              {/* Header with NIFTY 500 / NIFTY F&O Toggle */}
+              <div className="p-3.5 border-b border-[#1A2538] flex items-center justify-between">
+                <div>
+                  <div className="flex items-center space-x-2">
+                    <h3 className="text-sm font-bold text-white tracking-tight">Top gainers %</h3>
+                    <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 font-semibold border border-emerald-500/20">
+                      {stockUniverseFilter === 'fo' ? 'NIFTY F&O' : 'NIFTY 500'}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-400 font-mono mt-0.5">{candleTime}</p>
+                </div>
+
+                {/* Universe Filter Tabs: Nifty 500 vs Nifty F&O */}
+                <div className="flex items-center space-x-1 bg-[#0A0F1A] border border-[#1C273C] p-0.5 rounded-md font-mono text-[10px]">
+                  <button
+                    onClick={() => setStockUniverseFilter('nifty500')}
+                    className={`px-2.5 py-0.5 rounded transition-all ${
+                      stockUniverseFilter === 'nifty500' ? 'bg-blue-600 text-white font-semibold' : 'text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    NIFTY 500
+                  </button>
+                  <button
+                    onClick={() => setStockUniverseFilter('fo')}
+                    className={`px-2.5 py-0.5 rounded transition-all ${
+                      stockUniverseFilter === 'fo' ? 'bg-blue-600 text-white font-semibold' : 'text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    NIFTY F&O
+                  </button>
+                </div>
+              </div>
+
+              {/* Table with functioning % chg button */}
+              <table className="w-full text-left text-xs font-mono tabular-nums">
+                <thead className="bg-[#090F1B] text-slate-400 text-[11px] font-semibold border-b border-[#1A2538]">
+                  <tr>
+                    <th className="py-2.5 px-4 font-medium text-slate-300">
+                      Symbol
+                    </th>
+                    <th 
+                      onClick={() => setGainerSortAsc(!gainerSortAsc)}
+                      className="py-2.5 px-4 text-center font-medium text-white bg-[#0C1424] cursor-pointer hover:bg-[#152238] transition-colors select-none"
+                      title="Click to sort % chg"
+                    >
+                      <button className="inline-flex items-center space-x-1 font-semibold text-slate-200 hover:text-white">
+                        <span>% chg</span>
+                        <span className="text-[10px] text-blue-400 ml-1">{gainerSortAsc ? '▲' : '▼'}</span>
+                      </button>
+                    </th>
+                    <th className="py-2.5 px-4 text-right font-medium text-slate-300">
+                      Ltp
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#151F33]">
+                  {sortedGainers.map((stock, i) => (
+                    <tr 
+                      key={stock.symbol} 
+                      onClick={() => onSelectStock(stock)}
+                      className={`hover:bg-[#18253D] cursor-pointer transition-colors ${
+                        i % 2 === 0 ? 'bg-[#0E1524]' : 'bg-[#0B111D]'
+                      }`}
+                    >
+                      <td className="py-2.5 px-4 font-bold text-blue-400 text-[13px] tracking-wide">
+                        {stock.symbol}
+                      </td>
+                      <td className="py-2.5 px-4 text-center font-bold text-emerald-400 text-xs bg-[#0C1424]/60">
+                        {stock.change_pct.toFixed(2)}
+                      </td>
+                      <td className="py-2.5 px-4 text-right font-semibold text-slate-200 text-xs">
+                        {stock.ltp.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Top Losers % Card */}
+            <div className="bg-[#0E1524] border border-[#1A2538] rounded-xl overflow-hidden shadow-sm">
+              {/* Header with NIFTY 500 / NIFTY F&O Toggle */}
+              <div className="p-3.5 border-b border-[#1A2538] flex items-center justify-between">
+                <div>
+                  <div className="flex items-center space-x-2">
+                    <h3 className="text-sm font-bold text-white tracking-tight">Top losers %</h3>
+                    <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-rose-500/10 text-rose-400 font-semibold border border-rose-500/20">
+                      {stockUniverseFilter === 'fo' ? 'NIFTY F&O' : 'NIFTY 500'}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-400 font-mono mt-0.5">{candleTime}</p>
+                </div>
+
+                {/* Universe Filter Tabs: Nifty 500 vs Nifty F&O */}
+                <div className="flex items-center space-x-1 bg-[#0A0F1A] border border-[#1C273C] p-0.5 rounded-md font-mono text-[10px]">
+                  <button
+                    onClick={() => setStockUniverseFilter('nifty500')}
+                    className={`px-2.5 py-0.5 rounded transition-all ${
+                      stockUniverseFilter === 'nifty500' ? 'bg-blue-600 text-white font-semibold' : 'text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    NIFTY 500
+                  </button>
+                  <button
+                    onClick={() => setStockUniverseFilter('fo')}
+                    className={`px-2.5 py-0.5 rounded transition-all ${
+                      stockUniverseFilter === 'fo' ? 'bg-blue-600 text-white font-semibold' : 'text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    NIFTY F&O
+                  </button>
+                </div>
+              </div>
+
+              {/* Table with functioning % chg button */}
+              <table className="w-full text-left text-xs font-mono tabular-nums">
+                <thead className="bg-[#090F1B] text-slate-400 text-[11px] font-semibold border-b border-[#1A2538]">
+                  <tr>
+                    <th className="py-2.5 px-4 font-medium text-slate-300">
+                      Symbol
+                    </th>
+                    <th 
+                      onClick={() => setLoserSortAsc(!loserSortAsc)}
+                      className="py-2.5 px-4 text-center font-medium text-white bg-[#0C1424] cursor-pointer hover:bg-[#152238] transition-colors select-none"
+                      title="Click to sort % chg"
+                    >
+                      <button className="inline-flex items-center space-x-1 font-semibold text-slate-200 hover:text-white">
+                        <span>% chg</span>
+                        <span className="text-[10px] text-blue-400 ml-1">{loserSortAsc ? '▲' : '▼'}</span>
+                      </button>
+                    </th>
+                    <th className="py-2.5 px-4 text-right font-medium text-slate-300">
+                      Ltp
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#151F33]">
+                  {sortedLosers.map((stock, i) => (
+                    <tr 
+                      key={stock.symbol} 
+                      onClick={() => onSelectStock(stock)}
+                      className={`hover:bg-[#18253D] cursor-pointer transition-colors ${
+                        i % 2 === 0 ? 'bg-[#0E1524]' : 'bg-[#0B111D]'
+                      }`}
+                    >
+                      <td className="py-2.5 px-4 font-bold text-blue-400 text-[13px] tracking-wide">
+                        {stock.symbol}
+                      </td>
+                      <td className="py-2.5 px-4 text-center font-bold text-rose-400 text-xs bg-[#0C1424]/60">
+                        {stock.change_pct.toFixed(2)}
+                      </td>
+                      <td className="py-2.5 px-4 text-right font-semibold text-slate-200 text-xs">
+                        {stock.ltp.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+          </div>
+
+          {/* Row Below Top Gainers and Losers: Advance & Decline Bar in One Half */}
+          {/* Bottom Row: Advance & Decline Visual Bar Card (NIFTY 500 vs NIFTY F&O) */}
+          <div className="pt-1">
+            {(() => {
+              const isFo = adUniverseFilter === 'fo';
+              const summary = isFo 
+                ? (breadthData?.fo_breadth_summary || { advances: 64, declines: 118, unchanged: 2, total: 184, advances_pct: 34.8, declines_pct: 64.1, unchanged_pct: 1.1, ratio: 0.54 }) 
+                : (breadthData?.breadth_summary || { advances: 186, declines: 309, unchanged: 5, total: 500, advances_pct: 37.2, declines_pct: 61.8, unchanged_pct: 1.0, ratio: 0.60 });
+              
+              const adv = summary.advances || 0;
+              const dec = summary.declines || 0;
+              const unc = summary.unchanged || 0;
+              const total = summary.total || (adv + dec + unc);
+              const advPct = summary.advances_pct || ((adv / (total || 1)) * 100).toFixed(1);
+              const decPct = summary.declines_pct || ((dec / (total || 1)) * 100).toFixed(1);
+              const uncPct = summary.unchanged_pct || ((unc / (total || 1)) * 100).toFixed(1);
+              const ratio = summary.ratio || (adv / (dec || 1)).toFixed(2);
+              const indexTitle = isFo ? "NIFTY F&O" : "NIFTY 500";
+
+              return (
+                <div className="bg-[#0E1524] border border-[#1A2538] rounded-xl p-4 shadow-sm">
+                  {/* Card Header with Universe Toggle */}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-[#1A2538] gap-2">
+                    <div className="flex items-center space-x-2">
+                      <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
+                      <h3 className="text-sm font-bold text-white tracking-tight">{indexTitle} Advance & Decline</h3>
+                      <span className="text-[10px] font-mono text-slate-400 bg-[#162133] px-2 py-0.5 rounded border border-[#22334F]">
+                        {total} Stocks
+                      </span>
+                    </div>
+
+                    {/* Selector Tabs: NIFTY 500 vs NIFTY F&O */}
+                    <div className="flex items-center space-x-1 bg-[#0A0F1A] border border-[#1C273C] p-0.5 rounded-md font-mono text-[10px]">
+                      <button
+                        onClick={() => setAdUniverseFilter('nifty500')}
+                        className={`px-2.5 py-0.5 rounded transition-all ${
+                          adUniverseFilter === 'nifty500' ? 'bg-blue-600 text-white font-semibold' : 'text-slate-400 hover:text-white'
+                        }`}
+                      >
+                        NIFTY 500
+                      </button>
+                      <button
+                        onClick={() => setAdUniverseFilter('fo')}
+                        className={`px-2.5 py-0.5 rounded transition-all ${
+                          adUniverseFilter === 'fo' ? 'bg-blue-600 text-white font-semibold' : 'text-slate-400 hover:text-white'
+                        }`}
+                      >
+                        NIFTY F&O
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Summary Metric Counters */}
+                  <div className="grid grid-cols-3 gap-2 my-3.5 text-center font-mono">
+                    <div className="bg-emerald-500/10 border border-emerald-500/20 p-2.5 rounded-lg">
+                      <div className="text-[10px] uppercase tracking-wider text-emerald-400 font-semibold">Advances</div>
+                      <div className="text-base font-black text-emerald-400 mt-0.5 tabular-nums">▲ {adv}</div>
+                      <div className="text-[10px] text-emerald-400/80 font-medium">{advPct}%</div>
+                    </div>
+
+                    <div className="bg-slate-800/40 border border-slate-700/40 p-2.5 rounded-lg">
+                      <div className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">Unchanged</div>
+                      <div className="text-base font-black text-slate-300 mt-0.5 tabular-nums">{unc}</div>
+                      <div className="text-[10px] text-slate-400 font-medium">{uncPct}%</div>
+                    </div>
+
+                    <div className="bg-rose-500/10 border border-rose-500/20 p-2.5 rounded-lg">
+                      <div className="text-[10px] uppercase tracking-wider text-rose-400 font-semibold">Declines</div>
+                      <div className="text-base font-black text-rose-400 mt-0.5 tabular-nums">▼ {dec}</div>
+                      <div className="text-[10px] text-rose-400/80 font-medium">{decPct}%</div>
+                    </div>
+                  </div>
+
+                  {/* Horizontal Proportional Bar */}
+                  <div className="space-y-1.5 mt-4">
+                    <div className="flex items-center justify-between text-[11px] font-mono text-slate-400">
+                      <span className="text-emerald-400 font-semibold">{advPct}% Advances</span>
+                      <span className="text-slate-300 font-semibold">A/D Ratio: <span className="text-blue-400">{ratio}x</span></span>
+                      <span className="text-rose-400 font-semibold">{decPct}% Declines</span>
+                    </div>
+
+                    <div className="h-4 w-full bg-[#0A0F1A] rounded-md overflow-hidden flex border border-[#1A2538] p-0.5">
+                      <div 
+                        style={{ width: `${advPct}%` }}
+                        className="bg-gradient-to-r from-emerald-600 to-emerald-400 h-full rounded-sm transition-all duration-500 relative group"
+                        title={`Advances: ${adv} (${advPct}%)`}
+                      ></div>
+                      {uncPct > 0 && (
+                        <div 
+                          style={{ width: `${uncPct}%` }}
+                          className="bg-slate-600 h-full transition-all duration-500 mx-0.5 rounded-sm"
+                          title={`Unchanged: ${unc} (${uncPct}%)`}
+                        ></div>
+                      )}
+                      <div 
+                        style={{ width: `${decPct}%` }}
+                        className="bg-gradient-to-r from-rose-500 to-rose-700 h-full rounded-sm transition-all duration-500 relative group"
+                        title={`Declines: ${dec} (${decPct}%)`}
+                      ></div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
+        </section>
+      );
+    }
+
+    // ----------------- FEATURE 2: TERMINAL SCREENER TOOLS ----------------- //
+    function TerminalScreener({ onSelectStock }) {
+      const [stocks, setStocks] = useState([]);
+      const [loading, setLoading] = useState(true);
+      const [refreshing, setRefreshing] = useState(false);
+      const [universe, setUniverse] = useState('NIFTY50');
+      const [search, setSearch] = useState('');
+      const [filterTab, setFilterTab] = useState('ALL');
+      const [sortCol, setSortCol] = useState('change_pct');
+      const [sortDir, setSortDir] = useState('desc');
+
+      const fetchQuotes = async (isManual = false) => {
+        if (isManual) setRefreshing(true);
+        try {
+          const res = await api.get(`/screener/results?universe=${universe}`);
+          setStocks(res.data);
+        } catch (e) {
+          console.error(e);
+        } finally {
+          setLoading(false);
+          setRefreshing(false);
+        }
+      };
+
+      const scanNow = async () => {
+        setRefreshing(true);
+        try {
+          const res = await api.post(`/screener/scan?universe=${universe}`);
+          setStocks(res.data);
+        } catch (e) {
+          console.error(e);
+        } finally {
+          setRefreshing(false);
+        }
+      };
+
+      useEffect(() => {
+        fetchQuotes();
+        const t = setInterval(fetchQuotes, 15000);
+        return () => clearInterval(t);
+      }, [universe]);
+
+      const handleSort = (col) => {
+        if (sortCol === col) {
+          setSortDir(sortDir === 'asc' ? 'desc' : 'asc');
+        } else {
+          setSortCol(col);
+          setSortDir('desc');
+        }
+      };
+
+      const processedData = useMemo(() => {
+        let list = stocks.filter(s => {
+          const q = search.trim().toLowerCase();
+          const matches = !q || s.symbol.toLowerCase().includes(q) || s.name.toLowerCase().includes(q);
+          if (!matches) return false;
+          if (filterTab === 'GAINERS') return s.change_pct > 0;
+          if (filterTab === 'LOSERS') return s.change_pct < 0;
+          if (filterTab === 'VOL_SURGE') return s.volume_surge_x >= 1.5;
+          if (filterTab === 'BULL_MOMENTUM') return s.rsi >= 60;
+          if (filterTab === 'OVERSOLD') return s.rsi <= 40;
+          return true;
+        });
+
+        list.sort((a, b) => {
+          let vA = a[sortCol];
+          let vB = b[sortCol];
+          if (typeof vA === 'string') return sortDir === 'asc' ? vA.localeCompare(vB) : vB.localeCompare(vA);
+          return sortDir === 'asc' ? vA - vB : vB - vA;
+        });
+
+        return list;
+      }, [stocks, search, filterTab, sortCol, sortDir]);
+
+      return (
+        <section className="pt-2">
+          {/* Section Header */}
+          <div className="flex items-center space-x-3 pb-3 border-b border-[#1A2538] mb-4">
+            <span className="w-2 h-2 rounded-sm bg-indigo-500"></span>
+            <h2 className="text-sm font-bold text-white tracking-wide uppercase">Screener Tools & Watchlist</h2>
+            <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20">
+              {universe}
+            </span>
+            <span className="text-xs text-slate-500 font-mono">
+              {processedData.length} symbols matched
+            </span>
+          </div>
+
+          {/* Split Two-Column: Left Tools Sidebar + Right Data Table */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+            {/* Left Sidebar: Screener Controls & Filter Tools */}
+            <aside className="lg:col-span-3 bg-[#0E1524] border border-[#1A2538] rounded-xl p-4 space-y-5 shadow-sm">
+              <div className="border-b border-[#1A2538] pb-3">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-300">Screener Tools</h3>
+                <p className="text-[11px] text-slate-500 mt-0.5">Parameters & Strategy Filters</p>
+              </div>
+
+              {/* 1. Universe Selection */}
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-semibold text-slate-300 uppercase tracking-wide">
+                  Universe
+                </label>
+                <select
+                  value={universe}
+                  onChange={(e) => setUniverse(e.target.value)}
+                  className="w-full bg-[#101726] border border-[#223049] text-slate-200 text-xs rounded-lg px-3 py-2 font-medium focus:outline-none focus:border-blue-500"
+                >
+                  <option value="NIFTY50">NSE: NIFTY 50 Benchmark</option>
+                  <option value="BANKNIFTY">NSE: BANK NIFTY (Banking)</option>
+                </select>
+              </div>
+
+              {/* 2. Execute Scan Button */}
+              <div>
+                <button
+                  onClick={scanNow}
+                  disabled={refreshing}
+                  className="w-full flex items-center justify-center space-x-2 px-3.5 py-2.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-semibold rounded-lg text-xs transition-all shadow-md shadow-blue-600/20"
+                >
+                  <span className={`text-[12px] ${refreshing ? 'animate-spin inline-block' : ''}`}>↻</span>
+                  <span>{refreshing ? 'Scanning Pipeline...' : 'Run Screener Scan'}</span>
+                </button>
+              </div>
+
+              {/* 3. Search Instrument */}
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-semibold text-slate-300 uppercase tracking-wide">
+                  Search Symbol
+                </label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder="E.g. RELIANCE, TCS..."
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    className="w-full bg-[#101726] border border-[#1E293B] rounded-lg px-3 py-2 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-blue-500 font-mono"
+                  />
+                  {search && (
+                    <button 
+                      onClick={() => setSearch('')}
+                      className="absolute right-2.5 top-2 text-slate-500 hover:text-slate-300 text-xs"
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* 4. Strategy Filter Presets */}
+              <div className="space-y-2">
+                <label className="text-[11px] font-semibold text-slate-300 uppercase tracking-wide">
+                  Strategy Filter
+                </label>
+                <div className="space-y-1">
+                  {[
+                    { id: 'ALL', label: 'All Equities', count: stocks.length },
+                    { id: 'GAINERS', label: 'Gainers Only', count: stocks.filter(s => s.change_pct > 0).length },
+                    { id: 'LOSERS', label: 'Decliners Only', count: stocks.filter(s => s.change_pct < 0).length },
+                    { id: 'VOL_SURGE', label: 'Volume Breakouts (>1.5x)', count: stocks.filter(s => s.volume_surge_x >= 1.5).length },
+                    { id: 'BULL_MOMENTUM', label: 'Bullish RSI (>60)', count: stocks.filter(s => s.rsi >= 60).length },
+                    { id: 'OVERSOLD', label: 'Oversold RSI (<40)', count: stocks.filter(s => s.rsi <= 40).length }
+                  ].map(t => {
+                    const isSelected = filterTab === t.id;
+                    return (
+                      <button
+                        key={t.id}
+                        onClick={() => setFilterTab(t.id)}
+                        className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-all ${
+                          isSelected
+                            ? 'bg-blue-600 text-white font-semibold shadow-sm'
+                            : 'bg-[#101726] text-slate-400 hover:text-slate-200 hover:bg-[#152033] border border-[#1A2538]'
+                        }`}
+                      >
+                        <span>{t.label}</span>
+                        <span className={`text-[10px] font-mono px-1.5 py-0.2 rounded ${
+                          isSelected ? 'bg-white/20 text-white' : 'bg-[#182338] text-slate-400'
+                        }`}>
+                          {t.count}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* 5. Tool Info Card */}
+              <div className="p-3 bg-[#0A0E17] border border-[#1A2538] rounded-lg text-[11px] space-y-1 text-slate-400">
+                <div className="flex items-center justify-between text-slate-300 font-semibold">
+                  <span>Feed Status</span>
+                  <span className="text-emerald-400 font-mono">LIVE 15s</span>
+                </div>
+                <div>Automated periodic refresh running. Click symbol row to inspect candle metrics.</div>
+              </div>
+            </aside>
+
+            {/* Right Main Table: Screener Results */}
+            <div className="lg:col-span-9 bg-[#0E1524] border border-[#1C273C] rounded-xl overflow-hidden shadow-sm">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs tabular-nums border-collapse">
+                  <thead className="bg-[#090E18] text-slate-400 uppercase font-mono text-[10px] tracking-wider border-b border-[#1C273C]">
+                    <tr>
+                      <th className="py-3 px-3.5 cursor-pointer hover:text-white" onClick={() => handleSort('symbol')}>
+                        Instrument {sortCol === 'symbol' && (sortDir === 'asc' ? '▲' : '▼')}
+                      </th>
+                      <th className="py-3 px-3 text-right cursor-pointer hover:text-white" onClick={() => handleSort('ltp')}>
+                        LTP (₹) {sortCol === 'ltp' && (sortDir === 'asc' ? '▲' : '▼')}
+                      </th>
+                      <th className="py-3 px-3 text-right cursor-pointer hover:text-white" onClick={() => handleSort('change_pct')}>
+                        Chg % {sortCol === 'change_pct' && (sortDir === 'asc' ? '▲' : '▼')}
+                      </th>
+                      <th className="py-3 px-3 text-center">Trend (Intraday)</th>
+                      <th className="py-3 px-3 text-right cursor-pointer hover:text-white" onClick={() => handleSort('high')}>
+                        Day High / Low
+                      </th>
+                      <th className="py-3 px-3 text-right cursor-pointer hover:text-white" onClick={() => handleSort('volume')}>
+                        Volume {sortCol === 'volume' && (sortDir === 'asc' ? '▲' : '▼')}
+                      </th>
+                      <th className="py-3 px-3 text-center cursor-pointer hover:text-white" onClick={() => handleSort('volume_surge_x')}>
+                        Vol Spike {sortCol === 'volume_surge_x' && (sortDir === 'asc' ? '▲' : '▼')}
+                      </th>
+                      <th className="py-3 px-3 text-center cursor-pointer hover:text-white" onClick={() => handleSort('rsi')}>
+                        RSI (14) {sortCol === 'rsi' && (sortDir === 'asc' ? '▲' : '▼')}
+                      </th>
+                      <th className="py-3 px-3.5">Triggered Signal</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#162133]">
+                    {loading ? (
+                      <tr>
+                        <td colSpan={9} className="py-12 text-center text-slate-500 font-mono text-xs">
+                          Loading market feed...
+                        </td>
+                      </tr>
+                    ) : processedData.length === 0 ? (
+                      <tr>
+                        <td colSpan={9} className="py-12 text-center text-slate-500 font-mono text-xs">
+                          No symbols matched the selected filter criteria.
+                        </td>
+                      </tr>
+                    ) : (
+                      processedData.map((s, idx) => {
+                        const isBull = s.change_pct >= 0;
+                        return (
+                          <tr 
+                            key={s.symbol} 
+                            onClick={() => onSelectStock(s)}
+                            className={`hover:bg-[#151F33] transition-colors cursor-pointer group ${
+                              idx % 2 === 0 ? 'bg-[#0E1524]' : 'bg-[#0B111D]'
+                            }`}
+                          >
+                            <td className="py-2.5 px-3.5">
+                              <div className="font-semibold text-white tracking-wide text-xs">{s.symbol}</div>
+                              <div className="text-[10px] text-slate-400 truncate max-w-[170px]">{s.name}</div>
+                            </td>
+
+                            <td className="py-2.5 px-3 text-right font-mono font-semibold text-white text-xs">
+                              ₹{formatPrice(s.ltp)}
+                            </td>
+
+                            <td className="py-2.5 px-3 text-right font-mono font-semibold text-xs">
+                              <span className={isBull ? 'text-emerald-400' : 'text-rose-400'}>
+                                {isBull ? `+${s.change_pct.toFixed(2)}%` : `${s.change_pct.toFixed(2)}%`}
+                              </span>
+                            </td>
+
+                            <td className="py-2.5 px-3 text-center">
+                              <Sparkline isBull={isBull} points={isBull ? [20, 22, 28, 25, 34, 30, 42, 40, 52] : [55, 50, 48, 52, 40, 42, 35, 30, 22]} />
+                            </td>
+
+                            <td className="py-2.5 px-3 text-right font-mono text-[11px] text-slate-300 leading-tight">
+                              <div>H: ₹{formatPrice(s.high)}</div>
+                              <div className="text-slate-500 text-[10px]">L: ₹{formatPrice(s.low)}</div>
+                            </td>
+
+                            <td className="py-2.5 px-3 text-right font-mono text-slate-300 text-xs">
+                              {formatVolShort(s.volume)}
+                            </td>
+
+                            <td className="py-2.5 px-3 text-center font-mono text-xs">
+                              <span className={`px-1.5 py-0.5 rounded text-[10px] font-semibold ${
+                                s.volume_surge_x >= 1.5
+                                  ? 'bg-amber-500/10 text-amber-300 border border-amber-500/30'
+                                  : 'text-slate-400'
+                              }`}>
+                                {s.volume_surge_x}x
+                              </span>
+                            </td>
+
+                            <td className="py-2.5 px-3 text-center font-mono text-xs">
+                              <span className={`px-1.5 py-0.5 rounded text-[10px] font-semibold ${
+                                s.rsi >= 60 ? 'text-emerald-400' : s.rsi <= 40 ? 'text-blue-400' : 'text-slate-300'
+                              }`}>
+                                {s.rsi}
+                              </span>
+                            </td>
+
+                            <td className="py-2.5 px-3.5">
+                              <div className="flex flex-wrap gap-1">
+                                {s.triggered_criteria?.map((c, i) => (
+                                  <span key={i} className="text-[10px] px-1.5 py-0.2 rounded bg-slate-800 text-slate-300 border border-slate-700 font-medium">
+                                    {c}
+                                  </span>
+                                ))}
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+      );
+    }
+
+    // ----------------- FEATURE 3: HPS STOCKS (HIGH PROBABILITY SCREENER) ----------------- //
+    function HpsScreenerSection({ onSelectStock }) {
+      const [universe, setUniverse] = useState('nifty500'); // 'nifty500' or 'fo'
+      const [activeTimeframe, setActiveTimeframe] = useState('daily'); // '4h', 'daily', 'weekly', 'monthly'
+      const [dataByTimeframe, setDataByTimeframe] = useState({ '4h': [], 'daily': [], 'weekly': [], 'monthly': [] });
+      const [counts, setCounts] = useState({ '4h': 0, 'daily': 0, 'weekly': 0, 'monthly': 0 });
+      const [lastUpdated, setLastUpdated] = useState('');
+      const [loading, setLoading] = useState(true);
+      const [searchQuery, setSearchQuery] = useState('');
+      const [breakoutFilter, setBreakoutFilter] = useState('ALL'); // 'ALL', 'BROKEN_ABOVE', 'BROKEN_BELOW'
+
+      const fetchHpsData = async () => {
+        setLoading(true);
+        try {
+          const res = await api.get(`/screener/hps?timeframe=all&universe=${universe}`);
+          if (res.data && res.data.status === 'success') {
+            setDataByTimeframe(res.data.data || {});
+            setCounts(res.data.counts || {});
+            setLastUpdated(res.data.last_updated || 'Updated recently');
+          }
+        } catch (e) {
+          console.error("Failed to load HPS stock screener data:", e);
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      useEffect(() => {
+        fetchHpsData();
+      }, [universe]);
+
+      const currentList = dataByTimeframe[activeTimeframe] || [];
+      const filteredList = currentList.filter(stk => {
+        const matchesSearch = !searchQuery || 
+          stk.symbol.toLowerCase().includes(searchQuery.toLowerCase()) || 
+          (stk.name && stk.name.toLowerCase().includes(searchQuery.toLowerCase()));
+        
+        if (!matchesSearch) return false;
+        if (breakoutFilter === 'BROKEN_ABOVE') return stk.status === 'BROKEN_ABOVE';
+        if (breakoutFilter === 'BROKEN_BELOW') return stk.status === 'BROKEN_BELOW';
+        return true;
+      });
+
+      const bullishCount = currentList.filter(s => s.status === 'BROKEN_ABOVE').length;
+      const bearishCount = currentList.filter(s => s.status === 'BROKEN_BELOW').length;
+
+      const timeframes = [
+        { id: '4h', label: '4-Hour (4H)', desc: 'Intraday Swing' },
+        { id: 'daily', label: 'Daily (1D)', desc: 'Daily Trend Break' },
+        { id: 'weekly', label: 'Weekly (1W)', desc: 'Positional Trend' },
+        { id: 'monthly', label: 'Monthly (1M)', desc: 'Macro Cycle' }
+      ];
+
+      return (
+        <section className="space-y-5 animate-fade-in font-sans">
+          {/* Top Banner / Header */}
+          <div className="bg-[#0E1524] border border-[#1A2538] rounded-xl p-5 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <div className="flex items-center space-x-3">
+                <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-pulse"></span>
+                <h1 className="text-lg font-bold text-white tracking-tight">HPS Stocks (Breakout Tracker)</h1>
+                <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-400 font-bold border border-cyan-500/25">
+                  Multi-Timeframe Strategy
+                </span>
+              </div>
+              <p className="text-xs text-slate-400 mt-1">
+                Stocks that triggered high-probability breakout and breakdown signals across key timeframe levels.
+              </p>
+            </div>
+
+            {/* Universe Selector (NIFTY 500 vs NIFTY F&O) */}
+            <div className="flex items-center space-x-2">
+              <span className="text-xs font-mono text-slate-400">Universe:</span>
+              <div className="flex items-center bg-[#090F1B] border border-[#1C273C] p-0.5 rounded-lg font-mono text-xs">
+                <button
+                  onClick={() => setUniverse('nifty500')}
+                  className={`px-3 py-1.5 rounded-md font-semibold transition-all ${
+                    universe === 'nifty500'
+                      ? 'bg-blue-600 text-white shadow-sm'
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  NIFTY 500 (500 Stocks)
+                </button>
+                <button
+                  onClick={() => setUniverse('fo')}
+                  className={`px-3 py-1.5 rounded-md font-semibold transition-all ${
+                    universe === 'fo'
+                      ? 'bg-blue-600 text-white shadow-sm'
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  NIFTY F&O (213 Stocks)
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Timeframe Tabs Selector with Dynamic Badge Counters */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {timeframes.map(tf => {
+              const isSelected = activeTimeframe === tf.id;
+              const count = counts[tf.id] || 0;
+              return (
+                <button
+                  key={tf.id}
+                  onClick={() => setActiveTimeframe(tf.id)}
+                  className={`p-3.5 rounded-xl border text-left transition-all ${
+                    isSelected
+                      ? 'bg-gradient-to-br from-[#12213A] to-[#0D1829] border-cyan-500/50 shadow-md shadow-cyan-900/20'
+                      : 'bg-[#0E1524] border-[#1A2538] hover:border-[#273854] hover:bg-[#121B2D]'
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-1">
+                    <span className={`text-xs font-bold uppercase tracking-wider font-mono ${
+                      isSelected ? 'text-cyan-400' : 'text-slate-300'
+                    }`}>
+                      {tf.label}
+                    </span>
+                    <span className={`text-xs font-mono font-bold px-2 py-0.5 rounded ${
+                      isSelected
+                        ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'
+                        : 'bg-[#152033] text-slate-400 border border-[#22334E]'
+                    }`}>
+                      {count} Stocks
+                    </span>
+                  </div>
+                  <div className="text-[11px] text-slate-400">{tf.desc}</div>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Controls Bar: Search, Breakout Filter & Refresh */}
+          <div className="bg-[#0E1524] border border-[#1A2538] rounded-xl p-3.5 flex flex-col md:flex-row md:items-center justify-between gap-3 font-mono">
+            <div className="flex items-center space-x-2 flex-1 max-w-md">
+              <span className="text-slate-500 text-xs">🔍</span>
+              <input
+                type="text"
+                placeholder="Search symbol or company..."
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                className="w-full bg-[#0A0F1A] border border-[#1A2538] rounded-lg px-3 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-cyan-500"
+              />
+              {searchQuery && (
+                <button onClick={() => setSearchQuery('')} className="text-slate-400 hover:text-white text-xs">
+                  ✕
+                </button>
+              )}
+            </div>
+
+            <div className="flex items-center space-x-2">
+              {/* Breakout Direction Filter */}
+              <div className="flex items-center bg-[#0A0F1A] border border-[#1C273C] p-0.5 rounded-lg text-[11px]">
+                <button
+                  onClick={() => setBreakoutFilter('ALL')}
+                  className={`px-2.5 py-1 rounded transition-all ${
+                    breakoutFilter === 'ALL' ? 'bg-blue-600 text-white font-semibold' : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  All ({currentList.length})
+                </button>
+                <button
+                  onClick={() => setBreakoutFilter('BROKEN_ABOVE')}
+                  className={`px-2.5 py-1 rounded transition-all ${
+                    breakoutFilter === 'BROKEN_ABOVE' ? 'bg-emerald-600 text-white font-semibold' : 'text-emerald-400/80 hover:text-emerald-300'
+                  }`}
+                >
+                  ▲ Bullish Breakout ({bullishCount})
+                </button>
+                <button
+                  onClick={() => setBreakoutFilter('BROKEN_BELOW')}
+                  className={`px-2.5 py-1 rounded transition-all ${
+                    breakoutFilter === 'BROKEN_BELOW' ? 'bg-rose-600 text-white font-semibold' : 'text-rose-400/80 hover:text-rose-300'
+                  }`}
+                >
+                  ▼ Bearish Breakdown ({bearishCount})
+                </button>
+              </div>
+
+              {/* Export CSV Button */}
+              <button
+                onClick={() => {
+                  if (!filteredList || filteredList.length === 0) return;
+                  const headers = ['Symbol', 'Company Name', 'Sector', 'LTP (INR)', 'Spread (%)', 'Timeframe', 'Breakout Signal', 'Segment'];
+                  const rows = filteredList.map(stk => [
+                    `"${stk.symbol || ''}"`,
+                    `"${(stk.name || '').replace(/"/g, '""')}"`,
+                    `"${(stk.industry || '').replace(/"/g, '""')}"`,
+                    stk.ltp != null ? stk.ltp : '',
+                    stk.spread_pct != null ? stk.spread_pct : '',
+                    `"${stk.timeframe || activeTimeframe.toUpperCase()}"`,
+                    `"${stk.status === 'BROKEN_ABOVE' ? 'Bullish Breakout' : 'Bearish Breakdown'}"`,
+                    `"${stk.is_fo ? 'NIFTY F&O' : 'Cash (EQ)'}"`
+                  ]);
+                  const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+                  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                  const url = URL.createObjectURL(blob);
+                  const link = document.createElement('a');
+                  link.href = url;
+                  link.setAttribute('download', `HPS_Stocks_${universe}_${activeTimeframe}_${new Date().toISOString().slice(0, 10)}.csv`);
+                  document.body.appendChild(link);
+                  link.click();
+                  document.body.removeChild(link);
+                  URL.revokeObjectURL(url);
+                }}
+                disabled={loading || filteredList.length === 0}
+                className="flex items-center space-x-1.5 px-3 py-1.5 bg-[#142338] hover:bg-[#1C3252] text-cyan-300 hover:text-cyan-200 text-xs rounded-lg border border-cyan-500/30 transition-colors disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
+                title="Download filtered stocks as CSV"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <span>Export CSV</span>
+              </button>
+
+              {/* Refresh Button */}
+              <button
+                onClick={fetchHpsData}
+                disabled={loading}
+                className="px-3 py-1.5 bg-[#142033] hover:bg-[#1A2B45] text-slate-300 text-xs rounded-lg border border-[#223554] transition-colors"
+                title="Refresh list"
+              >
+                ↻ Refresh
+              </button>
+            </div>
+          </div>
+
+          {/* Screener Results Table for Selected Timeframe */}
+          <div className="bg-[#0E1524] border border-[#1A2538] rounded-xl overflow-hidden shadow-sm">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs font-mono tabular-nums">
+                <thead className="bg-[#090F1B] text-slate-400 text-[11px] uppercase font-semibold border-b border-[#1A2538]">
+                  <tr>
+                    <th className="py-3 px-3.5 w-10 text-center">#</th>
+                    <th className="py-3 px-3.5">Symbol</th>
+                    <th className="py-3 px-3.5">Company Name</th>
+                    <th className="py-3 px-3.5">Sector</th>
+                    <th className="py-3 px-3.5 text-right">LTP (₹)</th>
+                    <th className="py-3 px-3.5 text-right">Spread (%)</th>
+                    <th className="py-3 px-3.5 text-center">Timeframe</th>
+                    <th className="py-3 px-3.5 text-center">Breakout Signal</th>
+                    <th className="py-3 px-3.5 text-center">Segment</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#151F33]">
+                  {loading ? (
+                    <tr>
+                      <td colSpan={9} className="py-12 text-center text-slate-500 font-mono text-xs">
+                        Loading HPS breakout stocks...
+                      </td>
+                    </tr>
+                  ) : filteredList.length === 0 ? (
+                    <tr>
+                      <td colSpan={9} className="py-12 text-center text-slate-400 font-mono text-xs">
+                        No stocks matched the HPS breakout criteria on the {activeTimeframe.toUpperCase()} timeframe in {universe.toUpperCase()}.
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredList.map((stk, i) => {
+                      const isBull = stk.status === 'BROKEN_ABOVE';
+                      return (
+                        <tr
+                          key={stk.symbol}
+                          onClick={() => onSelectStock({
+                            symbol: stk.symbol,
+                            name: stk.name,
+                            ltp: stk.ltp,
+                            change_pct: stk.diff_pct,
+                            volume: 2450000
+                          })}
+                          className={`hover:bg-[#18253D] cursor-pointer transition-colors ${
+                            i % 2 === 0 ? 'bg-[#0E1524]' : 'bg-[#0B111D]'
+                          }`}
+                        >
+                          <td className="py-3 px-3.5 text-center text-slate-500 font-bold text-[10px]">
+                            {i + 1}
+                          </td>
+                          <td className="py-3 px-3.5 font-bold text-blue-400 text-xs tracking-wide">
+                            {stk.symbol}
+                          </td>
+                          <td className="py-3 px-3.5 text-slate-200 text-xs truncate max-w-[180px]">
+                            {stk.name}
+                          </td>
+                          <td className="py-3 px-3.5 text-slate-400 text-[11px] truncate max-w-[140px]">
+                            {stk.industry || 'Equities'}
+                          </td>
+                          <td className="py-3 px-3.5 text-right font-bold text-white text-xs">
+                            ₹{stk.ltp.toLocaleString('en-IN', { minimumFractionDigits: 1 })}
+                          </td>
+                          <td className="py-3 px-3.5 text-right font-bold text-xs">
+                            <span className={isBull ? 'text-emerald-400' : 'text-rose-400'}>
+                              {isBull ? `+${stk.diff_pct}%` : `${stk.diff_pct}%`}
+                            </span>
+                          </td>
+                          <td className="py-3 px-3.5 text-center">
+                            <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-[#142033] text-cyan-300 border border-[#233550]">
+                              {activeTimeframe.toUpperCase()}
+                            </span>
+                          </td>
+                          <td className="py-3 px-3.5 text-center">
+                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                              isBull
+                                ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
+                                : 'bg-rose-500/15 text-rose-400 border border-rose-500/30'
+                            }`}>
+                              {isBull ? '▲ Bullish Breakout' : '▼ Bearish Breakdown'}
+                            </span>
+                          </td>
+                          <td className="py-3 px-3.5 text-center">
+                            {stk.is_fo ? (
+                              <span className="px-1.5 py-0.5 rounded text-[9.5px] font-bold bg-purple-500/15 text-purple-300 border border-purple-500/25">
+                                F&O
+                              </span>
+                            ) : (
+                              <span className="px-1.5 py-0.5 rounded text-[9.5px] font-bold bg-slate-800 text-slate-400">
+                                EQ
+                              </span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Table Footer with Summary Details */}
+            <div className="p-3 border-t border-[#1A2538] flex flex-col sm:flex-row items-center justify-between text-[11px] font-mono text-slate-400 gap-2">
+              <div>
+                Showing <span className="text-white font-bold">{filteredList.length}</span> stocks broken on the <span className="text-cyan-400 font-bold">{activeTimeframe.toUpperCase()}</span> timeframe ({universe.toUpperCase()}).
+              </div>
+              <div className="flex items-center space-x-3 text-slate-400">
+                <span>Updated: <span className="text-slate-300">{lastUpdated}</span></span>
+                <span className="text-blue-400">Click row for stock details</span>
+              </div>
+            </div>
+          </div>
+        </section>
+      );
+    }
+
+    // ----------------- FEATURE 4: HPS MEAN REVERSION SCREENER ----------------- //
+    function HpsMeanReversionSection({ onSelectStock }) {
+      const [universe, setUniverse] = useState('nifty500'); // 'nifty500' or 'fo'
+      const [timeframe, setTimeframe] = useState('daily'); // 'daily', 'weekly', 'monthly'
+      const [level, setLevel] = useState('all'); // 'all', 'level1', 'level2', 'level3'
+      const [dataByTimeframe, setDataByTimeframe] = useState({
+        daily: { level1: [], level2: [], level3: [] },
+        weekly: { level1: [], level2: [], level3: [] },
+        monthly: { level1: [], level2: [], level3: [] }
+      });
+      const [counts, setCounts] = useState({
+        daily: { level1: 0, level2: 0, level3: 0 },
+        weekly: { level1: 0, level2: 0, level3: 0 },
+        monthly: { level1: 0, level2: 0, level3: 0 }
+      });
+      const [lastUpdated, setLastUpdated] = useState('');
+      const [loading, setLoading] = useState(true);
+      const [searchQuery, setSearchQuery] = useState('');
+
+      const fetchMeanReversionData = async () => {
+        setLoading(true);
+        try {
+          const res = await api.get(`/screener/hps-mean-reversion?timeframe=all&level=all&universe=${universe}`);
+          if (res.data && res.data.status === 'success') {
+            setDataByTimeframe(res.data.data || {});
+            setCounts(res.data.counts || {});
+            setLastUpdated(res.data.last_updated || 'Updated recently');
+          }
+        } catch (e) {
+          console.error("Failed to load HPS Mean Reversion screener data:", e);
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      useEffect(() => {
+        fetchMeanReversionData();
+      }, [universe]);
+
+      const tfData = dataByTimeframe[timeframe] || { level1: [], level2: [], level3: [] };
+      const tfCounts = counts[timeframe] || { level1: 0, level2: 0, level3: 0 };
+      const totalTfCount = (tfCounts.level1 || 0) + (tfCounts.level2 || 0) + (tfCounts.level3 || 0);
+
+      // Determine active stocks list based on level selection
+      let activeList = [];
+      if (level === 'all') {
+        activeList = [
+          ...(tfData.level1 || []),
+          ...(tfData.level2 || []),
+          ...(tfData.level3 || [])
+        ];
+      } else {
+        activeList = tfData[level] || [];
+      }
+
+      // Apply search filter
+      const filteredList = activeList.filter(stk => {
+        if (!searchQuery) return true;
+        const q = searchQuery.toLowerCase();
+        return stk.symbol.toLowerCase().includes(q) || (stk.name && stk.name.toLowerCase().includes(q));
+      });
+
+      const timeframes = [
+        { id: 'daily', label: 'Daily (1D)', desc: 'Short-term Reversion Zone' },
+        { id: 'weekly', label: 'Weekly (1W)', desc: 'Major Swing Support' },
+        { id: 'monthly', label: 'Monthly (1M)', desc: 'Macro Reversal Baseline' }
+      ];
+
+      const levels = [
+        { id: 'all', label: 'All Levels', desc: 'All Reversion Zones', count: totalTfCount, color: 'text-white' },
+        { id: 'level1', label: 'Level-1', desc: 'Primary Dynamic Support', count: tfCounts.level1 || 0, color: 'text-emerald-400' },
+        { id: 'level2', label: 'Level-2', desc: 'Intermediate Dynamic Support', count: tfCounts.level2 || 0, color: 'text-cyan-400' },
+        { id: 'level3', label: 'Level-3', desc: 'Deep Value Support', count: tfCounts.level3 || 0, color: 'text-amber-400' }
+      ];
+
+      return (
+        <section className="space-y-5 animate-fade-in font-sans">
+          {/* Top Banner / Header */}
+          <div className="bg-[#0E1524] border border-[#1A2538] rounded-xl p-5 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <div className="flex items-center space-x-3">
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                <h1 className="text-lg font-bold text-white tracking-tight">HPS Mean Reversion</h1>
+                <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 font-bold border border-emerald-500/25">
+                  Institutional Value Zones
+                </span>
+              </div>
+              <p className="text-xs text-slate-400 mt-1">
+                Identifies stocks currently testing high-probability support levels for potential mean-reversion bounces.
+              </p>
+            </div>
+
+            {/* Universe Selector (NIFTY 500 vs NIFTY F&O) */}
+            <div className="flex items-center space-x-2">
+              <span className="text-xs font-mono text-slate-400">Universe:</span>
+              <div className="flex items-center bg-[#090F1B] border border-[#1C273C] p-0.5 rounded-lg font-mono text-xs">
+                <button
+                  onClick={() => setUniverse('nifty500')}
+                  className={`px-3 py-1.5 rounded-md font-semibold transition-all ${
+                    universe === 'nifty500'
+                      ? 'bg-blue-600 text-white shadow-sm'
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  NIFTY 500 (500 Stocks)
+                </button>
+                <button
+                  onClick={() => setUniverse('fo')}
+                  className={`px-3 py-1.5 rounded-md font-semibold transition-all ${
+                    universe === 'fo'
+                      ? 'bg-blue-600 text-white shadow-sm'
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  NIFTY F&O (213 Stocks)
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Timeframe Selector Tabs */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {timeframes.map(tf => {
+              const isSelected = timeframe === tf.id;
+              const tfCount = (counts[tf.id]?.level1 || 0) + (counts[tf.id]?.level2 || 0) + (counts[tf.id]?.level3 || 0);
+              return (
+                <button
+                  key={tf.id}
+                  onClick={() => setTimeframe(tf.id)}
+                  className={`p-3.5 rounded-xl border text-left transition-all ${
+                    isSelected
+                      ? 'bg-gradient-to-br from-[#122B22] to-[#0D1E18] border-emerald-500/50 shadow-md shadow-emerald-950/30'
+                      : 'bg-[#0E1524] border-[#1A2538] hover:border-[#273854] hover:bg-[#121B2D]'
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-1">
+                    <span className={`text-xs font-bold uppercase tracking-wider font-mono ${
+                      isSelected ? 'text-emerald-400' : 'text-slate-300'
+                    }`}>
+                      {tf.label}
+                    </span>
+                    <span className={`text-xs font-mono font-bold px-2 py-0.5 rounded ${
+                      isSelected
+                        ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                        : 'bg-[#152033] text-slate-400 border border-[#22334E]'
+                    }`}>
+                      {tfCount} Stocks
+                    </span>
+                  </div>
+                  <div className="text-[11px] text-slate-400">{tf.desc}</div>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Reversion Level Selection Cards (Level-1, Level-2, Level-3) */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {levels.map(lvl => {
+              const isSelected = level === lvl.id;
+              return (
+                <button
+                  key={lvl.id}
+                  onClick={() => setLevel(lvl.id)}
+                  className={`p-3 rounded-xl border text-left transition-all ${
+                    isSelected
+                      ? 'bg-[#142338] border-blue-500/60 shadow-sm'
+                      : 'bg-[#0E1524] border-[#1A2538] hover:border-[#22324C]'
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-1">
+                    <span className={`text-xs font-bold font-mono ${lvl.color}`}>
+                      {lvl.label}
+                    </span>
+                    <span className={`text-xs font-mono font-bold px-2 py-0.5 rounded ${
+                      isSelected ? 'bg-blue-600 text-white' : 'bg-[#152033] text-slate-300'
+                    }`}>
+                      {lvl.count}
+                    </span>
+                  </div>
+                  <div className="text-[11px] text-slate-400 truncate">{lvl.desc}</div>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Search Bar & Action Filter */}
+          <div className="bg-[#0E1524] border border-[#1A2538] rounded-xl p-3.5 flex flex-col md:flex-row md:items-center justify-between gap-3 font-mono">
+            <div className="flex items-center space-x-2 flex-1 max-w-md">
+              <span className="text-slate-500 text-xs">🔍</span>
+              <input
+                type="text"
+                placeholder="Search symbol or company in active level..."
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                className="w-full bg-[#0A0F1A] border border-[#1A2538] rounded-lg px-3 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-emerald-500"
+              />
+              {searchQuery && (
+                <button onClick={() => setSearchQuery('')} className="text-slate-400 hover:text-white text-xs">
+                  ✕
+                </button>
+              )}
+            </div>
+
+            <div className="flex items-center space-x-3 text-xs">
+              <span className="text-slate-400">
+                Selected: <span className="text-emerald-400 font-bold">{timeframe.toUpperCase()}</span> | <span className="text-blue-400 font-bold">{level.toUpperCase()}</span>
+              </span>
+              {/* Export CSV Button */}
+              <button
+                onClick={() => {
+                  if (!filteredList || filteredList.length === 0) return;
+                  const headers = ['Symbol', 'Company Name', 'Sector', 'LTP (INR)', 'Distance to Level (%)', 'Reversion Level', 'Timeframe', 'Setup Condition', 'Segment'];
+                  const rows = filteredList.map(stk => [
+                    `"${stk.symbol || ''}"`,
+                    `"${(stk.name || '').replace(/"/g, '""')}"`,
+                    `"${(stk.industry || '').replace(/"/g, '""')}"`,
+                    stk.ltp != null ? stk.ltp : '',
+                    stk.spread_pct != null ? stk.spread_pct : '',
+                    `"${stk.level || level.toUpperCase()}"`,
+                    `"${stk.timeframe || timeframe.toUpperCase()}"`,
+                    `"${stk.status || ''}"`,
+                    `"${stk.is_fo ? 'NIFTY F&O' : 'Cash (EQ)'}"`
+                  ]);
+                  const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+                  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                  const url = URL.createObjectURL(blob);
+                  const link = document.createElement('a');
+                  link.href = url;
+                  link.setAttribute('download', `HPS_Mean_Reversion_${universe}_${timeframe}_${level}_${new Date().toISOString().slice(0, 10)}.csv`);
+                  document.body.appendChild(link);
+                  link.click();
+                  document.body.removeChild(link);
+                  URL.revokeObjectURL(url);
+                }}
+                disabled={loading || filteredList.length === 0}
+                className="flex items-center space-x-1.5 px-3 py-1.5 bg-[#122B22] hover:bg-[#183B2F] text-emerald-300 hover:text-emerald-200 text-xs rounded-lg border border-emerald-500/30 transition-colors disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
+                title="Download filtered stocks as CSV"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <span>Export CSV</span>
+              </button>
+
+              <button
+                onClick={fetchMeanReversionData}
+                disabled={loading}
+                className="px-3 py-1.5 bg-[#142033] hover:bg-[#1A2B45] text-slate-300 text-xs rounded-lg border border-[#223554] transition-colors"
+                title="Refresh list"
+              >
+                ↻ Refresh
+              </button>
+            </div>
+          </div>
+
+          {/* Table of Mean Reversion Stocks */}
+          <div className="bg-[#0E1524] border border-[#1A2538] rounded-xl overflow-hidden shadow-sm">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs font-mono tabular-nums">
+                <thead className="bg-[#090F1B] text-slate-400 text-[11px] uppercase font-semibold border-b border-[#1A2538]">
+                  <tr>
+                    <th className="py-3 px-3.5 w-10 text-center">#</th>
+                    <th className="py-3 px-3.5">Symbol</th>
+                    <th className="py-3 px-3.5">Company Name</th>
+                    <th className="py-3 px-3.5">Sector</th>
+                    <th className="py-3 px-3.5 text-right">LTP (₹)</th>
+                    <th className="py-3 px-3.5 text-right">Distance to Level</th>
+                    <th className="py-3 px-3.5 text-center">Reversion Level</th>
+                    <th className="py-3 px-3.5 text-center">Timeframe</th>
+                    <th className="py-3 px-3.5 text-center">Setup Condition</th>
+                    <th className="py-3 px-3.5 text-center">Segment</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#151F33]">
+                  {loading ? (
+                    <tr>
+                      <td colSpan={10} className="py-12 text-center text-slate-500 font-mono text-xs">
+                        Loading HPS Mean Reversion stocks...
+                      </td>
+                    </tr>
+                  ) : filteredList.length === 0 ? (
+                    <tr>
+                      <td colSpan={10} className="py-12 text-center text-slate-400 font-mono text-xs">
+                        No stocks currently at this reversion level on the {timeframe.toUpperCase()} timeframe in {universe.toUpperCase()}.
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredList.map((stk, i) => {
+                      const isSupport = stk.status === 'At Support Level';
+                      const badgeLevelColor = 
+                        stk.level === 'Level-1' ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30' :
+                        stk.level === 'Level-2' ? 'bg-cyan-500/15 text-cyan-400 border-cyan-500/30' :
+                        'bg-amber-500/15 text-amber-400 border-amber-500/30';
+
+                      return (
+                        <tr
+                          key={`${stk.symbol}-${stk.level}-${i}`}
+                          onClick={() => onSelectStock({
+                            symbol: stk.symbol,
+                            name: stk.name,
+                            ltp: stk.ltp,
+                            change_pct: stk.spread_pct,
+                            volume: 2450000
+                          })}
+                          className={`hover:bg-[#18253D] cursor-pointer transition-colors ${
+                            i % 2 === 0 ? 'bg-[#0E1524]' : 'bg-[#0B111D]'
+                          }`}
+                        >
+                          <td className="py-3 px-3.5 text-center text-slate-500 font-bold text-[10px]">
+                            {i + 1}
+                          </td>
+                          <td className="py-3 px-3.5 font-bold text-blue-400 text-xs tracking-wide">
+                            {stk.symbol}
+                          </td>
+                          <td className="py-3 px-3.5 text-slate-200 text-xs truncate max-w-[180px]">
+                            {stk.name}
+                          </td>
+                          <td className="py-3 px-3.5 text-slate-400 text-[11px] truncate max-w-[140px]">
+                            {stk.industry || 'Equities'}
+                          </td>
+                          <td className="py-3 px-3.5 text-right font-bold text-white text-xs">
+                            ₹{stk.ltp.toLocaleString('en-IN', { minimumFractionDigits: 1 })}
+                          </td>
+                          <td className="py-3 px-3.5 text-right font-bold text-xs">
+                            <span className={stk.spread_pct >= 0 ? 'text-emerald-400' : 'text-amber-400'}>
+                              {stk.spread_pct >= 0 ? `+${stk.spread_pct}%` : `${stk.spread_pct}%`}
+                            </span>
+                          </td>
+                          <td className="py-3 px-3.5 text-center">
+                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${badgeLevelColor}`}>
+                              {stk.level}
+                            </span>
+                          </td>
+                          <td className="py-3 px-3.5 text-center">
+                            <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-[#142033] text-slate-200 border border-[#233550]">
+                              {timeframe.toUpperCase()}
+                            </span>
+                          </td>
+                          <td className="py-3 px-3.5 text-center">
+                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                              isSupport
+                                ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
+                                : 'bg-blue-500/15 text-blue-300 border border-blue-500/30'
+                            }`}>
+                              {stk.status}
+                            </span>
+                          </td>
+                          <td className="py-3 px-3.5 text-center">
+                            {stk.is_fo ? (
+                              <span className="px-1.5 py-0.5 rounded text-[9.5px] font-bold bg-purple-500/15 text-purple-300 border border-purple-500/25">
+                                F&O
+                              </span>
+                            ) : (
+                              <span className="px-1.5 py-0.5 rounded text-[9.5px] font-bold bg-slate-800 text-slate-400">
+                                EQ
+                              </span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Table Footer with Summary Details */}
+            <div className="p-3 border-t border-[#1A2538] flex flex-col sm:flex-row items-center justify-between text-[11px] font-mono text-slate-400 gap-2">
+              <div>
+                Showing <span className="text-white font-bold">{filteredList.length}</span> stocks at <span className="text-blue-400 font-bold">{level.toUpperCase()}</span> on the <span className="text-emerald-400 font-bold">{timeframe.toUpperCase()}</span> timeframe ({universe.toUpperCase()}).
+              </div>
+              <div className="flex items-center space-x-3 text-slate-400">
+                <span>Updated: <span className="text-slate-300">{lastUpdated}</span></span>
+                <span className="text-blue-400">Click row for stock details</span>
+              </div>
+            </div>
+          </div>
+        </section>
+      );
+    }
+
+    // ----------------- STOCK DETAIL DRAWER ----------------- //
+    function StockDetailDrawer({ stock, onClose }) {
+      const isBull = stock.change_pct >= 0;
+
+      return (
+        <div className="fixed inset-0 z-50 flex justify-end bg-black/60 backdrop-blur-sm animate-fade-in font-sans">
+          <div className="w-full max-w-md bg-[#0D1422] border-l border-[#1F2B40] h-full p-6 shadow-2xl flex flex-col justify-between overflow-y-auto">
+            <div>
+              <div className="flex items-start justify-between pb-4 border-b border-[#1A2538]">
+                <div>
+                  <div className="flex items-center space-x-2">
+                    <h2 className="text-lg font-bold text-white tracking-wide">{stock.symbol}</h2>
+                    <span className={`px-2 py-0.5 rounded font-mono font-bold text-xs ${isBull ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'}`}>
+                      {isBull ? `+${stock.change_pct}%` : `${stock.change_pct}%`}
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-400 mt-0.5">{stock.name}</p>
+                </div>
+                <button onClick={onClose} className="p-1 text-slate-400 hover:text-white rounded hover:bg-[#162133]">
+                  ✕
+                </button>
+              </div>
+
+              <div className="mt-4 p-3 rounded-lg bg-[#111929] border border-[#1F2C42] text-xs text-slate-300">
+                <span className="text-blue-400 font-semibold block mb-1">Technical Assessment:</span>
+                {stock.change_pct > 1.2 && stock.volume_surge_x >= 1.5 ? (
+                  <p>Bullish momentum expansion. High institutional volume surge ({stock.volume_surge_x}x) above average.</p>
+                ) : stock.change_pct < -1.2 ? (
+                  <p>Bearish intraday pressure. Price currently testing daily lows.</p>
+                ) : (
+                  <p>Trading in stable range. Low directional volatility observed.</p>
+                )}
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 mt-4 text-xs font-mono">
+                <div className="p-3 bg-[#0A0F19] rounded border border-[#182336]">
+                  <span className="text-slate-400 text-[11px] block mb-0.5">LTP</span>
+                  <span className="text-sm font-bold text-white">₹{formatPrice(stock.ltp)}</span>
+                </div>
+                <div className="p-3 bg-[#0A0F19] rounded border border-[#182336]">
+                  <span className="text-slate-400 text-[11px] block mb-0.5">Volume</span>
+                  <span className="text-sm font-bold text-white">{formatVolShort(stock.volume)}</span>
+                </div>
+                <div className="p-3 bg-[#0A0F19] rounded border border-[#182336]">
+                  <span className="text-slate-400 text-[11px] block mb-0.5">RSI (14)</span>
+                  <span className="text-sm font-bold text-white">{stock.rsi || 50}</span>
+                </div>
+                <div className="p-3 bg-[#0A0F19] rounded border border-[#182336]">
+                  <span className="text-slate-400 text-[11px] block mb-0.5">Volume Spike</span>
+                  <span className="text-sm font-bold text-white">{stock.volume_surge_x || 1.0}x</span>
+                </div>
+              </div>
+
+              <div className="mt-4">
+                <span className="text-xs text-slate-400 font-medium block mb-1.5">Strategy Matches:</span>
+                <div className="flex flex-wrap gap-1.5">
+                  {stock.triggered_criteria?.map((c, i) => (
+                    <span key={i} className="text-xs px-2 py-0.5 rounded bg-blue-500/10 text-blue-300 border border-blue-500/20 font-medium">
+                      {c}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="pt-4 border-t border-[#1A2538] flex justify-end">
+              <button
+                onClick={onClose}
+                className="px-4 py-1.5 bg-[#1A2538] hover:bg-[#25344D] text-slate-200 text-xs font-semibold rounded transition-colors"
+              >
+                Close Drawer
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // ----------------- RULES MANAGER ----------------- //
+    function RulesManager({ onBack }) {
+      const [rules, setRules] = useState([]);
+      const [name, setName] = useState('');
+      const [universe, setUniverse] = useState('NIFTY50');
+      const [minChange, setMinChange] = useState(1.0);
+      const [minVol, setMinVol] = useState(1.5);
+
+      const fetchRules = async () => {
+        try {
+          const res = await api.get('/screener/rules');
+          setRules(res.data);
+        } catch (e) {}
+      };
+
+      useEffect(() => { fetchRules(); }, []);
+
+      const handleCreate = async (e) => {
+        e.preventDefault();
+        try {
+          await api.post('/screener/rules', {
+            name,
+            universe,
+            is_active: true,
+            criteria: {
+              min_change_pct: Number(minChange),
+              min_volume_ratio: Number(minVol)
+            }
+          });
+          setName('');
+          fetchRules();
+        } catch (e) {
+          alert('Failed to save rule');
+        }
+      };
+
+      const handleDelete = async (id) => {
+        if (!confirm('Delete rule?')) return;
+        await api.delete(`/screener/rules/${id}`);
+        fetchRules();
+      };
+
+      return (
+        <div className="space-y-4 max-w-4xl mx-auto text-xs">
+          <div className="flex items-center justify-between pb-3 border-b border-[#1A2538]">
+            <div>
+              <h2 className="text-sm font-bold text-white">Screener Strategy Rules</h2>
+              <p className="text-slate-400 text-xs">Define technical filter rules evaluated across live universe quotes</p>
+            </div>
+            <button onClick={onBack} className="px-3 py-1 bg-[#131B2E] text-slate-300 rounded border border-[#223049] hover:text-white">
+              ← Return to Screener
+            </button>
+          </div>
+
+          <form onSubmit={handleCreate} className="bg-[#0E1524] border border-[#1C273C] rounded-lg p-4 grid grid-cols-1 md:grid-cols-4 gap-3">
+            <div>
+              <label className="block text-slate-300 mb-1">Rule Name</label>
+              <input type="text" required value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Volume Spike" className="w-full px-2.5 py-1.5 bg-[#090E18] border border-[#1F2B40] rounded text-white" />
+            </div>
+            <div>
+              <label className="block text-slate-300 mb-1">Universe</label>
+              <select value={universe} onChange={e => setUniverse(e.target.value)} className="w-full px-2.5 py-1.5 bg-[#090E18] border border-[#1F2B40] rounded text-white">
+                <option value="NIFTY50">NIFTY 50</option>
+                <option value="BANKNIFTY">BANK NIFTY</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-slate-300 mb-1">Min % Change</label>
+              <input type="number" step="0.1" value={minChange} onChange={e => setMinChange(e.target.value)} className="w-full px-2.5 py-1.5 bg-[#090E18] border border-[#1F2B40] rounded text-white" />
+            </div>
+            <div className="flex items-end">
+              <button type="submit" className="w-full py-1.5 bg-blue-600 hover:bg-blue-500 text-white font-medium rounded transition-colors">Save Rule</button>
+            </div>
+          </form>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {rules.map(r => (
+              <div key={r.id} className="bg-[#0E1524] border border-[#1C273C] rounded-lg p-3 flex justify-between items-start">
+                <div>
+                  <h3 className="font-semibold text-white">{r.name}</h3>
+                  <span className="text-[10px] font-mono text-blue-400">{r.universe}</span>
+                  <div className="mt-1 flex gap-1 text-[11px] text-slate-400">
+                    {r.criteria.min_change_pct && <span>Change &gt;= {r.criteria.min_change_pct}%</span>}
+                    {r.criteria.min_volume_ratio && <span>• Vol &gt;= {r.criteria.min_volume_ratio}x</span>}
+                  </div>
+                </div>
+                <button onClick={() => handleDelete(r.id)} className="text-slate-500 hover:text-rose-400 text-xs">Delete</button>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    // ----------------- USERS MANAGER ----------------- //
+    function UsersManager({ onBack }) {
+      const [users, setUsers] = useState([]);
+      const [uName, setUName] = useState('');
+      const [pwd, setPwd] = useState('');
+      const [email, setEmail] = useState('');
+      const [role, setRole] = useState('viewer');
+      const [loading, setLoading] = useState(true);
+      const [error, setError] = useState('');
+      const [success, setSuccess] = useState('');
+
+      const fetchUsers = async () => {
+        setLoading(true);
+        try {
+          const res = await api.get('/users');
+          setUsers(res.data || []);
+        } catch (e) {
+          setError('Failed to fetch user accounts');
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      useEffect(() => { fetchUsers(); }, []);
+
+      const handleAdd = async (e) => {
+        e.preventDefault();
+        setError('');
+        setSuccess('');
+        try {
+          await api.post('/users', { username: uName, password: pwd, email: email || null, role });
+          setUName('');
+          setPwd('');
+          setEmail('');
+          setSuccess('User created successfully');
+          fetchUsers();
+        } catch (e) {
+          setError(e.response?.data?.detail || 'Failed to create user');
+        }
+      };
+
+      const handleDelete = async (id, name) => {
+        if (!confirm(`Are you sure you want to delete user "${name}"?`)) return;
+        try {
+          await api.delete(`/users/${id}`);
+          setSuccess(`User ${name} removed`);
+          fetchUsers();
+        } catch (e) {
+          setError(e.response?.data?.detail || 'Cannot delete user');
+        }
+      };
+
+      const handleToggleStatus = async (user) => {
+        try {
+          await api.patch(`/users/${user.id}`, { is_active: !user.is_active });
+          fetchUsers();
+        } catch (e) {
+          setError('Failed to update user status');
+        }
+      };
+
+      return (
+        <div className="space-y-6 max-w-5xl mx-auto text-xs font-sans animate-fade-in">
+          {/* Header */}
+          <div className="flex items-center justify-between pb-4 border-b border-[#1A2538]">
+            <div className="flex items-center space-x-3">
+              <div className="p-2.5 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                </svg>
+              </div>
+              <div>
+                <h1 className="text-lg font-bold text-white tracking-tight">Team Accounts & Access Control</h1>
+                <p className="text-slate-400 text-xs">Manage team member logins, roles, and linked alert channels.</p>
+              </div>
+            </div>
+            <button onClick={onBack} className="px-3 py-1.5 bg-[#131B2E] text-slate-300 rounded-lg border border-[#223049] hover:text-white text-xs">
+              ← Return
+            </button>
+          </div>
+
+          {/* User Metrics Summary */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="bg-[#0E1524] border border-[#1A2538] rounded-xl p-4">
+              <span className="text-[10px] font-mono uppercase text-slate-400 block mb-1">Total Registered Users</span>
+              <div className="text-2xl font-bold font-mono text-white">{users.length}</div>
+            </div>
+            <div className="bg-[#0E1524] border border-[#1A2538] rounded-xl p-4">
+              <span className="text-[10px] font-mono uppercase text-slate-400 block mb-1">Administrators</span>
+              <div className="text-2xl font-bold font-mono text-blue-400">
+                {users.filter(u => u.role === 'admin').length}
+              </div>
+            </div>
+            <div className="bg-[#0E1524] border border-[#1A2538] rounded-xl p-4">
+              <span className="text-[10px] font-mono uppercase text-slate-400 block mb-1">View-Only Traders</span>
+              <div className="text-2xl font-bold font-mono text-emerald-400">
+                {users.filter(u => u.role === 'viewer').length}
+              </div>
+            </div>
+          </div>
+
+          {/* Feedback messages */}
+          {error && <div className="p-3 bg-rose-500/10 border border-rose-500/20 text-rose-300 rounded-lg text-xs font-mono">{error}</div>}
+          {success && <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 rounded-lg text-xs font-mono">{success}</div>}
+
+          {/* Add User Card */}
+          <div className="bg-[#0E1524] border border-[#1A2538] rounded-xl p-5 shadow-sm">
+            <h2 className="text-xs font-bold text-white uppercase font-mono tracking-wider mb-3">Create New Account</h2>
+            <form onSubmit={handleAdd} className="grid grid-cols-1 md:grid-cols-5 gap-3">
+              <div>
+                <label className="block text-[11px] font-mono text-slate-300 mb-1">Username *</label>
+                <input type="text" required value={uName} onChange={e => setUName(e.target.value)} placeholder="e.g. rahul_trader" className="w-full px-3 py-1.5 bg-[#090F1B] border border-[#1F2C45] rounded-lg text-white font-mono text-xs focus:outline-none focus:border-blue-500" />
+              </div>
+              <div>
+                <label className="block text-[11px] font-mono text-slate-300 mb-1">Email</label>
+                <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="trader@quant.in" className="w-full px-3 py-1.5 bg-[#090F1B] border border-[#1F2C45] rounded-lg text-white text-xs focus:outline-none focus:border-blue-500" />
+              </div>
+              <div>
+                <label className="block text-[11px] font-mono text-slate-300 mb-1">Password *</label>
+                <input type="password" required value={pwd} onChange={e => setPwd(e.target.value)} placeholder="Minimum 6 characters" className="w-full px-3 py-1.5 bg-[#090F1B] border border-[#1F2C45] rounded-lg text-white text-xs focus:outline-none focus:border-blue-500" />
+              </div>
+              <div>
+                <label className="block text-[11px] font-mono text-slate-300 mb-1">Role *</label>
+                <select value={role} onChange={e => setRole(e.target.value)} className="w-full px-3 py-1.5 bg-[#090F1B] border border-[#1F2C45] rounded-lg text-white text-xs focus:outline-none focus:border-blue-500">
+                  <option value="viewer">Viewer (Read Only Screener)</option>
+                  <option value="admin">Admin (Full Control)</option>
+                </select>
+              </div>
+              <div className="flex items-end">
+                <button type="submit" className="w-full py-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs rounded-lg transition-colors shadow-sm">
+                  + Create User
+                </button>
+              </div>
+            </form>
+          </div>
+
+          {/* Users Table */}
+          <div className="bg-[#0E1524] border border-[#1A2538] rounded-xl overflow-hidden shadow-sm">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs font-mono">
+                <thead className="bg-[#090F1B] text-slate-400 font-mono text-[11px] uppercase border-b border-[#1A2538]">
+                  <tr>
+                    <th className="py-3 px-4">User</th>
+                    <th className="py-3 px-4">Email</th>
+                    <th className="py-3 px-4 text-center">Role</th>
+                    <th className="py-3 px-4 text-center">Telegram DMs</th>
+                    <th className="py-3 px-4 text-center">Account Status</th>
+                    <th className="py-3 px-4 text-center">Created At</th>
+                    <th className="py-3 px-4 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#152033]">
+                  {loading ? (
+                    <tr>
+                      <td colSpan={7} className="py-8 text-center text-slate-500">Loading team accounts...</td>
+                    </tr>
+                  ) : users.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="py-8 text-center text-slate-500">No users found</td>
+                    </tr>
+                  ) : (
+                    users.map(u => (
+                      <tr key={u.id} className="hover:bg-[#131D30] transition-colors">
+                        <td className="py-3 px-4">
+                          <div className="flex items-center space-x-2.5">
+                            <div className="w-7 h-7 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center font-bold text-xs text-slate-200">
+                              {u.username[0].toUpperCase()}
+                            </div>
+                            <span className="font-bold text-white">{u.username}</span>
+                          </div>
+                        </td>
+                        <td className="py-3 px-4 text-slate-400">{u.email || '—'}</td>
+                        <td className="py-3 px-4 text-center">
+                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
+                            u.role === 'admin' 
+                              ? 'bg-blue-500/10 text-blue-400 border border-blue-500/30' 
+                              : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'
+                          }`}>
+                            {u.role}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 text-center">
+                          {u.telegram_chat_id ? (
+                            <span className="px-2 py-0.5 rounded text-[10px] bg-sky-500/10 text-sky-300 border border-sky-500/25">
+                              ID: {u.telegram_chat_id}
+                            </span>
+                          ) : (
+                            <span className="text-slate-600 text-[11px]">Not Linked</span>
+                          )}
+                        </td>
+                        <td className="py-3 px-4 text-center">
+                          <button
+                            onClick={() => handleToggleStatus(u)}
+                            className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                              u.is_active 
+                                ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 hover:bg-rose-500/20 hover:text-rose-400' 
+                                : 'bg-rose-500/15 text-rose-400 border border-rose-500/30 hover:bg-emerald-500/20 hover:text-emerald-400'
+                            }`}
+                            title="Click to toggle status"
+                          >
+                            {u.is_active ? 'Active' : 'Disabled'}
+                          </button>
+                        </td>
+                        <td className="py-3 px-4 text-center text-slate-400 text-[11px]">
+                          {u.created_at ? new Date(u.created_at).toLocaleDateString() : 'N/A'}
+                        </td>
+                        <td className="py-3 px-4 text-right">
+                          <button
+                            onClick={() => handleDelete(u.id, u.username)}
+                            className="text-rose-400 hover:text-rose-300 hover:underline text-[11px]"
+                          >
+                            Delete
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // ----------------- BROKER AUTH VIEW ----------------- //
+    function BrokerAuthView({ onConnected, onBack }) {
+      const [clientId, setClientId] = useState('');
+      const [apiSecret, setApiSecret] = useState('');
+      const [token, setToken] = useState('');
+      const [loading, setLoading] = useState(false);
+      const [msg, setMsg] = useState('');
+      const [error, setError] = useState('');
+
+      const handleConnect = async (e) => {
+        e.preventDefault();
+        setMsg('');
+        setError('');
+        setLoading(true);
+        try {
+          await api.post('/auth/dhan-login', {
+            api_key: clientId.trim(),
+            api_secret: apiSecret.trim() || null,
+            request_token: token.trim()
+          });
+          setMsg('Broker connection established and encrypted on server.');
+          onConnected();
+        } catch (err) {
+          setError(err.response?.data?.detail || 'Broker connection failed');
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      return (
+        <div className="max-w-lg mx-auto space-y-4 text-xs">
+          <div className="flex items-center justify-between pb-3 border-b border-[#1A2538]">
+            <div>
+              <h2 className="text-sm font-bold text-white">Broker Credentials</h2>
+              <p className="text-slate-400 text-xs">Persisted securely via backend encryption</p>
+            </div>
+            <button onClick={onBack} className="px-3 py-1 bg-[#131B2E] text-slate-300 rounded border border-[#223049] hover:text-white">
+              ← Return
+            </button>
+          </div>
+
+          <div className="bg-[#0E1524] border border-[#1C273C] rounded-lg p-5">
+            {error && <div className="mb-3 p-2 bg-rose-500/10 border border-rose-500/20 text-rose-400 rounded text-xs">{error}</div>}
+            {msg && <div className="mb-3 p-2 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded text-xs">{msg}</div>}
+
+            <form onSubmit={handleConnect} className="space-y-3">
+              <div>
+                <label className="block text-slate-300 mb-1">Client ID *</label>
+                <input type="text" required value={clientId} onChange={e => setClientId(e.target.value)} placeholder="10-digit Client ID" className="w-full px-3 py-1.5 bg-[#090E18] border border-[#1F2B40] rounded text-white font-mono" />
+              </div>
+              <div>
+                <label className="block text-slate-300 mb-1">API Secret</label>
+                <input type="password" value={apiSecret} onChange={e => setApiSecret(e.target.value)} placeholder="Optional if using access token" className="w-full px-3 py-1.5 bg-[#090E18] border border-[#1F2B40] rounded text-white" />
+              </div>
+              <div>
+                <label className="block text-slate-300 mb-1">Access Token / Request Token *</label>
+                <textarea rows={3} required value={token} onChange={e => setToken(e.target.value)} placeholder="Paste Access Token" className="w-full px-3 py-1.5 bg-[#090E18] border border-[#1F2B40] rounded text-white font-mono" />
+              </div>
+              <button type="submit" disabled={loading} className="w-full py-2 bg-blue-600 hover:bg-blue-500 text-white font-medium rounded transition-colors">
+                {loading ? 'Validating...' : 'Connect Broker Account'}
+              </button>
+            </form>
+          </div>
+        </div>
+      );
+    }
+
+    // ----------------- PROFILE VIEW ----------------- //
+    function ProfileView({ onBack }) {
+      const [prof, setProf] = useState(null);
+      const [loading, setLoading] = useState(true);
+
+      useEffect(() => {
+        api.get('/profile/').then(r => setProf(r.data)).catch(() => {}).finally(() => setLoading(false));
+      }, []);
+
+      if (loading) return <div className="text-center py-12 text-xs text-slate-500 font-mono">Loading profile...</div>;
+
+      const dhan = prof?.dhan_profile;
+
+      return (
+        <div className="max-w-4xl mx-auto space-y-6 text-sm font-sans animate-fade-in">
+          <div className="flex items-center justify-between pb-4 border-b border-[#1A2538]">
+            <div className="flex items-center space-x-3">
+              <div className="p-2.5 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+              </div>
+              <div>
+                <h1 className="text-lg font-bold text-white tracking-tight">Account & Notification Settings</h1>
+                <p className="text-slate-400 text-xs">Manage active authorizations and personal alert delivery channels</p>
+              </div>
+            </div>
+            <button onClick={onBack} className="px-3.5 py-1.5 bg-[#131B2E] text-slate-300 rounded-lg border border-[#223049] hover:text-white text-xs">
+              ← Return
+            </button>
+          </div>
+
+          <div className="bg-[#0E1524] border border-[#1C273C] rounded-lg p-5">
+            <div className="flex items-center justify-between pb-3 border-b border-[#1A2538] mb-4">
+              <div>
+                <h3 className="font-bold text-white text-sm">{prof?.app_user ? prof.app_user.toUpperCase() : 'TRADING ACCOUNT'}</h3>
+                <p className="text-[11px] text-slate-400 font-mono">Role: {prof?.app_role ? prof.app_role.toUpperCase() : 'USER'}</p>
+              </div>
+              <span className="px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+                ACTIVE
+              </span>
+            </div>
+
+            <div className="mb-4">
+              <span className="text-slate-400 text-[10px] uppercase font-mono block mb-1.5">Authorized Products</span>
+              <div className="flex flex-wrap gap-1.5">
+                {dhan?.active_products?.map(p => (
+                  <span key={p} className="px-2 py-0.5 rounded text-[11px] font-mono bg-blue-500/10 text-blue-300 border border-blue-500/20">{p}</span>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <span className="text-slate-400 text-[10px] uppercase font-mono block mb-1.5">Market Exchanges</span>
+              <div className="flex flex-wrap gap-1.5">
+                {dhan?.enabled_exchanges?.map(x => (
+                  <span key={x} className="px-2 py-0.5 rounded text-[11px] font-mono bg-emerald-500/10 text-emerald-300 border border-emerald-500/20">{x}</span>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* User Personal Telegram Alert Settings */}
+          <UserTelegramPreferenceCard />
+        </div>
+      );
+    }
+
+    // Personal Telegram settings for viewer / admin
+    function UserTelegramPreferenceCard() {
+      const [chatId, setChatId] = useState('');
+      const [enabled, setEnabled] = useState(true);
+      const [saving, setSaving] = useState(false);
+      const [msg, setMsg] = useState('');
+
+      useEffect(() => {
+        api.get('/telegram/user-pref').then(res => {
+          if (res.data && res.data.status === 'success') {
+            setChatId(res.data.telegram_chat_id || '');
+            setEnabled(res.data.telegram_alerts_enabled !== false);
+          }
+        }).catch(err => console.error("Error loading user telegram prefs:", err));
+      }, []);
+
+      const handleSave = async (e) => {
+        e.preventDefault();
+        setSaving(true);
+        setMsg('');
+        try {
+          await api.put('/telegram/user-pref', {
+            telegram_chat_id: chatId,
+            telegram_alerts_enabled: enabled
+          });
+          setMsg('Saved personal Telegram alert preferences');
+        } catch (e) {
+          setMsg('Failed to update preferences: ' + (e.response?.data?.detail || e.message));
+        } finally {
+          setSaving(false);
+        }
+      };
+
+      return (
+        <div className="bg-[#0E1524] border border-[#1C273C] rounded-lg p-5 mt-5">
+          <div className="flex items-center space-x-3 mb-3">
+            <svg className="w-5 h-5 text-sky-400" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 00-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.75-.55 2.92-1.27 4.86-2.11 5.83-2.51 2.78-1.16 3.35-1.36 3.73-1.36.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .38z"/>
+            </svg>
+            <div>
+              <h3 className="font-bold text-white text-sm">Personal Telegram Alerts (Direct DMs)</h3>
+              <p className="text-xs text-slate-400">Receive private direct notifications when your watched setups trigger.</p>
+            </div>
+          </div>
+
+          <form onSubmit={handleSave} className="space-y-4">
+            <div>
+              <label className="block text-xs font-mono text-slate-300 mb-1">Your Telegram Chat ID</label>
+              <input
+                type="text"
+                placeholder="e.g. 123456789 (Obtain by messaging @userinfobot on Telegram)"
+                value={chatId}
+                onChange={e => setChatId(e.target.value)}
+                className="w-full bg-[#090F1B] border border-[#1F2C45] rounded-lg px-3 py-2 text-xs text-white placeholder-slate-500 font-mono focus:outline-none focus:border-sky-500"
+              />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <label className="flex items-center space-x-2 text-xs text-slate-300 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={enabled}
+                  onChange={e => setEnabled(e.target.checked)}
+                  className="rounded border-[#1F2C45] text-sky-500 focus:ring-0"
+                />
+                <span>Enable direct private Telegram alert delivery</span>
+              </label>
+
+              <button
+                type="submit"
+                disabled={saving}
+                className="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white font-semibold text-xs rounded-lg transition-colors shadow-sm disabled:opacity-50"
+              >
+                {saving ? 'Saving...' : 'Update Telegram Alerts'}
+              </button>
+            </div>
+
+            {msg && (
+              <p className={`text-xs font-mono ${msg.includes('Failed') ? 'text-rose-400' : 'text-emerald-400'}`}>
+                {msg}
+              </p>
+            )}
+          </form>
+        </div>
+      );
+    }
+
+    // ----------------- FEATURE 5: TELEGRAM ALERTS CONTROL CENTER (ADMIN) ----------------- //
+    function TelegramAlertsView({ onBack }) {
+      const [botToken, setBotToken] = useState('');
+      const [channelId, setChannelId] = useState('');
+      const [isEnabled, setIsEnabled] = useState(false);
+      const [alertHps, setAlertHps] = useState(true);
+      const [alertMeanRev, setAlertMeanRev] = useState(true);
+      const [botUsername, setBotUsername] = useState('');
+      const [botTokenMasked, setBotTokenMasked] = useState('');
+      const [loading, setLoading] = useState(true);
+      const [saving, setSaving] = useState(false);
+      const [testing, setTesting] = useState(false);
+      const [statusMsg, setStatusMsg] = useState({ type: '', text: '' });
+      const [testChatId, setTestChatId] = useState('');
+
+      const fetchConfig = async () => {
+        setLoading(true);
+        try {
+          const res = await api.get('/telegram/config');
+          if (res.data && res.data.status === 'success') {
+            setIsEnabled(res.data.is_enabled);
+            setBotUsername(res.data.bot_username || '');
+            setBotTokenMasked(res.data.bot_token_masked || '');
+            setChannelId(res.data.default_channel_id || '');
+            setAlertHps(res.data.alert_on_hps_breakout !== false);
+            setAlertMeanRev(res.data.alert_on_mean_reversion !== false);
+            setTestChatId(res.data.default_channel_id || '');
+          }
+        } catch (e) {
+          console.error("Failed to fetch telegram config:", e);
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      useEffect(() => {
+        fetchConfig();
+      }, []);
+
+      const handleSave = async (e) => {
+        e.preventDefault();
+        setSaving(true);
+        setStatusMsg({ type: '', text: '' });
+        try {
+          const payload = {
+            is_enabled: isEnabled,
+            default_channel_id: channelId,
+            alert_on_hps_breakout: alertHps,
+            alert_on_mean_reversion: alertMeanRev
+          };
+          if (botToken.trim()) {
+            payload.bot_token = botToken.trim();
+          }
+          const res = await api.put('/telegram/config', payload);
+          setStatusMsg({ type: 'success', text: 'Telegram configuration updated successfully!' });
+          setBotToken('');
+          fetchConfig();
+        } catch (e) {
+          setStatusMsg({ type: 'error', text: e.response?.data?.detail || 'Failed to update configuration' });
+        } finally {
+          setSaving(false);
+        }
+      };
+
+      const handleSendTest = async () => {
+        if (!testChatId.trim()) {
+          setStatusMsg({ type: 'error', text: 'Please enter a target Channel ID, Group ID or User Chat ID to test' });
+          return;
+        }
+        setTesting(true);
+        setStatusMsg({ type: '', text: '' });
+        try {
+          const res = await api.post('/telegram/send-test', { chat_id: testChatId.trim() });
+          setStatusMsg({ type: 'success', text: 'Test alert sent successfully to ' + testChatId });
+        } catch (e) {
+          setStatusMsg({ type: 'error', text: e.response?.data?.detail || 'Failed to dispatch test message' });
+        } finally {
+          setTesting(false);
+        }
+      };
+
+      return (
+        <div className="space-y-6 max-w-4xl font-sans animate-fade-in">
+          {/* Header */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="p-2.5 rounded-xl bg-sky-500/10 border border-sky-500/20 text-sky-400">
+                <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 00-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.75-.55 2.92-1.27 4.86-2.11 5.83-2.51 2.78-1.16 3.35-1.36 3.73-1.36.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .38z"/>
+                </svg>
+              </div>
+              <div>
+                <h1 className="text-lg font-bold text-white tracking-tight">Telegram Alert Notification System</h1>
+                <p className="text-xs text-slate-400">
+                  Hybrid broadcast engine: Send real-time screener alerts to shared groups and private member DMs.
+                </p>
+              </div>
+            </div>
+            <button onClick={onBack} className="px-3 py-1.5 bg-[#131B2E] text-slate-300 rounded-lg border border-[#223049] hover:text-white text-xs">
+              ← Return
+            </button>
+          </div>
+
+          {/* Architecture Details Box */}
+          <div className="bg-[#0E1524] border border-[#1A2538] rounded-xl p-4 text-xs space-y-2">
+            <h2 className="font-bold text-white flex items-center space-x-2">
+              <span className="w-2 h-2 rounded-full bg-sky-400"></span>
+              <span>How Telegram Alerts Work (Hybrid Model)</span>
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-slate-400 pt-1">
+              <div className="bg-[#090F1B] border border-[#192438] p-3 rounded-lg">
+                <div className="font-semibold text-sky-300 mb-1">1. Group Channel Broadcasts</div>
+                <div>Add your bot as an Admin to your Telegram Group or Broadcast Channel. Paste the Group ID (e.g. <code>-100xxxxxxx</code>) below. All community members receive alerts at once.</div>
+              </div>
+              <div className="bg-[#090F1B] border border-[#192438] p-3 rounded-lg">
+                <div className="font-semibold text-emerald-300 mb-1">2. Private Direct DMs</div>
+                <div>Individual team members can open the bot and enter their private Chat ID in their Profile to receive personal 1-on-1 notifications automatically.</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Configuration Form */}
+          <div className="bg-[#0E1524] border border-[#1A2538] rounded-xl p-5 shadow-sm">
+            <form onSubmit={handleSave} className="space-y-5">
+              {/* Bot Active Switch */}
+              <div className="flex items-center justify-between pb-4 border-b border-[#1A2538]">
+                <div>
+                  <h3 className="font-bold text-white text-sm">Enable Telegram Alerts Dispatcher</h3>
+                  <p className="text-xs text-slate-400">Activate or pause automated notification dispatches.</p>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={isEnabled}
+                    onChange={e => setIsEnabled(e.target.checked)}
+                    className="sr-only peer"
+                  />
+                  <div className="w-11 h-6 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-sky-600"></div>
+                </label>
+              </div>
+
+              {/* Bot Token Input */}
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-mono font-bold text-slate-300">
+                    Telegram Bot Token (from @BotFather)
+                  </label>
+                  {botUsername && (
+                    <span className="text-[11px] font-mono text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
+                      Connected: @{botUsername}
+                    </span>
+                  )}
+                </div>
+                <input
+                  type="password"
+                  placeholder={botTokenMasked ? `Currently configured (${botTokenMasked}) — enter new to replace` : "e.g. 123456789:ABCdefGhIJKlmNoPQRsTUVwxyZ"}
+                  value={botToken}
+                  onChange={e => setBotToken(e.target.value)}
+                  className="w-full bg-[#090F1B] border border-[#1A2538] rounded-lg px-3.5 py-2 text-xs text-white placeholder-slate-500 font-mono focus:outline-none focus:border-sky-500"
+                />
+                <p className="text-[11px] text-slate-500">
+                  Create a bot on Telegram with <a href="https://t.me/BotFather" target="_blank" className="text-sky-400 underline">@BotFather</a> and paste the HTTP API bot token here.
+                </p>
+              </div>
+
+              {/* Default Channel / Group Chat ID */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-mono font-bold text-slate-300">
+                  Shared Broadcast Group / Channel ID
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. -1001234567890 or @YourPublicChannel"
+                  value={channelId}
+                  onChange={e => setChannelId(e.target.value)}
+                  className="w-full bg-[#090F1B] border border-[#1A2538] rounded-lg px-3.5 py-2 text-xs text-white placeholder-slate-500 font-mono focus:outline-none focus:border-sky-500"
+                />
+                <p className="text-[11px] text-slate-500">
+                  Add the bot as an administrator to your target group or channel, then provide the chat ID.
+                </p>
+              </div>
+
+              {/* Alert Triggers */}
+              <div className="space-y-2 pt-2">
+                <div className="text-xs font-mono font-bold text-slate-300 uppercase">Alert Triggers</div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <label className="flex items-center space-x-3 p-3 bg-[#090F1B] border border-[#1A2538] rounded-lg cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={alertHps}
+                      onChange={e => setAlertHps(e.target.checked)}
+                      className="rounded border-[#1A2538] text-sky-500 focus:ring-0"
+                    />
+                    <div>
+                      <div className="text-xs font-bold text-white">HPS Breakout Alerts</div>
+                      <div className="text-[11px] text-slate-400">Notify on Bullish & Bearish momentum breaks</div>
+                    </div>
+                  </label>
+
+                  <label className="flex items-center space-x-3 p-3 bg-[#090F1B] border border-[#1A2538] rounded-lg cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={alertMeanRev}
+                      onChange={e => setAlertMeanRev(e.target.checked)}
+                      className="rounded border-[#1A2538] text-emerald-500 focus:ring-0"
+                    />
+                    <div>
+                      <div className="text-xs font-bold text-white">HPS Mean Reversion Alerts</div>
+                      <div className="text-[11px] text-slate-400">Notify when stocks enter Level-1, Level-2, or Level-3</div>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
+              {statusMsg.text && (
+                <div className={`p-3 rounded-lg text-xs font-mono ${
+                  statusMsg.type === 'success' ? 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/20' : 'bg-rose-500/10 text-rose-300 border border-rose-500/20'
+                }`}>
+                  {statusMsg.text}
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              <div className="flex items-center justify-between pt-3 border-t border-[#1A2538]">
+                <button
+                  type="submit"
+                  disabled={saving}
+                  className="px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs rounded-lg transition-colors shadow-sm disabled:opacity-50"
+                >
+                  {saving ? 'Saving...' : 'Save Configuration'}
+                </button>
+
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="text"
+                    placeholder="Chat ID for test"
+                    value={testChatId}
+                    onChange={e => setTestChatId(e.target.value)}
+                    className="w-48 bg-[#090F1B] border border-[#1A2538] rounded-lg px-2.5 py-1.5 text-xs text-white placeholder-slate-500 font-mono focus:outline-none focus:border-sky-500"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleSendTest}
+                    disabled={testing}
+                    className="px-3.5 py-2 bg-[#17253D] hover:bg-[#203456] text-sky-300 text-xs rounded-lg border border-sky-500/30 transition-colors font-mono disabled:opacity-50"
+                  >
+                    {testing ? 'Sending...' : 'Send Test Alert'}
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      );
+    }
+
+    // ----------------- LOGIN SCREEN ----------------- //
+    function LoginScreen({ onLoginSuccess }) {
+      const [username, setUsername] = useState('');
+      const [password, setPassword] = useState('');
+      const [loading, setLoading] = useState(false);
+      const [error, setError] = useState('');
+
+      const handleSubmit = async (e) => {
+        e.preventDefault();
+        setError('');
+        setLoading(true);
+        try {
+          const res = await api.post('/auth/login', { username, password });
+          onLoginSuccess({ username: res.data.username, role: res.data.role }, res.data.access_token);
+        } catch (err) {
+          setError(err.response?.data?.detail || 'Invalid username or password');
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      return (
+        <div className="min-h-screen bg-[#070A10] flex flex-col justify-center items-center px-4 font-sans select-none">
+          <div className="text-center mb-7">
+            <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-blue-600/20 border border-blue-500/30 text-blue-400 mb-3 text-base font-bold shadow-lg shadow-blue-600/10">
+              AQ
+            </div>
+            <h1 className="text-2xl font-bold text-white tracking-tight">AlphaQuant Terminal</h1>
+          </div>
+
+          <div className="w-full max-w-md bg-[#0D1422] border border-[#1B273E] rounded-2xl p-8 shadow-2xl">
+            <h2 className="text-base font-semibold text-white mb-1">Sign In</h2>
+            <p className="text-xs text-slate-400 mb-6">Enter your credentials to access your trading workspace</p>
+
+            {error && (
+              <div className="mb-4 p-3 bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs rounded-lg">
+                {error}
+              </div>
+            )}
+
+            <form onSubmit={handleSubmit} className="space-y-4 text-sm">
+              <div>
+                <label className="block text-slate-300 font-medium text-xs mb-1.5">Username</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Enter username"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  className="w-full px-3.5 py-2.5 bg-[#080C14] border border-[#1E2B40] rounded-lg text-white focus:outline-none focus:border-blue-500 font-mono text-sm"
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-300 font-medium text-xs mb-1.5">Password</label>
+                <input
+                  type="password"
+                  required
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full px-3.5 py-2.5 bg-[#080C14] border border-[#1E2B40] rounded-lg text-white focus:outline-none focus:border-blue-500 font-mono text-sm"
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full py-3 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-semibold rounded-lg transition-colors mt-2 text-sm shadow-md shadow-blue-600/25"
+              >
+                {loading ? 'Authenticating...' : 'Sign In to Workspace'}
+              </button>
+            </form>
+          </div>
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>
