@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  alphaquant:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: alphaquant_app
+    restart: always
+    ports:
+      - "8080:8080"
+    environment:
+      - SECRET_KEY=${SECRET_KEY:-super-secret-production-key-alphaquant-2026}
+      - DATABASE_URL=sqlite:///./data/alphaquant.db
+      - DHAN_CLIENT_ID=${DHAN_CLIENT_ID:-}
+      - DHAN_PIN=${DHAN_PIN:-}
+      - DHAN_TOTP_SECRET=${DHAN_TOTP_SECRET:-}
+    volumes:
+      - alphaquant_data:/app/backend/data
+
+volumes:
+  alphaquant_data:
