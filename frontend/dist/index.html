@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>AlphaQuant Terminal | Indian Equity Intelligence</title>
+  <link rel="icon" type="image/png" href="/assets/alphaquant_pennant_pro.svg" />
   
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
@@ -142,6 +143,18 @@
       const [brokerSession, setBrokerSession] = useState({ authenticated: false, client_id: null, market_open: false, loading: true });
       const [selectedStock, setSelectedStock] = useState(null);
       const [isPaused, setIsPaused] = useState(false);
+      const [showWelcomeTour, setShowWelcomeTour] = useState(() => {
+        const saved = localStorage.getItem("alphaquant_user");
+        if (saved) {
+          try {
+            const u = JSON.parse(saved);
+            return !localStorage.getItem("alphaquant_tour_seen_" + u.username);
+          } catch (e) {
+            return false;
+          }
+        }
+        return false;
+      });
 
       const [indices] = useState([
         { symbol: "RELIANCE", ltp: 2980.50, change: 14.20, change_pct: 0.48 },
@@ -192,6 +205,9 @@
         localStorage.setItem('alphaquant_user', JSON.stringify(userData));
         setUser(userData);
         checkBrokerStatus();
+        if (!localStorage.getItem("alphaquant_tour_seen_" + userData.username)) {
+          setShowWelcomeTour(true);
+        }
       };
 
       const handleLogout = () => {
@@ -262,10 +278,8 @@
                   onClick={() => setActiveNav('breadth')}
                   className="p-4 border-b border-[#1A2538] flex items-center space-x-3 cursor-pointer"
                 >
-                  <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-blue-600 to-indigo-500 p-[1px] shadow-md shadow-blue-500/20">
-                    <div className="w-full h-full bg-[#0C121E] rounded-[7px] flex items-center justify-center font-bold text-blue-400 text-xs tracking-wider">
-                      AQ
-                    </div>
+                  <div className="w-9 h-9 rounded-lg bg-gradient-to-tr from-blue-600/30 to-indigo-500/30 p-[1px] shadow-md shadow-blue-500/10 flex items-center justify-center bg-[#0C121E] overflow-hidden">
+                    <img src="/assets/alphaquant_pennant_pro.svg" alt="AlphaQuant Logo" className="w-8 h-8 object-contain" />
                   </div>
                   <div>
                     <h1 className="font-bold text-xs tracking-tight text-white flex items-center space-x-1.5">
@@ -406,6 +420,16 @@
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
                     <span>My Account & Alerts</span>
                   </button>
+
+                  <button
+                    onClick={() => setShowWelcomeTour(true)}
+                    className="w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg font-semibold transition-all text-blue-400 hover:text-blue-300 hover:bg-blue-500/10 border border-blue-500/20 mt-2"
+                  >
+                    <svg className="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span>Platform Demo & Guide</span>
+                  </button>
                 </nav>
               </div>
 
@@ -462,6 +486,110 @@
           {selectedStock && (
             <StockDetailDrawer stock={selectedStock} onClose={() => setSelectedStock(null)} />
           )}
+
+          {showWelcomeTour && (
+            <UserWelcomeDemoModal
+              user={user}
+              onNavigate={(nav) => setActiveNav(nav)}
+              onClose={() => {
+                localStorage.setItem("alphaquant_tour_seen_" + user.username, "true");
+                setShowWelcomeTour(false);
+              }}
+            />
+          )}
+        </div>
+      );
+    }
+
+
+    // ----------------- USER WELCOME & PLATFORM DEMO TOUR MODAL ----------------- //
+    function UserWelcomeDemoModal({ user, onNavigate, onClose }) {
+      const [step, setStep] = useState(1);
+      return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm select-none">
+          <div className="bg-[#0C121E] border border-blue-500/30 rounded-2xl p-6 max-w-lg w-full shadow-2xl text-slate-100">
+            <div className="flex items-center space-x-3 mb-4">
+              <div className="w-12 h-12 rounded-xl bg-[#080C14] border border-blue-500/30 p-2 flex items-center justify-center shadow-lg shadow-blue-500/20">
+                <img src="/assets/alphaquant_pennant_pro.svg" alt="AlphaQuant Logo" className="w-9 h-9 object-contain" />
+              </div>
+              <div>
+                <h2 className="text-lg font-bold text-white flex items-center space-x-2">
+                  <span>Welcome, {user ? user.username : "Trader"}!</span>
+                  <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-400 font-bold">PRO</span>
+                </h2>
+                <p className="text-xs text-slate-400 font-mono">AlphaQuant Terminal Quick Start Guide (Step {step} of 4)</p>
+              </div>
+            </div>
+
+            {step === 1 && (
+              <div className="space-y-3 text-sm text-slate-300">
+                <p className="font-semibold text-white">Step 1: Market Breadth Analyser</p>
+                <p className="text-xs text-slate-300">Track real-time advance/decline ratios, sector performance, and 52-week high/low distributions across Nifty 50, Nifty 500, and F&O universe.</p>
+                <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg text-xs text-blue-300">
+                  Monitor broader institutional momentum and sector outperformance before entering trades.
+                </div>
+              </div>
+            )}
+
+            {step === 2 && (
+              <div className="space-y-3 text-sm text-slate-300">
+                <p className="font-semibold text-white">Step 2: Screener Tools & HPS Stocks</p>
+                <p className="text-xs text-slate-300">Identify high-probability setups and multi-timeframe breakout candidates across 4H, Daily, Weekly, and Monthly charts.</p>
+                <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-lg text-xs text-emerald-300">
+                  Filter by sector baskets or market cap to pinpoint high relative strength momentum stocks.
+                </div>
+              </div>
+            )}
+
+            {step === 3 && (
+              <div className="space-y-3 text-sm text-slate-300">
+                <p className="font-semibold text-white">Step 3: HPS Mean Reversion</p>
+                <p className="text-xs text-slate-300">Spot institutional support accumulation levels categorized into Level-1, Level-2, and Level-3 value zones.</p>
+                <div className="p-3 bg-cyan-500/10 border border-cyan-500/20 rounded-lg text-xs text-cyan-300">
+                  Execute high-reward, defined-risk dip-buying strategies at key moving average support bands.
+                </div>
+              </div>
+            )}
+
+            {step === 4 && (
+              <div className="space-y-3 text-sm text-slate-300">
+                <p className="font-semibold text-white">Step 4: Telegram Alerts & CSV Data Export</p>
+                <p className="text-xs text-slate-300">Receive real-time push notifications on personal or team Telegram channels when setups trigger, and export any screener table with one click.</p>
+                <div className="p-3 bg-purple-500/10 border border-purple-500/20 rounded-lg text-xs text-purple-300">
+                  Configure notification thresholds in the Profile section and keep your trading workflow synchronized.
+                </div>
+              </div>
+            )}
+
+            <div className="flex items-center justify-between mt-6 pt-4 border-t border-[#1A2538]">
+              {step > 1 ? (
+                <button
+                  onClick={() => setStep(step - 1)}
+                  className="px-4 py-2 text-xs rounded-lg bg-[#182338] text-slate-300 hover:text-white transition-colors border border-[#263756]"
+                >
+                  Previous
+                </button>
+              ) : <div />}
+
+              <div className="flex items-center space-x-2">
+                {step < 4 ? (
+                  <button
+                    onClick={() => setStep(step + 1)}
+                    className="px-4 py-2 text-xs rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-semibold transition-colors shadow-md shadow-blue-600/25"
+                  >
+                    Next Step ➔
+                  </button>
+                ) : (
+                  <button
+                    onClick={onClose}
+                    className="px-4 py-2 text-xs rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold transition-colors shadow-md shadow-emerald-600/25"
+                  >
+                    Get Started
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
       );
     }
@@ -3126,8 +3254,8 @@
       return (
         <div className="min-h-screen bg-[#070A10] flex flex-col justify-center items-center px-4 font-sans select-none">
           <div className="text-center mb-7">
-            <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-blue-600/20 border border-blue-500/30 text-blue-400 mb-3 text-base font-bold shadow-lg shadow-blue-600/10">
-              AQ
+            <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-[#0C121E] border border-blue-500/30 mb-3 p-3 shadow-2xl shadow-blue-500/20">
+              <img src="/assets/alphaquant_pennant_pro.svg" alt="AlphaQuant Logo" className="w-16 h-16 object-contain" />
             </div>
             <h1 className="text-2xl font-bold text-white tracking-tight">AlphaQuant Terminal</h1>
           </div>

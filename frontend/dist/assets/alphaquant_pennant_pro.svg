@@ -1,0 +1,88 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none">
+  <defs>
+    <!-- Background Gradient -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0F172A"/>
+      <stop offset="50%" stop-color="#090E17"/>
+      <stop offset="100%" stop-color="#04070D"/>
+    </linearGradient>
+
+    <!-- Border Metallic Gradient -->
+    <linearGradient id="borderGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38BDF8" stop-opacity="0.6"/>
+      <stop offset="50%" stop-color="#1E293B" stop-opacity="0.8"/>
+      <stop offset="100%" stop-color="#059669" stop-opacity="0.4"/>
+    </linearGradient>
+
+    <!-- Flagpole Impulse Gradient -->
+    <linearGradient id="impulseGrad" x1="0%" y1="100%" x2="0%" y2="0%">
+      <stop offset="0%" stop-color="#1D4ED8"/>
+      <stop offset="50%" stop-color="#2563EB"/>
+      <stop offset="100%" stop-color="#38BDF8"/>
+    </linearGradient>
+
+    <!-- Pennant Fill Gradient -->
+    <linearGradient id="pennantArea" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#3B82F6" stop-opacity="0.16"/>
+      <stop offset="60%" stop-color="#0284C7" stop-opacity="0.10"/>
+      <stop offset="100%" stop-color="#10B981" stop-opacity="0.22"/>
+    </linearGradient>
+
+    <!-- Breakout Emerald Gradient -->
+    <linearGradient id="breakoutGreen" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#059669"/>
+      <stop offset="40%" stop-color="#10B981"/>
+      <stop offset="100%" stop-color="#00F5A0"/>
+    </linearGradient>
+
+    <!-- Soft Glow Filter -->
+    <filter id="proGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="2.5" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+  </defs>
+
+  <!-- Container Base with Chamfered Modern Feel -->
+  <rect x="2" y="2" width="116" height="116" rx="28" fill="url(#bgGrad)" stroke="url(#borderGrad)" stroke-width="2"/>
+
+  <!-- Subtle Institutional Chart Grid -->
+  <line x1="22" y1="92" x2="98" y2="92" stroke="#162235" stroke-width="1.2" stroke-dasharray="3 3"/>
+  <line x1="22" y1="68" x2="98" y2="68" stroke="#162235" stroke-width="1.2" stroke-dasharray="3 3"/>
+  <line x1="22" y1="44" x2="98" y2="44" stroke="#162235" stroke-width="1.2" stroke-dasharray="3 3"/>
+
+  <!-- Impulse Flagpole: Sharp upward surge -->
+  <path d="M 28 92 L 28 32" stroke="url(#impulseGrad)" stroke-width="6.5" stroke-linecap="round"/>
+  <!-- Polished Base Node -->
+  <circle cx="28" cy="92" r="5" fill="#1D4ED8"/>
+  <circle cx="28" cy="92" r="2.5" fill="#60A5FA"/>
+
+  <!-- Symmetrical Pennant Triangle Consolidation -->
+  <polygon points="28,32 72,52 28,72" fill="url(#pennantArea)" stroke="#1E3A8A" stroke-width="1" stroke-linejoin="round"/>
+  
+  <!-- Upper Resistance Boundary -->
+  <line x1="28" y1="32" x2="72" y2="52" stroke="#38BDF8" stroke-width="3" stroke-linecap="round"/>
+  <!-- Lower Support Boundary -->
+  <line x1="28" y1="72" x2="72" y2="52" stroke="#0284C7" stroke-width="3" stroke-linecap="round"/>
+
+  <!-- Precision Internal Harmonic Wave Cycle -->
+  <path d="M 33 66 L 42 39 L 52 59 L 61 47 L 72 52" 
+        stroke="#93C5FD" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.85"/>
+  
+  <!-- Wave Turning Point Micro-Dots -->
+  <circle cx="42" cy="39" r="2" fill="#BAE6FD"/>
+  <circle cx="52" cy="59" r="2" fill="#BAE6FD"/>
+  <circle cx="61" cy="47" r="2" fill="#BAE6FD"/>
+
+  <!-- Explosive Breakout Arrowhead & Surge Vector -->
+  <g filter="url(#proGlow)">
+    <!-- Breakout Trajectory out of Apex -->
+    <path d="M 72 52 L 96 26" stroke="url(#breakoutGreen)" stroke-width="6.5" stroke-linecap="round"/>
+    
+    <!-- Aerodynamic Institutional Breakout Arrowhead -->
+    <path d="M 80 22 L 99 23 L 98 42 Z" fill="url(#breakoutGreen)"/>
+    
+    <!-- Apex Breakout Trigger Node -->
+    <circle cx="72" cy="52" r="4.5" fill="#00F5A0"/>
+    <circle cx="72" cy="52" r="2" fill="#FFFFFF"/>
+  </g>
+</svg>
