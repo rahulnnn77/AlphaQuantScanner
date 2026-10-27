@@ -599,7 +599,7 @@
     // ----------------- FEATURE 1: MARKET BREADTH SECTION ----------------- //
     function MarketBreadthSection({ onSelectStock }) {
       const defaultBreadth = {
-        candle_time: "Friday 23rd Oct Close (3:30pm)",
+        candle_time: "Live Indian Market Session",
         indices: [
           { symbol: "NIFTY 50", name: "Nifty 50 Benchmark", ltp: 22600.00, change: -87.65, change_pct: -0.39 },
           { symbol: "BANK NIFTY", name: "Nifty Bank", ltp: 54287.35, change: 142.10, change_pct: 0.29 },
@@ -812,7 +812,7 @@
               <h2 className="text-sm font-bold text-white tracking-wide uppercase">Market Breadth Analyser</h2>
             </div>
             <div className="text-[11px] font-mono text-slate-400">
-              {breadthData?.candle_time || "Friday 23rd Oct Close"}
+              {breadthData?.candle_time || "Live Market Session"}
             </div>
           </div>
 

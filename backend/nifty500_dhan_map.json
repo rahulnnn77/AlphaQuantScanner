@@ -1,0 +1,2477 @@
+{
+  "ARE&M": {
+    "security_id": 100,
+    "symbol": "ARE&M",
+    "name": "Amara Raja Energy & Mobility"
+  },
+  "FACT": {
+    "security_id": 1008,
+    "symbol": "FACT",
+    "name": "Fertilisers & Chemical Travancore"
+  },
+  "GODREJCP": {
+    "security_id": 10099,
+    "symbol": "GODREJCP",
+    "name": "Godrej Consumer Products"
+  },
+  "SCHAEFFLER": {
+    "security_id": 1011,
+    "symbol": "SCHAEFFLER",
+    "name": "Schaeffler India"
+  },
+  "ADANIENSOL": {
+    "security_id": 10217,
+    "symbol": "ADANIENSOL",
+    "name": "Adani Energy Solutions"
+  },
+  "FEDERALBNK": {
+    "security_id": 1023,
+    "symbol": "FEDERALBNK",
+    "name": "Federal Bank"
+  },
+  "SYNGENE": {
+    "security_id": 10243,
+    "symbol": "SYNGENE",
+    "name": "Syngene International"
+  },
+  "FINCABLES": {
+    "security_id": 1038,
+    "symbol": "FINCABLES",
+    "name": "Finolex Cables"
+  },
+  "LUPIN": {
+    "security_id": 10440,
+    "symbol": "LUPIN",
+    "name": "Lupin"
+  },
+  "UNITDSPR": {
+    "security_id": 10447,
+    "symbol": "UNITDSPR",
+    "name": "United Spirits"
+  },
+  "BHARTIARTL": {
+    "security_id": 10604,
+    "symbol": "BHARTIARTL",
+    "name": "Bharti Airtel"
+  },
+  "OLECTRA": {
+    "security_id": 10637,
+    "symbol": "OLECTRA",
+    "name": "Olectra Greentech"
+  },
+  "PNB": {
+    "security_id": 10666,
+    "symbol": "PNB",
+    "name": "Punjab National Bank"
+  },
+  "INDIAMART": {
+    "security_id": 10726,
+    "symbol": "INDIAMART",
+    "name": "IndiaMART InterMesh"
+  },
+  "OFSS": {
+    "security_id": 10738,
+    "symbol": "OFSS",
+    "name": "Oracle Financial Services Software"
+  },
+  "UNIONBANK": {
+    "security_id": 10753,
+    "symbol": "UNIONBANK",
+    "name": "Union Bank of India"
+  },
+  "ZENSARTECH": {
+    "security_id": 1076,
+    "symbol": "ZENSARTECH",
+    "name": "Zensar Technologies"
+  },
+  "SYRMA": {
+    "security_id": 10793,
+    "symbol": "SYRMA",
+    "name": "Syrma SGS"
+  },
+  "CANBK": {
+    "security_id": 10794,
+    "symbol": "CANBK",
+    "name": "Canara Bank"
+  },
+  "GABRIEL": {
+    "security_id": 1085,
+    "symbol": "GABRIEL",
+    "name": "Gabriel"
+  },
+  "GODREJIND": {
+    "security_id": 10925,
+    "symbol": "GODREJIND",
+    "name": "Godrej Industries"
+  },
+  "DIVISLAB": {
+    "security_id": 10940,
+    "symbol": "DIVISLAB",
+    "name": "Divis Laboratories"
+  },
+  "RADICO": {
+    "security_id": 10990,
+    "symbol": "RADICO",
+    "name": "Radico Khaitan"
+  },
+  "MARUTI": {
+    "security_id": 10999,
+    "symbol": "MARUTI",
+    "name": "Maruti Suzuki"
+  },
+  "IDFCFIRSTB": {
+    "security_id": 11184,
+    "symbol": "IDFCFIRSTB",
+    "name": "IDFC First Bank"
+  },
+  "INDIGO": {
+    "security_id": 11195,
+    "symbol": "INDIGO",
+    "name": "Interglobe Aviation"
+  },
+  "UCOBANK": {
+    "security_id": 11223,
+    "symbol": "UCOBANK",
+    "name": "UCO Bank"
+  },
+  "JSL": {
+    "security_id": 11236,
+    "symbol": "JSL",
+    "name": "Jindal Stainless"
+  },
+  "WELSPUNLIV": {
+    "security_id": 11253,
+    "symbol": "WELSPUNLIV",
+    "name": "Welspun Living"
+  },
+  "IGL": {
+    "security_id": 11262,
+    "symbol": "IGL",
+    "name": "Indraprastha Gas"
+  },
+  "UPL": {
+    "security_id": 11287,
+    "symbol": "UPL",
+    "name": "UPL"
+  },
+  "AFFLE": {
+    "security_id": 11343,
+    "symbol": "AFFLE",
+    "name": "Affle 3i"
+  },
+  "PETRONET": {
+    "security_id": 11351,
+    "symbol": "PETRONET",
+    "name": "Petronet LNG"
+  },
+  "BIOCON": {
+    "security_id": 11373,
+    "symbol": "BIOCON",
+    "name": "Biocon"
+  },
+  "MAHABANK": {
+    "security_id": 11377,
+    "symbol": "MAHABANK",
+    "name": "Bank of Maharashtra"
+  },
+  "POONAWALLA": {
+    "security_id": 11403,
+    "symbol": "POONAWALLA",
+    "name": "Poonawalla Fincorp"
+  },
+  "RKFORGE": {
+    "security_id": 11411,
+    "symbol": "RKFORGE",
+    "name": "Ramkrishna Forgings"
+  },
+  "CCL": {
+    "security_id": 11452,
+    "symbol": "CCL",
+    "name": "CCL Products"
+  },
+  "LT": {
+    "security_id": 11483,
+    "symbol": "LT",
+    "name": "Larsen & Toubro"
+  },
+  "APARINDS": {
+    "security_id": 11491,
+    "symbol": "APARINDS",
+    "name": "Apar Industries"
+  },
+  "GLAXO": {
+    "security_id": 1153,
+    "symbol": "GLAXO",
+    "name": "GlaxoSmithKline Pharmaceuticals"
+  },
+  "ULTRACEMCO": {
+    "security_id": 11532,
+    "symbol": "ULTRACEMCO",
+    "name": "UltraTech Cement"
+  },
+  "TCS": {
+    "security_id": 11536,
+    "symbol": "TCS",
+    "name": "Tata Consultancy Services"
+  },
+  "COFORGE": {
+    "security_id": 11543,
+    "symbol": "COFORGE",
+    "name": "Coforge"
+  },
+  "PPLPHARMA": {
+    "security_id": 11571,
+    "symbol": "PPLPHARMA",
+    "name": "Piramal Pharma"
+  },
+  "FORCEMOT": {
+    "security_id": 11573,
+    "symbol": "FORCEMOT",
+    "name": "Force Motors"
+  },
+  "NTPC": {
+    "security_id": 11630,
+    "symbol": "NTPC",
+    "name": "NTPC"
+  },
+  "LALPATHLAB": {
+    "security_id": 11654,
+    "symbol": "LALPATHLAB",
+    "name": "Dr. Lal Path Labs"
+  },
+  "JBMA": {
+    "security_id": 11655,
+    "symbol": "JBMA",
+    "name": "JBM Auto"
+  },
+  "ALKEM": {
+    "security_id": 11703,
+    "symbol": "ALKEM",
+    "name": "Alkem Laboratories"
+  },
+  "JSWSTEEL": {
+    "security_id": 11723,
+    "symbol": "JSWSTEEL",
+    "name": "JSW Steel"
+  },
+  "JPPOWER": {
+    "security_id": 11763,
+    "symbol": "JPPOWER",
+    "name": "Jaiprakash Power Ventures"
+  },
+  "IIFL": {
+    "security_id": 11809,
+    "symbol": "IIFL",
+    "name": "IIFL Finance"
+  },
+  "GODFRYPHLP": {
+    "security_id": 1181,
+    "symbol": "GODFRYPHLP",
+    "name": "Godfrey Phillips"
+  },
+  "WELCORP": {
+    "security_id": 11821,
+    "symbol": "WELCORP",
+    "name": "Welspun Corp"
+  },
+  "NH": {
+    "security_id": 11840,
+    "symbol": "NH",
+    "name": "Narayana Hrudayalaya"
+  },
+  "AMBER": {
+    "security_id": 1185,
+    "symbol": "AMBER",
+    "name": "Amber Enterprises"
+  },
+  "GLAND": {
+    "security_id": 1186,
+    "symbol": "GLAND",
+    "name": "Gland Pharma"
+  },
+  "GRANULES": {
+    "security_id": 11872,
+    "symbol": "GRANULES",
+    "name": "Granules"
+  },
+  "YESBANK": {
+    "security_id": 11915,
+    "symbol": "YESBANK",
+    "name": "Yes Bank"
+  },
+  "MEDANTA": {
+    "security_id": 11956,
+    "symbol": "MEDANTA",
+    "name": "Global Health"
+  },
+  "SUZLON": {
+    "security_id": 12018,
+    "symbol": "SUZLON",
+    "name": "Suzlon Energy"
+  },
+  "FIVESTAR": {
+    "security_id": 12032,
+    "symbol": "FIVESTAR",
+    "name": "Five Star Business Finance"
+  },
+  "KAYNES": {
+    "security_id": 12092,
+    "symbol": "KAYNES",
+    "name": "Kaynes Technology India"
+  },
+  "GRASIM": {
+    "security_id": 1232,
+    "symbol": "GRASIM",
+    "name": "Grasim Industries"
+  },
+  "CASTROLIND": {
+    "security_id": 1250,
+    "symbol": "CASTROLIND",
+    "name": "Castrol"
+  },
+  "AMBUJACEM": {
+    "security_id": 1270,
+    "symbol": "AMBUJACEM",
+    "name": "Ambuja Cements"
+  },
+  "ABB": {
+    "security_id": 13,
+    "symbol": "ABB",
+    "name": "ABB"
+  },
+  "360ONE": {
+    "security_id": 13061,
+    "symbol": "360ONE",
+    "name": "360 One WAM"
+  },
+  "AIAENG": {
+    "security_id": 13086,
+    "symbol": "AIAENG",
+    "name": "AIA Engineering"
+  },
+  "PVRINOX": {
+    "security_id": 13147,
+    "symbol": "PVRINOX",
+    "name": "PVR Inox"
+  },
+  "KEC": {
+    "security_id": 13260,
+    "symbol": "KEC",
+    "name": "KEC International"
+  },
+  "JKCEMENT": {
+    "security_id": 13270,
+    "symbol": "JKCEMENT",
+    "name": "JK Cement"
+  },
+  "M&MFIN": {
+    "security_id": 13285,
+    "symbol": "M&MFIN",
+    "name": "M&M Financial Services"
+  },
+  "KEI": {
+    "security_id": 13310,
+    "symbol": "KEI",
+    "name": "KEI Industries"
+  },
+  "HDFCBANK": {
+    "security_id": 1333,
+    "symbol": "HDFCBANK",
+    "name": "HDFC Bank"
+  },
+  "SOLARINDS": {
+    "security_id": 13332,
+    "symbol": "SOLARINDS",
+    "name": "Solar Industries"
+  },
+  "GALLANTT": {
+    "security_id": 13337,
+    "symbol": "GALLANTT",
+    "name": "Gallantt Ispat"
+  },
+  "KFINTECH": {
+    "security_id": 13359,
+    "symbol": "KFINTECH",
+    "name": "KFin Technologies"
+  },
+  "HEGAM": {
+    "security_id": 1336,
+    "symbol": "HEGAM",
+    "name": "HEG Advanced Materials"
+  },
+  "SUNTV": {
+    "security_id": 13404,
+    "symbol": "SUNTV",
+    "name": "Sun TV Network"
+  },
+  "GPIL": {
+    "security_id": 13409,
+    "symbol": "GPIL",
+    "name": "Godawari Power & Ispat"
+  },
+  "HEROMOTOCO": {
+    "security_id": 1348,
+    "symbol": "HEROMOTOCO",
+    "name": "Hero Motocorp"
+  },
+  "PFOCUS": {
+    "security_id": 13496,
+    "symbol": "PFOCUS",
+    "name": "Prime Focus"
+  },
+  "EMAMILTD": {
+    "security_id": 13517,
+    "symbol": "EMAMILTD",
+    "name": "Emami"
+  },
+  "GMRAIRPORT": {
+    "security_id": 13528,
+    "symbol": "GMRAIRPORT",
+    "name": "GMR Airports"
+  },
+  "TECHM": {
+    "security_id": 13538,
+    "symbol": "TECHM",
+    "name": "Tech Mahindra"
+  },
+  "ACE": {
+    "security_id": 13587,
+    "symbol": "ACE",
+    "name": "Action Construction Equipment"
+  },
+  "IRCTC": {
+    "security_id": 13611,
+    "symbol": "IRCTC",
+    "name": "IRCTC"
+  },
+  "ANANTRAJ": {
+    "security_id": 13620,
+    "symbol": "ANANTRAJ",
+    "name": "Anant Raj"
+  },
+  "HINDALCO": {
+    "security_id": 1363,
+    "symbol": "HINDALCO",
+    "name": "Hindalco Industries"
+  },
+  "JMFINANCIL": {
+    "security_id": 13637,
+    "symbol": "JMFINANCIL",
+    "name": "JM Financial"
+  },
+  "ELECON": {
+    "security_id": 13643,
+    "symbol": "ELECON",
+    "name": "Elecon Engineering Company"
+  },
+  "FLUOROCHEM": {
+    "security_id": 13750,
+    "symbol": "FLUOROCHEM",
+    "name": "Gujarat Fluorochemicals"
+  },
+  "NAUKRI": {
+    "security_id": 13751,
+    "symbol": "NAUKRI",
+    "name": "Info Edge"
+  },
+  "GESHIP": {
+    "security_id": 13776,
+    "symbol": "GESHIP",
+    "name": "Great Eastern Shipping Company"
+  },
+  "TORNTPOWER": {
+    "security_id": 13786,
+    "symbol": "TORNTPOWER",
+    "name": "Torrent Power"
+  },
+  "LTFOODS": {
+    "security_id": 13816,
+    "symbol": "LTFOODS",
+    "name": "LT Foods"
+  },
+  "SOBHA": {
+    "security_id": 13826,
+    "symbol": "SOBHA",
+    "name": "Sobha"
+  },
+  "HINDUNILVR": {
+    "security_id": 1394,
+    "symbol": "HINDUNILVR",
+    "name": "Hindustan Unilever"
+  },
+  "HBLENGINE": {
+    "security_id": 13966,
+    "symbol": "HBLENGINE",
+    "name": "HBL Engineering"
+  },
+  "HINDPETRO": {
+    "security_id": 1406,
+    "symbol": "HINDPETRO",
+    "name": "Hindustan Petroleum"
+  },
+  "UNOMINDA": {
+    "security_id": 14154,
+    "symbol": "UNOMINDA",
+    "name": "UNO Minda"
+  },
+  "NSLNISP": {
+    "security_id": 14180,
+    "symbol": "NSLNISP",
+    "name": "NMDC Steel"
+  },
+  "TIMKEN": {
+    "security_id": 14198,
+    "symbol": "TIMKEN",
+    "name": "Timken"
+  },
+  "HINDZINC": {
+    "security_id": 1424,
+    "symbol": "HINDZINC",
+    "name": "Hindustan Zinc"
+  },
+  "REDINGTON": {
+    "security_id": 14255,
+    "symbol": "REDINGTON",
+    "name": "Redington"
+  },
+  "PFC": {
+    "security_id": 14299,
+    "symbol": "PFC",
+    "name": "Power Finance Corporation"
+  },
+  "FSL": {
+    "security_id": 14304,
+    "symbol": "FSL",
+    "name": "Firstsource Solutions"
+  },
+  "INDIANB": {
+    "security_id": 14309,
+    "symbol": "INDIANB",
+    "name": "Indian Bank"
+  },
+  "HSCL": {
+    "security_id": 14334,
+    "symbol": "HSCL",
+    "name": "Himadri Speciality Chemical"
+  },
+  "IDEA": {
+    "security_id": 14366,
+    "symbol": "IDEA",
+    "name": "Vodafone Idea"
+  },
+  "PAGEIND": {
+    "security_id": 14413,
+    "symbol": "PAGEIND",
+    "name": "Page Industries"
+  },
+  "ASTRAL": {
+    "security_id": 14418,
+    "symbol": "ASTRAL",
+    "name": "Astral"
+  },
+  "JKTYRE": {
+    "security_id": 14435,
+    "symbol": "JKTYRE",
+    "name": "JK Tyre & Industries"
+  },
+  "PHOENIXLTD": {
+    "security_id": 14552,
+    "symbol": "PHOENIXLTD",
+    "name": "Phoenix Mills"
+  },
+  "FORTIS": {
+    "security_id": 14592,
+    "symbol": "FORTIS",
+    "name": "Fortis Healthcare"
+  },
+  "NAVINFLUOR": {
+    "security_id": 14672,
+    "symbol": "NAVINFLUOR",
+    "name": "Navin Fluorine International"
+  },
+  "DLF": {
+    "security_id": 14732,
+    "symbol": "DLF",
+    "name": "DLF"
+  },
+  "IDBI": {
+    "security_id": 1476,
+    "symbol": "IDBI",
+    "name": "IDBI Bank"
+  },
+  "CENTRALBK": {
+    "security_id": 14894,
+    "symbol": "CENTRALBK",
+    "name": "Central Bank of India"
+  },
+  "IFCI": {
+    "security_id": 1491,
+    "symbol": "IFCI",
+    "name": "IFCI"
+  },
+  "KPRMILL": {
+    "security_id": 14912,
+    "symbol": "KPRMILL",
+    "name": "KPR Mill"
+  },
+  "CIEINDIA": {
+    "security_id": 14937,
+    "symbol": "CIEINDIA",
+    "name": "CIE Automotive"
+  },
+  "MOTILALOFS": {
+    "security_id": 14947,
+    "symbol": "MOTILALOFS",
+    "name": "Motilal Oswal Financial Services"
+  },
+  "POWERGRID": {
+    "security_id": 14977,
+    "symbol": "POWERGRID",
+    "name": "Power Grid Corporation of India"
+  },
+  "ASTERDM": {
+    "security_id": 1508,
+    "symbol": "ASTERDM",
+    "name": "Aster DM Quality Care"
+  },
+  "ADANIPORTS": {
+    "security_id": 15083,
+    "symbol": "ADANIPORTS",
+    "name": "Adani Ports & SEZ"
+  },
+  "INDHOTEL": {
+    "security_id": 1512,
+    "symbol": "INDHOTEL",
+    "name": "Indian Hotels Company"
+  },
+  "COLPAL": {
+    "security_id": 15141,
+    "symbol": "COLPAL",
+    "name": "Colgate Palmolive"
+  },
+  "INDIACEM": {
+    "security_id": 1515,
+    "symbol": "INDIACEM",
+    "name": "India Cements"
+  },
+  "TARIL": {
+    "security_id": 15174,
+    "symbol": "TARIL",
+    "name": "Transformers & Rectifiers"
+  },
+  "ECLERX": {
+    "security_id": 15179,
+    "symbol": "ECLERX",
+    "name": "eClerx Services"
+  },
+  "BRIGADE": {
+    "security_id": 15184,
+    "symbol": "BRIGADE",
+    "name": "Brigade Enterprises"
+  },
+  "CEATLTD": {
+    "security_id": 15254,
+    "symbol": "CEATLTD",
+    "name": "CEAT"
+  },
+  "RPOWER": {
+    "security_id": 15259,
+    "symbol": "RPOWER",
+    "name": "Reliance Power"
+  },
+  "IRB": {
+    "security_id": 15313,
+    "symbol": "IRB",
+    "name": "IRB Infrastructure Developers"
+  },
+  "NMDC": {
+    "security_id": 15332,
+    "symbol": "NMDC",
+    "name": "NMDC"
+  },
+  "RECLTD": {
+    "security_id": 15355,
+    "symbol": "RECLTD",
+    "name": "REC"
+  },
+  "MANKIND": {
+    "security_id": 15380,
+    "symbol": "MANKIND",
+    "name": "Mankind Pharma"
+  },
+  "TITAGARH": {
+    "security_id": 15414,
+    "symbol": "TITAGARH",
+    "name": "Titagarh Rail Systems"
+  },
+  "APOLLOHOSP": {
+    "security_id": 157,
+    "symbol": "APOLLOHOSP",
+    "name": "Apollo Hospitals"
+  },
+  "GILLETTE": {
+    "security_id": 1576,
+    "symbol": "GILLETTE",
+    "name": "Gillette"
+  },
+  "INFY": {
+    "security_id": 1594,
+    "symbol": "INFY",
+    "name": "Infosys"
+  },
+  "TATAINVEST": {
+    "security_id": 1621,
+    "symbol": "TATAINVEST",
+    "name": "Tata Investment Corporation"
+  },
+  "IOC": {
+    "security_id": 1624,
+    "symbol": "IOC",
+    "name": "Indian Oil Corporation"
+  },
+  "LINDEINDIA": {
+    "security_id": 1627,
+    "symbol": "LINDEINDIA",
+    "name": "Linde"
+  },
+  "APOLLOTYRE": {
+    "security_id": 163,
+    "symbol": "APOLLOTYRE",
+    "name": "Apollo Tyres"
+  },
+  "IPCALAB": {
+    "security_id": 1633,
+    "symbol": "IPCALAB",
+    "name": "IPCA Laboratories"
+  },
+  "ITC": {
+    "security_id": 1660,
+    "symbol": "ITC",
+    "name": "ITC"
+  },
+  "BAJAJ-AUTO": {
+    "security_id": 16669,
+    "symbol": "BAJAJ-AUTO",
+    "name": "Bajaj Auto"
+  },
+  "BAJAJFINSV": {
+    "security_id": 16675,
+    "symbol": "BAJAJFINSV",
+    "name": "Bajaj Finserv"
+  },
+  "PTCIL": {
+    "security_id": 16682,
+    "symbol": "PTCIL",
+    "name": "PTC Industries"
+  },
+  "UBL": {
+    "security_id": 16713,
+    "symbol": "UBL",
+    "name": "United Breweries"
+  },
+  "ITI": {
+    "security_id": 1675,
+    "symbol": "ITI",
+    "name": "ITI"
+  },
+  "GVT&D": {
+    "security_id": 16783,
+    "symbol": "GVT&D",
+    "name": "GE Vernova T&D"
+  },
+  "ZFCVINDIA": {
+    "security_id": 16915,
+    "symbol": "ZFCVINDIA",
+    "name": "ZF Commercial"
+  },
+  "PATANJALI": {
+    "security_id": 17029,
+    "symbol": "PATANJALI",
+    "name": "Patanjali Foods"
+  },
+  "CROMPTON": {
+    "security_id": 17094,
+    "symbol": "CROMPTON",
+    "name": "Crompton Greaves"
+  },
+  "SUMICHEM": {
+    "security_id": 17105,
+    "symbol": "SUMICHEM",
+    "name": "Sumitomo Chemical"
+  },
+  "SHRIPISTON": {
+    "security_id": 17186,
+    "symbol": "SHRIPISTON",
+    "name": "SPR Auto Technologies"
+  },
+  "BLS": {
+    "security_id": 17279,
+    "symbol": "BLS",
+    "name": "BLS International Services"
+  },
+  "LLOYDSME": {
+    "security_id": 17313,
+    "symbol": "LLOYDSME",
+    "name": "Lloyds Metals & Energy"
+  },
+  "ADANIPOWER": {
+    "security_id": 17388,
+    "symbol": "ADANIPOWER",
+    "name": "Adani Power"
+  },
+  "NHPC": {
+    "security_id": 17400,
+    "symbol": "NHPC",
+    "name": "NHPC"
+  },
+  "NETWEB": {
+    "security_id": 17433,
+    "symbol": "NETWEB",
+    "name": "Netweb Technologies"
+  },
+  "OIL": {
+    "security_id": 17438,
+    "symbol": "OIL",
+    "name": "Oil India"
+  },
+  "MGL": {
+    "security_id": 17534,
+    "symbol": "MGL",
+    "name": "Mahanagar Gas"
+  },
+  "ZYDUSWELL": {
+    "security_id": 17635,
+    "symbol": "ZYDUSWELL",
+    "name": "Zydus Wellness"
+  },
+  "SARDAEN": {
+    "security_id": 17758,
+    "symbol": "SARDAEN",
+    "name": "Sarda Energy & Minerals"
+  },
+  "LTM": {
+    "security_id": 17818,
+    "symbol": "LTM",
+    "name": "LTM"
+  },
+  "JSWENERGY": {
+    "security_id": 17869,
+    "symbol": "JSWENERGY",
+    "name": "JSW Energy"
+  },
+  "GODREJPROP": {
+    "security_id": 17875,
+    "symbol": "GODREJPROP",
+    "name": "Godrej Properties"
+  },
+  "ABBOTINDIA": {
+    "security_id": 17903,
+    "symbol": "ABBOTINDIA",
+    "name": "Abbott"
+  },
+  "HINDCOPPER": {
+    "security_id": 17939,
+    "symbol": "HINDCOPPER",
+    "name": "Hindustan Copper"
+  },
+  "COHANCE": {
+    "security_id": 17945,
+    "symbol": "COHANCE",
+    "name": "Cohance Lifesciences"
+  },
+  "MMTC": {
+    "security_id": 17957,
+    "symbol": "MMTC",
+    "name": "MMTC"
+  },
+  "NESTLEIND": {
+    "security_id": 17963,
+    "symbol": "NESTLEIND",
+    "name": "Nestle"
+  },
+  "SBICARD": {
+    "security_id": 17971,
+    "symbol": "SBICARD",
+    "name": "SBI Cards"
+  },
+  "WHIRLPOOL": {
+    "security_id": 18011,
+    "symbol": "WHIRLPOOL",
+    "name": "Whirlpool"
+  },
+  "CONCORDBIO": {
+    "security_id": 18060,
+    "symbol": "CONCORDBIO",
+    "name": "Concord Biotech"
+  },
+  "KAJARIACER": {
+    "security_id": 1808,
+    "symbol": "KAJARIACER",
+    "name": "Kajaria Ceramics"
+  },
+  "JUBLFOOD": {
+    "security_id": 18096,
+    "symbol": "JUBLFOOD",
+    "name": "Jubilant FoodWorks"
+  },
+  "THANGAMAYL": {
+    "security_id": 18118,
+    "symbol": "THANGAMAYL",
+    "name": "Thangamayil Jewellery"
+  },
+  "KPIL": {
+    "security_id": 1814,
+    "symbol": "KPIL",
+    "name": "Kalpataru Projects International"
+  },
+  "JIOFIN": {
+    "security_id": 18143,
+    "symbol": "JIOFIN",
+    "name": "Jio Financial Services"
+  },
+  "PERSISTENT": {
+    "security_id": 18365,
+    "symbol": "PERSISTENT",
+    "name": "Persistent Systems"
+  },
+  "KARURVYSYA": {
+    "security_id": 1838,
+    "symbol": "KARURVYSYA",
+    "name": "Karur Vysya Bank"
+  },
+  "RBLBANK": {
+    "security_id": 18391,
+    "symbol": "RBLBANK",
+    "name": "RBL Bank"
+  },
+  "POWERINDIA": {
+    "security_id": 18457,
+    "symbol": "POWERINDIA",
+    "name": "Hitachi Energy"
+  },
+  "CUPID": {
+    "security_id": 18520,
+    "symbol": "CUPID",
+    "name": "Cupid"
+  },
+  "LTTS": {
+    "security_id": 18564,
+    "symbol": "LTTS",
+    "name": "L&T Technology Services"
+  },
+  "RRKABEL": {
+    "security_id": 18566,
+    "symbol": "RRKABEL",
+    "name": "RR Kabel"
+  },
+  "KIRLOSBROS": {
+    "security_id": 18581,
+    "symbol": "KIRLOSBROS",
+    "name": "Kirloskar Brothers"
+  },
+  "ICICILIFE": {
+    "security_id": 18652,
+    "symbol": "ICICILIFE",
+    "name": "ICICI Life Insurance"
+  },
+  "NUVAMA": {
+    "security_id": 18721,
+    "symbol": "NUVAMA",
+    "name": "Nuvama Wealth Management"
+  },
+  "SIGNATURE": {
+    "security_id": 18743,
+    "symbol": "SIGNATURE",
+    "name": "Signatureglobal"
+  },
+  "ENDURANCE": {
+    "security_id": 18822,
+    "symbol": "ENDURANCE",
+    "name": "Endurance Technologies"
+  },
+  "SJVN": {
+    "security_id": 18883,
+    "symbol": "SJVN",
+    "name": "SJVN"
+  },
+  "PNBHOUSING": {
+    "security_id": 18908,
+    "symbol": "PNBHOUSING",
+    "name": "PNB Housing Finance"
+  },
+  "VBL": {
+    "security_id": 18921,
+    "symbol": "VBL",
+    "name": "Varun Beverages"
+  },
+  "CUMMINSIND": {
+    "security_id": 1901,
+    "symbol": "CUMMINSIND",
+    "name": "Cummins"
+  },
+  "JSWINFRA": {
+    "security_id": 19020,
+    "symbol": "JSWINFRA",
+    "name": "JSW Infrastructure"
+  },
+  "MANAPPURAM": {
+    "security_id": 19061,
+    "symbol": "MANAPPURAM",
+    "name": "Manappuram Finance"
+  },
+  "KOTAKBANK": {
+    "security_id": 1922,
+    "symbol": "KOTAKBANK",
+    "name": "Kotak Bank"
+  },
+  "LAURUSLABS": {
+    "security_id": 19234,
+    "symbol": "LAURUSLABS",
+    "name": "Laurus Labs"
+  },
+  "KSB": {
+    "security_id": 1949,
+    "symbol": "KSB",
+    "name": "KSB"
+  },
+  "BSE": {
+    "security_id": 19585,
+    "symbol": "BSE",
+    "name": "BSE"
+  },
+  "TRENT": {
+    "security_id": 1964,
+    "symbol": "TRENT",
+    "name": "Trent"
+  },
+  "HONASA": {
+    "security_id": 19813,
+    "symbol": "HONASA",
+    "name": "Mamaearth"
+  },
+  "DMART": {
+    "security_id": 19913,
+    "symbol": "DMART",
+    "name": "Avenue Supermarts DMart"
+  },
+  "DEEPAKNTR": {
+    "security_id": 19943,
+    "symbol": "DEEPAKNTR",
+    "name": "Deepak Nitrite"
+  },
+  "LICHSGFIN": {
+    "security_id": 1997,
+    "symbol": "LICHSGFIN",
+    "name": "LIC Housing Finance"
+  },
+  "JWL": {
+    "security_id": 20224,
+    "symbol": "JWL",
+    "name": "Jupiter Wagons"
+  },
+  "OBEROIRLTY": {
+    "security_id": 20242,
+    "symbol": "OBEROIRLTY",
+    "name": "Oberoi Realty"
+  },
+  "IREDA": {
+    "security_id": 20261,
+    "symbol": "IREDA",
+    "name": "IREDA"
+  },
+  "IRFC": {
+    "security_id": 2029,
+    "symbol": "IRFC",
+    "name": "IRFC"
+  },
+  "TATATECH": {
+    "security_id": 20293,
+    "symbol": "TATATECH",
+    "name": "Tata Technologies"
+  },
+  "PRESTIGE": {
+    "security_id": 20302,
+    "symbol": "PRESTIGE",
+    "name": "Prestige Estates Projects"
+  },
+  "M&M": {
+    "security_id": 2031,
+    "symbol": "M&M",
+    "name": "Mahindra & Mahindra"
+  },
+  "CGCL": {
+    "security_id": 20329,
+    "symbol": "CGCL",
+    "name": "Capri Global Capital"
+  },
+  "COALINDIA": {
+    "security_id": 20374,
+    "symbol": "COALINDIA",
+    "name": "Coal India"
+  },
+  "RAMCOCEM": {
+    "security_id": 2043,
+    "symbol": "RAMCOCEM",
+    "name": "Ramco Cements"
+  },
+  "CHENNPETRO": {
+    "security_id": 2049,
+    "symbol": "CHENNPETRO",
+    "name": "Chennai Petroleum Corporation"
+  },
+  "GRAVITA": {
+    "security_id": 20534,
+    "symbol": "GRAVITA",
+    "name": "Gravita India"
+  },
+  "DOMS": {
+    "security_id": 20551,
+    "symbol": "DOMS",
+    "name": "DOMS Industries"
+  },
+  "HOMEFIRST": {
+    "security_id": 2056,
+    "symbol": "HOMEFIRST",
+    "name": "Home First Finance Company"
+  },
+  "INOXINDIA": {
+    "security_id": 20607,
+    "symbol": "INOXINDIA",
+    "name": "INOX India"
+  },
+  "VTL": {
+    "security_id": 2073,
+    "symbol": "VTL",
+    "name": "Vardhman Textiles"
+  },
+  "HUDCO": {
+    "security_id": 20825,
+    "symbol": "HUDCO",
+    "name": "HUDCO"
+  },
+  "AZAD": {
+    "security_id": 20905,
+    "symbol": "AZAD",
+    "name": "Azad Engineering"
+  },
+  "KIRLOSENG": {
+    "security_id": 20936,
+    "symbol": "KIRLOSENG",
+    "name": "Kirloskar Oil Engines"
+  },
+  "TEJASNET": {
+    "security_id": 21131,
+    "symbol": "TEJASNET",
+    "name": "Tejas Networks"
+  },
+  "CDSL": {
+    "security_id": 21174,
+    "symbol": "CDSL",
+    "name": "CDSL"
+  },
+  "ASHOKLEY": {
+    "security_id": 212,
+    "symbol": "ASHOKLEY",
+    "name": "Ashok Leyland"
+  },
+  "AUBANK": {
+    "security_id": 21238,
+    "symbol": "AUBANK",
+    "name": "AU Small Finance Bank"
+  },
+  "JYOTICNC": {
+    "security_id": 21334,
+    "symbol": "JYOTICNC",
+    "name": "Jyoti CNC Automation"
+  },
+  "MFSL": {
+    "security_id": 2142,
+    "symbol": "MFSL",
+    "name": "Max Financial Services"
+  },
+  "BDL": {
+    "security_id": 2144,
+    "symbol": "BDL",
+    "name": "Bharat Dynamics"
+  },
+  "COCHINSHIP": {
+    "security_id": 21508,
+    "symbol": "COCHINSHIP",
+    "name": "Cochin Shipyard"
+  },
+  "ABCAPITAL": {
+    "security_id": 21614,
+    "symbol": "ABCAPITAL",
+    "name": "Aditya Birla Capital"
+  },
+  "DIXON": {
+    "security_id": 21690,
+    "symbol": "DIXON",
+    "name": "Dixon Technologies"
+  },
+  "CHOLAHLDNG": {
+    "security_id": 21740,
+    "symbol": "CHOLAHLDNG",
+    "name": "Cholamandalam Financial Holdings"
+  },
+  "ICICIGI": {
+    "security_id": 21770,
+    "symbol": "ICICIGI",
+    "name": "ICICI Lombard General Insurance"
+  },
+  "SBILIFE": {
+    "security_id": 21808,
+    "symbol": "SBILIFE",
+    "name": "SBI Life Insurance"
+  },
+  "BOSCHLTD": {
+    "security_id": 2181,
+    "symbol": "BOSCHLTD",
+    "name": "Bosch"
+  },
+  "ACC": {
+    "security_id": 22,
+    "symbol": "ACC",
+    "name": "ACC"
+  },
+  "IEX": {
+    "security_id": 220,
+    "symbol": "IEX",
+    "name": "Indian Energy Exchange"
+  },
+  "MAXHEALTH": {
+    "security_id": 22377,
+    "symbol": "MAXHEALTH",
+    "name": "Max Healthcare Institute"
+  },
+  "BANDHANBNK": {
+    "security_id": 2263,
+    "symbol": "BANDHANBNK",
+    "name": "Bandhan Bank"
+  },
+  "MRF": {
+    "security_id": 2277,
+    "symbol": "MRF",
+    "name": "MRF"
+  },
+  "MRPL": {
+    "security_id": 2283,
+    "symbol": "MRPL",
+    "name": "Mangalore Refinery & Petroleum"
+  },
+  "HAL": {
+    "security_id": 2303,
+    "symbol": "HAL",
+    "name": "Hindustan Aeronautics"
+  },
+  "NCC": {
+    "security_id": 2319,
+    "symbol": "NCC",
+    "name": "NCC"
+  },
+  "BHARTIHEXA": {
+    "security_id": 23489,
+    "symbol": "BHARTIHEXA",
+    "name": "Bharti Hexacom"
+  },
+  "AIIL": {
+    "security_id": 23553,
+    "symbol": "AIIL",
+    "name": "Authum Inv & Infr"
+  },
+  "ASIANPAINT": {
+    "security_id": 236,
+    "symbol": "ASIANPAINT",
+    "name": "Asian Paints"
+  },
+  "MUTHOOTFIN": {
+    "security_id": 23650,
+    "symbol": "MUTHOOTFIN",
+    "name": "Muthoot Finance"
+  },
+  "AADHARHFC": {
+    "security_id": 23729,
+    "symbol": "AADHARHFC",
+    "name": "Aadhar Housing Finance"
+  },
+  "TBOTEK": {
+    "security_id": 23740,
+    "symbol": "TBOTEK",
+    "name": "TBO Tek"
+  },
+  "NEULANDLAB": {
+    "security_id": 2406,
+    "symbol": "NEULANDLAB",
+    "name": "Neuland Laboratories"
+  },
+  "PIIND": {
+    "security_id": 24184,
+    "symbol": "PIIND",
+    "name": "PI Industries"
+  },
+  "ABDL": {
+    "security_id": 24308,
+    "symbol": "ABDL",
+    "name": "Allied Blenders & Distillers"
+  },
+  "RAILTEL": {
+    "security_id": 2431,
+    "symbol": "RAILTEL",
+    "name": "Railtel Corporation of India"
+  },
+  "EMCURE": {
+    "security_id": 24398,
+    "symbol": "EMCURE",
+    "name": "Emcure Pharmaceuticals"
+  },
+  "ONGC": {
+    "security_id": 2475,
+    "symbol": "ONGC",
+    "name": "Oil & Natural Gas Corporation"
+  },
+  "OLAELEC": {
+    "security_id": 24777,
+    "symbol": "OLAELEC",
+    "name": "Ola Electric Mobility"
+  },
+  "FIRSTCRY": {
+    "security_id": 24814,
+    "symbol": "FIRSTCRY",
+    "name": "Firstcry (Brainbees Solutions)"
+  },
+  "LTF": {
+    "security_id": 24948,
+    "symbol": "LTF",
+    "name": "L&T Finance"
+  },
+  "ADANIENT": {
+    "security_id": 25,
+    "symbol": "ADANIENT",
+    "name": "Adani Enterprises"
+  },
+  "PREMIERENE": {
+    "security_id": 25049,
+    "symbol": "PREMIERENE",
+    "name": "Premier Energies"
+  },
+  "TDPOWERSYS": {
+    "security_id": 25178,
+    "symbol": "TDPOWERSYS",
+    "name": "TD Power Systems"
+  },
+  "BAJAJHFL": {
+    "security_id": 25270,
+    "symbol": "BAJAJHFL",
+    "name": "Bajaj Housing Finance"
+  },
+  "PGEL": {
+    "security_id": 25358,
+    "symbol": "PGEL",
+    "name": "PG Electroplast"
+  },
+  "TRITURBINE": {
+    "security_id": 25584,
+    "symbol": "TRITURBINE",
+    "name": "Triveni Turbines"
+  },
+  "POLYMED": {
+    "security_id": 25718,
+    "symbol": "POLYMED",
+    "name": "Poly Medicure"
+  },
+  "APLAPOLLO": {
+    "security_id": 25780,
+    "symbol": "APLAPOLLO",
+    "name": "APL Apollo Tubes"
+  },
+  "HYUNDAI": {
+    "security_id": 25844,
+    "symbol": "HYUNDAI",
+    "name": "Hyundai Motor India"
+  },
+  "MINDACORP": {
+    "security_id": 25897,
+    "symbol": "MINDACORP",
+    "name": "Minda Corporation"
+  },
+  "WAAREEENER": {
+    "security_id": 25907,
+    "symbol": "WAAREEENER",
+    "name": "Waaree Energies"
+  },
+  "AFCONS": {
+    "security_id": 25977,
+    "symbol": "AFCONS",
+    "name": "Afcons Infrastructure"
+  },
+  "LEMONTREE": {
+    "security_id": 2606,
+    "symbol": "LEMONTREE",
+    "name": "Lemon Tree Hotels"
+  },
+  "ATUL": {
+    "security_id": 263,
+    "symbol": "ATUL",
+    "name": "Atul"
+  },
+  "PCBL": {
+    "security_id": 2649,
+    "symbol": "PCBL",
+    "name": "PCBL Chemical"
+  },
+  "PIDILITIND": {
+    "security_id": 2664,
+    "symbol": "PIDILITIND",
+    "name": "Pidilite Industries"
+  },
+  "SAGILITY": {
+    "security_id": 27052,
+    "symbol": "SAGILITY",
+    "name": "Sagility"
+  },
+  "ACMESOLAR": {
+    "security_id": 27061,
+    "symbol": "ACMESOLAR",
+    "name": "ACME Solar Holdings"
+  },
+  "SWIGGY": {
+    "security_id": 27066,
+    "symbol": "SWIGGY",
+    "name": "Swiggy"
+  },
+  "MTARTECH": {
+    "security_id": 2709,
+    "symbol": "MTARTECH",
+    "name": "MTAR Technologies"
+  },
+  "SWANCORP": {
+    "security_id": 27095,
+    "symbol": "SWANCORP",
+    "name": "Swan Corp"
+  },
+  "NTPCGREEN": {
+    "security_id": 27176,
+    "symbol": "NTPCGREEN",
+    "name": "NTPC Green Energy"
+  },
+  "AUROPHARMA": {
+    "security_id": 275,
+    "symbol": "AUROPHARMA",
+    "name": "Aurobindo Pharma"
+  },
+  "GICRE": {
+    "security_id": 277,
+    "symbol": "GICRE",
+    "name": "GIC of India"
+  },
+  "JUBLINGREA": {
+    "security_id": 2783,
+    "symbol": "JUBLINGREA",
+    "name": "Jubilant Ingrevia"
+  },
+  "SAILIFE": {
+    "security_id": 27839,
+    "symbol": "SAILIFE",
+    "name": "Sai Life Sciences"
+  },
+  "VMM": {
+    "security_id": 27969,
+    "symbol": "VMM",
+    "name": "Vishal Mega Mart"
+  },
+  "IKS": {
+    "security_id": 28125,
+    "symbol": "IKS",
+    "name": "Inventurus Knowledge Solutions"
+  },
+  "ANURAS": {
+    "security_id": 2829,
+    "symbol": "ANURAS",
+    "name": "Anupam Rasayan"
+  },
+  "IGIL": {
+    "security_id": 28378,
+    "symbol": "IGIL",
+    "name": "International Gemological Institute"
+  },
+  "CRAFTSMAN": {
+    "security_id": 2854,
+    "symbol": "CRAFTSMAN",
+    "name": "Craftsman Automation"
+  },
+  "RELIANCE": {
+    "security_id": 2885,
+    "symbol": "RELIANCE",
+    "name": "Reliance Industries"
+  },
+  "INDUSTOWER": {
+    "security_id": 29135,
+    "symbol": "INDUSTOWER",
+    "name": "Indus Towers"
+  },
+  "ONESOURCE": {
+    "security_id": 29224,
+    "symbol": "ONESOURCE",
+    "name": "Onesource Specialty Pharma"
+  },
+  "ITCHOTELS": {
+    "security_id": 29251,
+    "symbol": "ITCHOTELS",
+    "name": "ITC Hotels"
+  },
+  "KALYANKJIL": {
+    "security_id": 2955,
+    "symbol": "KALYANKJIL",
+    "name": "Kalyan Jewellers"
+  },
+  "SAIL": {
+    "security_id": 2963,
+    "symbol": "SAIL",
+    "name": "Steel Authority of India"
+  },
+  "HEXT": {
+    "security_id": 29666,
+    "symbol": "HEXT",
+    "name": "Hexaware Technologies"
+  },
+  "SAMMAANCAP": {
+    "security_id": 30125,
+    "symbol": "SAMMAANCAP",
+    "name": "Sammaan Capital"
+  },
+  "JINDALSAW": {
+    "security_id": 3024,
+    "symbol": "JINDALSAW",
+    "name": "Jindal SAW"
+  },
+  "SBIN": {
+    "security_id": 3045,
+    "symbol": "SBIN",
+    "name": "State Bank of India"
+  },
+  "SCI": {
+    "security_id": 3048,
+    "symbol": "SCI",
+    "name": "Shipping Corporation of India"
+  },
+  "BAJAJHLDNG": {
+    "security_id": 305,
+    "symbol": "BAJAJHLDNG",
+    "name": "Bajaj Holdings & Investments"
+  },
+  "VEDL": {
+    "security_id": 3063,
+    "symbol": "VEDL",
+    "name": "Vedanta"
+  },
+  "SHREECEM": {
+    "security_id": 3103,
+    "symbol": "SHREECEM",
+    "name": "Shree Cement"
+  },
+  "RHIM": {
+    "security_id": 31163,
+    "symbol": "RHIM",
+    "name": "RHI Magnesita"
+  },
+  "MCX": {
+    "security_id": 31181,
+    "symbol": "MCX",
+    "name": "MCX"
+  },
+  "TIINDIA": {
+    "security_id": 312,
+    "symbol": "TIINDIA",
+    "name": "Tube Investment"
+  },
+  "SCHNEIDER": {
+    "security_id": 31234,
+    "symbol": "SCHNEIDER",
+    "name": "Schneider Electric Infra"
+  },
+  "NBCC": {
+    "security_id": 31415,
+    "symbol": "NBCC",
+    "name": "NBCC"
+  },
+  "SIEMENS": {
+    "security_id": 3150,
+    "symbol": "SIEMENS",
+    "name": "Siemens"
+  },
+  "BAJFINANCE": {
+    "security_id": 317,
+    "symbol": "BAJFINANCE",
+    "name": "Bajaj Finance"
+  },
+  "LODHA": {
+    "security_id": 3220,
+    "symbol": "LODHA",
+    "name": "Lodha Developers"
+  },
+  "ANGELONE": {
+    "security_id": 324,
+    "symbol": "ANGELONE",
+    "name": "Angel One"
+  },
+  "SRF": {
+    "security_id": 3273,
+    "symbol": "SRF",
+    "name": "SRF"
+  },
+  "SUNDARMFIN": {
+    "security_id": 3339,
+    "symbol": "SUNDARMFIN",
+    "name": "Sundaram Finance"
+  },
+  "BALKRISIND": {
+    "security_id": 335,
+    "symbol": "BALKRISIND",
+    "name": "Balkrishna Industries"
+  },
+  "SUNPHARMA": {
+    "security_id": 3351,
+    "symbol": "SUNPHARMA",
+    "name": "Sun Pharmaceutical"
+  },
+  "SUPREMEIND": {
+    "security_id": 3363,
+    "symbol": "SUPREMEIND",
+    "name": "Supreme Industries"
+  },
+  "TATACHEM": {
+    "security_id": 3405,
+    "symbol": "TATACHEM",
+    "name": "Tata Chemicals"
+  },
+  "BALRAMCHIN": {
+    "security_id": 341,
+    "symbol": "BALRAMCHIN",
+    "name": "Balrampur Chini Mills"
+  },
+  "TATAELXSI": {
+    "security_id": 3411,
+    "symbol": "TATAELXSI",
+    "name": "Tata Elxsi"
+  },
+  "HONAUT": {
+    "security_id": 3417,
+    "symbol": "HONAUT",
+    "name": "Honeywell Automation"
+  },
+  "CAMS": {
+    "security_id": 342,
+    "symbol": "CAMS",
+    "name": "CAMS"
+  },
+  "TATAPOWER": {
+    "security_id": 3426,
+    "symbol": "TATAPOWER",
+    "name": "Tata Power"
+  },
+  "TATACONSUM": {
+    "security_id": 3432,
+    "symbol": "TATACONSUM",
+    "name": "Tata Consumer Products"
+  },
+  "BBOX": {
+    "security_id": 3435,
+    "symbol": "BBOX",
+    "name": "Black Box"
+  },
+  "TMPV": {
+    "security_id": 3456,
+    "symbol": "TMPV",
+    "name": "Tata Motors Passenger Vehicles"
+  },
+  "THERMAX": {
+    "security_id": 3475,
+    "symbol": "THERMAX",
+    "name": "Thermax"
+  },
+  "TATASTEEL": {
+    "security_id": 3499,
+    "symbol": "TATASTEEL",
+    "name": "Tata Steel"
+  },
+  "TITAN": {
+    "security_id": 3506,
+    "symbol": "TITAN",
+    "name": "Titan"
+  },
+  "TORNTPHARM": {
+    "security_id": 3518,
+    "symbol": "TORNTPHARM",
+    "name": "Torrent Pharmaceuticals"
+  },
+  "ADANIGREEN": {
+    "security_id": 3563,
+    "symbol": "ADANIGREEN",
+    "name": "Adani Green Energy"
+  },
+  "NAM-INDIA": {
+    "security_id": 357,
+    "symbol": "NAM-INDIA",
+    "name": "Nippon Life India AMC"
+  },
+  "BATAINDIA": {
+    "security_id": 371,
+    "symbol": "BATAINDIA",
+    "name": "Bata"
+  },
+  "VOLTAS": {
+    "security_id": 3718,
+    "symbol": "VOLTAS",
+    "name": "Voltas"
+  },
+  "TATACOMM": {
+    "security_id": 3721,
+    "symbol": "TATACOMM",
+    "name": "Tata Communications"
+  },
+  "RITES": {
+    "security_id": 3761,
+    "symbol": "RITES",
+    "name": "RITES"
+  },
+  "WIPRO": {
+    "security_id": 3787,
+    "symbol": "WIPRO",
+    "name": "Wipro"
+  },
+  "ZEEL": {
+    "security_id": 3812,
+    "symbol": "ZEEL",
+    "name": "Zee Entertainment"
+  },
+  "BEL": {
+    "security_id": 383,
+    "symbol": "BEL",
+    "name": "Bharat Electronics"
+  },
+  "CAPLIPOINT": {
+    "security_id": 3906,
+    "symbol": "CAPLIPOINT",
+    "name": "Caplin Point Laboratories"
+  },
+  "NATCOPHARM": {
+    "security_id": 3918,
+    "symbol": "NATCOPHARM",
+    "name": "Natco Pharma"
+  },
+  "BEML": {
+    "security_id": 395,
+    "symbol": "BEML",
+    "name": "BEML"
+  },
+  "NIACL": {
+    "security_id": 399,
+    "symbol": "NIACL",
+    "name": "The New India Assurance Company"
+  },
+  "AEGISLOG": {
+    "security_id": 40,
+    "symbol": "AEGISLOG",
+    "name": "Aegis Logistics"
+  },
+  "NAVA": {
+    "security_id": 4014,
+    "symbol": "NAVA",
+    "name": "Nava"
+  },
+  "BERGEPAINT": {
+    "security_id": 404,
+    "symbol": "BERGEPAINT",
+    "name": "Berger Paints"
+  },
+  "MARICO": {
+    "security_id": 4067,
+    "symbol": "MARICO",
+    "name": "Marico"
+  },
+  "MOTHERSON": {
+    "security_id": 4204,
+    "symbol": "MOTHERSON",
+    "name": "Samvardhana Motherson International"
+  },
+  "BHARATFORG": {
+    "security_id": 422,
+    "symbol": "BHARATFORG",
+    "name": "Bharat Forge"
+  },
+  "HDFCAMC": {
+    "security_id": 4244,
+    "symbol": "HDFCAMC",
+    "name": "HDFC AMC"
+  },
+  "SHRIRAMFIN": {
+    "security_id": 4306,
+    "symbol": "SHRIRAMFIN",
+    "name": "Shriram Finance"
+  },
+  "BHEL": {
+    "security_id": 438,
+    "symbol": "BHEL",
+    "name": "Bharat Heavy Electricals"
+  },
+  "CREDITACC": {
+    "security_id": 4421,
+    "symbol": "CREDITACC",
+    "name": "Credit Access Grameen"
+  },
+  "MPHASIS": {
+    "security_id": 4503,
+    "symbol": "MPHASIS",
+    "name": "Mphasis"
+  },
+  "BANKBARODA": {
+    "security_id": 4668,
+    "symbol": "BANKBARODA",
+    "name": "Bank of Baroda"
+  },
+  "HDFCLIFE": {
+    "security_id": 467,
+    "symbol": "HDFCLIFE",
+    "name": "HDFC Life Insurance"
+  },
+  "SONACOMS": {
+    "security_id": 4684,
+    "symbol": "SONACOMS",
+    "name": "Sona BLW Precision Forgings"
+  },
+  "SHYAMMETL": {
+    "security_id": 4693,
+    "symbol": "SHYAMMETL",
+    "name": "Shyam Metalics & Energy"
+  },
+  "GAIL": {
+    "security_id": 4717,
+    "symbol": "GAIL",
+    "name": "GAIL"
+  },
+  "BANKINDIA": {
+    "security_id": 4745,
+    "symbol": "BANKINDIA",
+    "name": "Bank of India"
+  },
+  "CONCOR": {
+    "security_id": 4749,
+    "symbol": "CONCOR",
+    "name": "Container Corporation of India"
+  },
+  "KIMS": {
+    "security_id": 4847,
+    "symbol": "KIMS",
+    "name": "Krishna Institute of Medical Sciences"
+  },
+  "ENGINERSIN": {
+    "security_id": 4907,
+    "symbol": "ENGINERSIN",
+    "name": "Engineers India"
+  },
+  "ICICIBANK": {
+    "security_id": 4963,
+    "symbol": "ICICIBANK",
+    "name": "ICICI Bank"
+  },
+  "IRCON": {
+    "security_id": 4986,
+    "symbol": "IRCON",
+    "name": "Ircon International"
+  },
+  "CLEAN": {
+    "security_id": 5049,
+    "symbol": "CLEAN",
+    "name": "Clean Science & Technology"
+  },
+  "MAZDOCK": {
+    "security_id": 509,
+    "symbol": "MAZDOCK",
+    "name": "Mazagon Dock Shipbuilders"
+  },
+  "ETERNAL": {
+    "security_id": 5097,
+    "symbol": "ETERNAL",
+    "name": "Eternal"
+  },
+  "GMDCLTD": {
+    "security_id": 5204,
+    "symbol": "GMDCLTD",
+    "name": "Gujarat Mineral Development Corporation"
+  },
+  "INDUSINDBK": {
+    "security_id": 5258,
+    "symbol": "INDUSINDBK",
+    "name": "Indusind Bank"
+  },
+  "BPCL": {
+    "security_id": 526,
+    "symbol": "BPCL",
+    "name": "Bharat Petroleum"
+  },
+  "UTIAMC": {
+    "security_id": 527,
+    "symbol": "UTIAMC",
+    "name": "UTI AMC"
+  },
+  "DEVYANI": {
+    "security_id": 5373,
+    "symbol": "DEVYANI",
+    "name": "Devyani International"
+  },
+  "ASAHIINDIA": {
+    "security_id": 5378,
+    "symbol": "ASAHIINDIA",
+    "name": "Asahi India Glass"
+  },
+  "AAVAS": {
+    "security_id": 5385,
+    "symbol": "AAVAS",
+    "name": "Aavas Financiers"
+  },
+  "CARTRADE": {
+    "security_id": 5407,
+    "symbol": "CARTRADE",
+    "name": "CarTrade Tech"
+  },
+  "NUVOCO": {
+    "security_id": 5426,
+    "symbol": "NUVOCO",
+    "name": "Nuvoco Vistas Corporation"
+  },
+  "APTUS": {
+    "security_id": 5435,
+    "symbol": "APTUS",
+    "name": "Aptus Value Housing Finance"
+  },
+  "BRITANNIA": {
+    "security_id": 547,
+    "symbol": "BRITANNIA",
+    "name": "Britannia Industries"
+  },
+  "GRSE": {
+    "security_id": 5475,
+    "symbol": "GRSE",
+    "name": "Garden Reach Shipbuilders"
+  },
+  "ACUTAAS": {
+    "security_id": 5578,
+    "symbol": "ACUTAAS",
+    "name": "Acutaas Chemicals"
+  },
+  "VIJAYA": {
+    "security_id": 5585,
+    "symbol": "VIJAYA",
+    "name": "Vijaya Diagnostic Centre"
+  },
+  "CEMPRO": {
+    "security_id": 5622,
+    "symbol": "CEMPRO",
+    "name": "Cemindia Projects"
+  },
+  "J&KBANK": {
+    "security_id": 5633,
+    "symbol": "J&KBANK",
+    "name": "Jammu & Kashmir Bank"
+  },
+  "CUB": {
+    "security_id": 5701,
+    "symbol": "CUB",
+    "name": "City Union Bank"
+  },
+  "CYIENT": {
+    "security_id": 5748,
+    "symbol": "CYIENT",
+    "name": "Cyient"
+  },
+  "SANSERA": {
+    "security_id": 5751,
+    "symbol": "SANSERA",
+    "name": "Sansera Engineering"
+  },
+  "CANFINHOME": {
+    "security_id": 583,
+    "symbol": "CANFINHOME",
+    "name": "Can Fin Homes"
+  },
+  "AXISBANK": {
+    "security_id": 5900,
+    "symbol": "AXISBANK",
+    "name": "Axis Bank"
+  },
+  "GRAPHITE": {
+    "security_id": 592,
+    "symbol": "GRAPHITE",
+    "name": "Graphite"
+  },
+  "INTELLECT": {
+    "security_id": 5926,
+    "symbol": "INTELLECT",
+    "name": "Intellect Design Arena"
+  },
+  "CARBORUNIV": {
+    "security_id": 595,
+    "symbol": "CARBORUNIV",
+    "name": "Carborundum Universal"
+  },
+  "ABSLAMC": {
+    "security_id": 6018,
+    "symbol": "ABSLAMC",
+    "name": "Aditya Birla Sun Life AMC"
+  },
+  "ATGL": {
+    "security_id": 6066,
+    "symbol": "ATGL",
+    "name": "Adani Total Gas"
+  },
+  "ABREL": {
+    "security_id": 625,
+    "symbol": "ABREL",
+    "name": "Aditya Birla Real Estate"
+  },
+  "CESC": {
+    "security_id": 628,
+    "symbol": "CESC",
+    "name": "CESC"
+  },
+  "NATIONALUM": {
+    "security_id": 6364,
+    "symbol": "NATIONALUM",
+    "name": "NALCO"
+  },
+  "CHAMBLFERT": {
+    "security_id": 637,
+    "symbol": "CHAMBLFERT",
+    "name": "Chambal Fertilisers & Chemicals"
+  },
+  "TECHNOE": {
+    "security_id": 6445,
+    "symbol": "TECHNOE",
+    "name": "Techno Electric & Engineering"
+  },
+  "NYKAA": {
+    "security_id": 6545,
+    "symbol": "NYKAA",
+    "name": "Nykaa"
+  },
+  "POLICYBZR": {
+    "security_id": 6656,
+    "symbol": "POLICYBZR",
+    "name": "PB FinTech"
+  },
+  "PAYTM": {
+    "security_id": 6705,
+    "symbol": "PAYTM",
+    "name": "One 97 Communications"
+  },
+  "JINDALSTEL": {
+    "security_id": 6733,
+    "symbol": "JINDALSTEL",
+    "name": "Jindal Steel"
+  },
+  "EXIDEIND": {
+    "security_id": 676,
+    "symbol": "EXIDEIND",
+    "name": "Exide Industries"
+  },
+  "CHOLAFIN": {
+    "security_id": 685,
+    "symbol": "CHOLAFIN",
+    "name": "Cholamandalam Investment"
+  },
+  "CIPLA": {
+    "security_id": 694,
+    "symbol": "CIPLA",
+    "name": "Cipla"
+  },
+  "BSOFT": {
+    "security_id": 6994,
+    "symbol": "BSOFT",
+    "name": "Birlasoft"
+  },
+  "AARTIIND": {
+    "security_id": 7,
+    "symbol": "AARTIIND",
+    "name": "Aarti Industries"
+  },
+  "STARHEALTH": {
+    "security_id": 7083,
+    "symbol": "STARHEALTH",
+    "name": "Star Health Insurance"
+  },
+  "TEGA": {
+    "security_id": 7105,
+    "symbol": "TEGA",
+    "name": "Tega Industries"
+  },
+  "ANANDRATHI": {
+    "security_id": 7145,
+    "symbol": "ANANDRATHI",
+    "name": "Anand Rathi Wealth"
+  },
+  "HCLTECH": {
+    "security_id": 7229,
+    "symbol": "HCLTECH",
+    "name": "HCL Technologies"
+  },
+  "DATAPATTNS": {
+    "security_id": 7358,
+    "symbol": "DATAPATTNS",
+    "name": "Data Patterns"
+  },
+  "COROMANDEL": {
+    "security_id": 739,
+    "symbol": "COROMANDEL",
+    "name": "Coromandel International"
+  },
+  "GLENMARK": {
+    "security_id": 7406,
+    "symbol": "GLENMARK",
+    "name": "Glenmark Pharmaceuticals"
+  },
+  "VAML": {
+    "security_id": 750174,
+    "symbol": "VAML",
+    "name": "Vedanta Aluminium Metal"
+  },
+  "VISL": {
+    "security_id": 750290,
+    "symbol": "VISL",
+    "name": "Vedanta Iron & Steel"
+  },
+  "VOGL": {
+    "security_id": 750368,
+    "symbol": "VOGL",
+    "name": "Vedanta Oil & Gas"
+  },
+  "VEDPOWER": {
+    "security_id": 750518,
+    "symbol": "VEDPOWER",
+    "name": "Vedanta Power"
+  },
+  "WOCKPHARMA": {
+    "security_id": 7506,
+    "symbol": "WOCKPHARMA",
+    "name": "Wockhardt"
+  },
+  "ZENTEC": {
+    "security_id": 7508,
+    "symbol": "ZENTEC",
+    "name": "Zen Technologies"
+  },
+  "ENRIN": {
+    "security_id": 756871,
+    "symbol": "ENRIN",
+    "name": "Siemens Energy"
+  },
+  "CRISIL": {
+    "security_id": 757,
+    "symbol": "CRISIL",
+    "name": "CRISIL"
+  },
+  "BELRISE": {
+    "security_id": 757102,
+    "symbol": "BELRISE",
+    "name": "Belrise Industries"
+  },
+  "AEGISVOPAK": {
+    "security_id": 757336,
+    "symbol": "AEGISVOPAK",
+    "name": "Aegis Vopak Terminals"
+  },
+  "ATHERENERG": {
+    "security_id": 757645,
+    "symbol": "ATHERENERG",
+    "name": "Ather Energy"
+  },
+  "HDBFS": {
+    "security_id": 757772,
+    "symbol": "HDBFS",
+    "name": "HDB Financial Services"
+  },
+  "ANTHEM": {
+    "security_id": 757885,
+    "symbol": "ANTHEM",
+    "name": "Anthem Biosciences"
+  },
+  "JSWCEMENT": {
+    "security_id": 758460,
+    "symbol": "JSWCEMENT",
+    "name": "JSW Cement"
+  },
+  "CPPLUS": {
+    "security_id": 758858,
+    "symbol": "CPPLUS",
+    "name": "Aditya Infotech"
+  },
+  "URBANCO": {
+    "security_id": 759084,
+    "symbol": "URBANCO",
+    "name": "Urban Company"
+  },
+  "JAINREC": {
+    "security_id": 759244,
+    "symbol": "JAINREC",
+    "name": "Jain Resource Recycling"
+  },
+  "TATACAP": {
+    "security_id": 759265,
+    "symbol": "TATACAP",
+    "name": "Tata Capital"
+  },
+  "RUBICON": {
+    "security_id": 759316,
+    "symbol": "RUBICON",
+    "name": "Rubicon Research"
+  },
+  "CANHLIFE": {
+    "security_id": 759477,
+    "symbol": "CANHLIFE",
+    "name": "Canara HSBC Life Insurance Company"
+  },
+  "PIRAMALFIN": {
+    "security_id": 759551,
+    "symbol": "PIRAMALFIN",
+    "name": "Piramal Finance"
+  },
+  "LENSKART": {
+    "security_id": 759605,
+    "symbol": "LENSKART",
+    "name": "Lenskart Solutions"
+  },
+  "PWL": {
+    "security_id": 759723,
+    "symbol": "PWL",
+    "name": "Physicswallah"
+  },
+  "EMMVEE": {
+    "security_id": 759728,
+    "symbol": "EMMVEE",
+    "name": "Emmvee Photovoltaic Power"
+  },
+  "TMCV": {
+    "security_id": 759782,
+    "symbol": "TMCV",
+    "name": "Tata Motors"
+  },
+  "GROWW": {
+    "security_id": 759806,
+    "symbol": "GROWW",
+    "name": "Groww"
+  },
+  "PINELABS": {
+    "security_id": 759820,
+    "symbol": "PINELABS",
+    "name": "Pine Labs"
+  },
+  "TENNIND": {
+    "security_id": 759880,
+    "symbol": "TENNIND",
+    "name": "Tenneco Clean Air"
+  },
+  "CGPOWER": {
+    "security_id": 760,
+    "symbol": "CGPOWER",
+    "name": "CG Power & Industrial Solutions"
+  },
+  "CLEANMAX": {
+    "security_id": 760183,
+    "symbol": "CLEANMAX",
+    "name": "Clean Max Enviro Energy Solutions"
+  },
+  "LGEINDIA": {
+    "security_id": 760213,
+    "symbol": "LGEINDIA",
+    "name": "LG Electronics"
+  },
+  "MEESHO": {
+    "security_id": 760229,
+    "symbol": "MEESHO",
+    "name": "Meesho"
+  },
+  "ICICIAMC": {
+    "security_id": 760407,
+    "symbol": "ICICIAMC",
+    "name": "ICICI Prudential Asset Management"
+  },
+  "BHARATCOAL": {
+    "security_id": 760726,
+    "symbol": "BHARATCOAL",
+    "name": "Bharat Coking Coal"
+  },
+  "FRACTAL": {
+    "security_id": 760961,
+    "symbol": "FRACTAL",
+    "name": "Fractal Analytics"
+  },
+  "CMPDI": {
+    "security_id": 761581,
+    "symbol": "CMPDI",
+    "name": "Central Mine P & D Institute"
+  },
+  "DABUR": {
+    "security_id": 772,
+    "symbol": "DABUR",
+    "name": "Dabur India"
+  },
+  "INOXWIND": {
+    "security_id": 7852,
+    "symbol": "INOXWIND",
+    "name": "Inox Wind"
+  },
+  "ZYDUSLIFE": {
+    "security_id": 7929,
+    "symbol": "ZYDUSLIFE",
+    "name": "Zydus Life Science"
+  },
+  "AVANTIFEED": {
+    "security_id": 7936,
+    "symbol": "AVANTIFEED",
+    "name": "Avanti Feeds"
+  },
+  "DALBHARAT": {
+    "security_id": 8075,
+    "symbol": "DALBHARAT",
+    "name": "Dalmia Bharat"
+  },
+  "AWL": {
+    "security_id": 8110,
+    "symbol": "AWL",
+    "name": "AWL Agri Business"
+  },
+  "AJANTPHARM": {
+    "security_id": 8124,
+    "symbol": "AJANTPHARM",
+    "name": "Ajanta Pharma"
+  },
+  "DEEPAKFERT": {
+    "security_id": 827,
+    "symbol": "DEEPAKFERT",
+    "name": "Deepak Fertilisers & Petrochemicals"
+  },
+  "BLUESTARCO": {
+    "security_id": 8311,
+    "symbol": "BLUESTARCO",
+    "name": "Blue Star"
+  },
+  "TVSMOTOR": {
+    "security_id": 8479,
+    "symbol": "TVSMOTOR",
+    "name": "TVS Motors"
+  },
+  "NLCINDIA": {
+    "security_id": 8585,
+    "symbol": "NLCINDIA",
+    "name": "NLC India"
+  },
+  "MSUMI": {
+    "security_id": 8596,
+    "symbol": "MSUMI",
+    "name": "Motherson Sumi Wiring"
+  },
+  "DRREDDY": {
+    "security_id": 881,
+    "symbol": "DRREDDY",
+    "name": "Dr Reddys Laboratories"
+  },
+  "PRIVISCL": {
+    "security_id": 8825,
+    "symbol": "PRIVISCL",
+    "name": "Privi Speciality Chemicals"
+  },
+  "USHAMART": {
+    "security_id": 8840,
+    "symbol": "USHAMART",
+    "name": "Usha Martin"
+  },
+  "CHOICEIN": {
+    "security_id": 8866,
+    "symbol": "CHOICEIN",
+    "name": "Choice International"
+  },
+  "TTML": {
+    "security_id": 8954,
+    "symbol": "TTML",
+    "name": "Tata Teleservices Maharashtra"
+  },
+  "EICHERMOT": {
+    "security_id": 910,
+    "symbol": "EICHERMOT",
+    "name": "Eicher Motors"
+  },
+  "EIDPARRY": {
+    "security_id": 916,
+    "symbol": "EIDPARRY",
+    "name": "EID Parry"
+  },
+  "EIHOTEL": {
+    "security_id": 919,
+    "symbol": "EIHOTEL",
+    "name": "EIH Hotels"
+  },
+  "IOB": {
+    "security_id": 9348,
+    "symbol": "IOB",
+    "name": "Indian Overseas Bank"
+  },
+  "ELGIEQUIP": {
+    "security_id": 937,
+    "symbol": "ELGIEQUIP",
+    "name": "Elgi Equipments"
+  },
+  "RAINBOW": {
+    "security_id": 9408,
+    "symbol": "RAINBOW",
+    "name": "Rainbow Childrens Medicare"
+  },
+  "LICI": {
+    "security_id": 9480,
+    "symbol": "LICI",
+    "name": "LIC of India"
+  },
+  "RVNL": {
+    "security_id": 9552,
+    "symbol": "RVNL",
+    "name": "Rail Vikas Nigam"
+  },
+  "ESCORTS": {
+    "security_id": 958,
+    "symbol": "ESCORTS",
+    "name": "Escorts Kubota"
+  },
+  "POLYCAB": {
+    "security_id": 9590,
+    "symbol": "POLYCAB",
+    "name": "Polycab"
+  },
+  "DELHIVERY": {
+    "security_id": 9599,
+    "symbol": "DELHIVERY",
+    "name": "Delhivery"
+  },
+  "KPITTECH": {
+    "security_id": 9683,
+    "symbol": "KPITTECH",
+    "name": "KPIT Technologies"
+  },
+  "TRIDENT": {
+    "security_id": 9685,
+    "symbol": "TRIDENT",
+    "name": "Trident"
+  },
+  "PARADEEP": {
+    "security_id": 9741,
+    "symbol": "PARADEEP",
+    "name": "Paradeep Phosphates"
+  },
+  "AETHER": {
+    "security_id": 9810,
+    "symbol": "AETHER",
+    "name": "Aether Industries"
+  },
+  "HAVELLS": {
+    "security_id": 9819,
+    "symbol": "HAVELLS",
+    "name": "Havells"
+  }
+}

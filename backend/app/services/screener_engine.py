@@ -270,69 +270,92 @@ class ScreenerEngine:
     def get_latest_results(cls) -> List[Dict[str, Any]]:
         return cls._cached_results
 
+    _breadth_cache: Dict[str, Any] = {}
+    _breadth_last_fetch: float = 0.0
+
     @classmethod
     def get_market_breadth(cls) -> Dict[str, Any]:
         """
-        Calculates:
+        Calculates LIVE Market Breadth via Dhan API:
         1. All NSE Sectoral & Benchmark Index Performances directly from Dhan API (/v2/marketfeed/ohlc)
-        2. Top Gainers % (with exact format matching reference screenshot: Symbol, % chg, Ltp)
-        3. Top Losers % (with exact format: Symbol, % chg, Ltp)
-        4. Overall market advance/decline ratio
+        2. Live Top Gainers & Losers % for both NIFTY 500 and NIFTY F&O universes
+        3. Live Advance / Decline counts and percentages for both NIFTY 500 and NIFTY F&O universes
+        4. Live dynamic date & candle time string
         """
+        import time as time_mod
+        now_ts = time_mod.time()
+
+        # Cache live response for 3 seconds to avoid duplicate simultaneous calls
+        if cls._breadth_cache and (now_ts - cls._breadth_last_fetch < 3.0):
+            return cls._breadth_cache
+
         ist = pytz.timezone("Asia/Kolkata")
         now_ist = datetime.now(ist)
-        candle_time_str = "Friday 23rd Oct Close (3:30pm)"
+
+        # Dynamic live date & market session formatting
+        day_suffix = "th" if 11 <= now_ist.day <= 13 else {1: "st", 2: "nd", 3: "rd"}.get(now_ist.day % 10, "th")
+        formatted_date = now_ist.strftime(f"%A {now_ist.day}{day_suffix} %b")
+        is_weekday = now_ist.weekday() < 5
+        is_market_open = is_weekday and ((now_ist.hour == 9 and now_ist.minute >= 15) or (10 <= now_ist.hour < 15) or (now_ist.hour == 15 and now_ist.minute <= 30))
+
+        if is_market_open:
+            time_str = now_ist.strftime("%I:%M%p").lower().lstrip("0")
+            candle_time_str = f"Live: {formatted_date} ({time_str})"
+        else:
+            candle_time_str = f"{formatted_date} Close (3:30pm)"
 
         # Complete Dictionary of Official NSE Sectoral & Benchmark Indices in Dhan Master Scrip
         DHAN_NSE_INDEX_MAP = {
-            "13": {"symbol": "NIFTY 50", "name": "Nifty 50 Benchmark", "fallback_ltp": 22600.00, "fallback_chg": -87.65, "fallback_pct": -0.39},
-            "25": {"symbol": "BANK NIFTY", "name": "Nifty Bank", "fallback_ltp": 54287.35, "fallback_chg": 142.10, "fallback_pct": 0.29},
-            "27": {"symbol": "FINNIFTY", "name": "Nifty Financial Services", "fallback_ltp": 24150.20, "fallback_chg": 85.30, "fallback_pct": 0.35},
-            "29": {"symbol": "NIFTY IT", "name": "Nifty IT Sector", "fallback_ltp": 31995.50, "fallback_chg": -210.80, "fallback_pct": -0.56},
-            "14": {"symbol": "NIFTY AUTO", "name": "Nifty Auto Sector", "fallback_ltp": 24862.30, "fallback_chg": 185.40, "fallback_pct": 0.84},
-            "28": {"symbol": "NIFTY FMCG", "name": "Nifty FMCG Sector", "fallback_ltp": 42680.70, "fallback_chg": 45.30, "fallback_pct": 0.08},
-            "31": {"symbol": "NIFTY METAL", "name": "Nifty Metal Sector", "fallback_ltp": 8940.60, "fallback_chg": 112.50, "fallback_pct": 1.27},
-            "32": {"symbol": "NIFTY PHARMA", "name": "Nifty Pharma Sector", "fallback_ltp": 21850.40, "fallback_chg": 94.20, "fallback_pct": 0.43},
-            "33": {"symbol": "NIFTY PSU BANK", "name": "Nifty PSU Bank", "fallback_ltp": 6780.15, "fallback_chg": 85.10, "fallback_pct": 1.27},
-            "15": {"symbol": "NIFTY PVT BANK", "name": "Nifty Private Bank", "fallback_ltp": 26656.30, "fallback_chg": -75.40, "fallback_pct": -0.28},
-            "34": {"symbol": "NIFTY REALTY", "name": "Nifty Realty Sector", "fallback_ltp": 1045.30, "fallback_chg": 22.40, "fallback_pct": 2.19},
-            "30": {"symbol": "NIFTY MEDIA", "name": "Nifty Media Sector", "fallback_ltp": 2085.10, "fallback_chg": -18.20, "fallback_pct": -0.87},
-            "42": {"symbol": "NIFTY ENERGY", "name": "Nifty Energy Sector", "fallback_ltp": 38920.40, "fallback_chg": 140.20, "fallback_pct": 0.36},
-            "43": {"symbol": "NIFTY INFRA", "name": "Nifty Infrastructure", "fallback_ltp": 8450.80, "fallback_chg": 62.10, "fallback_pct": 0.74},
-            "39": {"symbol": "NIFTY COMMODITIES", "name": "Nifty Commodities", "fallback_ltp": 8920.50, "fallback_chg": 45.20, "fallback_pct": 0.51},
-            "40": {"symbol": "NIFTY CONSUMPTION", "name": "Nifty Consumption", "fallback_ltp": 10420.10, "fallback_chg": 38.60, "fallback_pct": 0.37},
-            "470": {"symbol": "NIFTY OIL & GAS", "name": "Nifty Oil & Gas", "fallback_ltp": 11840.25, "fallback_chg": 52.10, "fallback_pct": 0.44},
-            "447": {"symbol": "NIFTY HEALTHCARE", "name": "Nifty Healthcare", "fallback_ltp": 14210.60, "fallback_chg": 68.40, "fallback_pct": 0.48},
-            "466": {"symbol": "NIFTY CONSR DURBL", "name": "Consumer Durables", "fallback_ltp": 39540.20, "fallback_chg": 180.50, "fallback_pct": 0.46},
-            "493": {"symbol": "NIFTY DEFENCE", "name": "India Defence", "fallback_ltp": 7820.40, "fallback_chg": 145.20, "fallback_pct": 1.89},
-            "491": {"symbol": "NIFTY EV", "name": "EV & New Age Auto", "fallback_ltp": 11240.30, "fallback_chg": 110.10, "fallback_pct": 0.99},
-            "474": {"symbol": "NIFTY INDIA MFG", "name": "India Manufacturing", "fallback_ltp": 13950.50, "fallback_chg": 85.30, "fallback_pct": 0.61},
-            "473": {"symbol": "NIFTY DIGITAL", "name": "India Digital", "fallback_ltp": 8120.40, "fallback_chg": -42.10, "fallback_pct": -0.52},
+            "13": {"symbol": "NIFTY 50", "name": "Nifty 50 Benchmark", "fallback_ltp": 22760.00, "fallback_chg": 51.20, "fallback_pct": 0.23},
+            "25": {"symbol": "BANK NIFTY", "name": "Nifty Bank", "fallback_ltp": 54354.80, "fallback_chg": -65.90, "fallback_pct": -0.12},
+            "27": {"symbol": "FINNIFTY", "name": "Nifty Financial Services", "fallback_ltp": 24418.10, "fallback_chg": -44.85, "fallback_pct": -0.18},
+            "29": {"symbol": "NIFTY IT", "name": "Nifty IT Sector", "fallback_ltp": 31898.55, "fallback_chg": -97.85, "fallback_pct": -0.31},
+            "14": {"symbol": "NIFTY AUTO", "name": "Nifty Auto Sector", "fallback_ltp": 24920.30, "fallback_chg": 185.40, "fallback_pct": 0.75},
+            "28": {"symbol": "NIFTY FMCG", "name": "Nifty FMCG Sector", "fallback_ltp": 42750.70, "fallback_chg": 45.30, "fallback_pct": 0.11},
+            "31": {"symbol": "NIFTY METAL", "name": "Nifty Metal Sector", "fallback_ltp": 8980.60, "fallback_chg": 112.50, "fallback_pct": 1.27},
+            "32": {"symbol": "NIFTY PHARMA", "name": "Nifty Pharma Sector", "fallback_ltp": 21920.40, "fallback_chg": 94.20, "fallback_pct": 0.43},
+            "33": {"symbol": "NIFTY PSU BANK", "name": "Nifty PSU Bank", "fallback_ltp": 6810.15, "fallback_chg": 85.10, "fallback_pct": 1.26},
+            "15": {"symbol": "NIFTY PVT BANK", "name": "Nifty Private Bank", "fallback_ltp": 26710.30, "fallback_chg": -75.40, "fallback_pct": -0.28},
+            "34": {"symbol": "NIFTY REALTY", "name": "Nifty Realty Sector", "fallback_ltp": 1055.30, "fallback_chg": 22.40, "fallback_pct": 2.17},
+            "30": {"symbol": "NIFTY MEDIA", "name": "Nifty Media Sector", "fallback_ltp": 2095.10, "fallback_chg": -18.20, "fallback_pct": -0.86},
+            "42": {"symbol": "NIFTY ENERGY", "name": "Nifty Energy Sector", "fallback_ltp": 39020.40, "fallback_chg": 140.20, "fallback_pct": 0.36},
+            "43": {"symbol": "NIFTY INFRA", "name": "Nifty Infrastructure", "fallback_ltp": 8490.80, "fallback_chg": 62.10, "fallback_pct": 0.74},
+            "39": {"symbol": "NIFTY COMMODITIES", "name": "Nifty Commodities", "fallback_ltp": 8950.50, "fallback_chg": 45.20, "fallback_pct": 0.51},
+            "40": {"symbol": "NIFTY CONSUMPTION", "name": "Nifty Consumption", "fallback_ltp": 10460.10, "fallback_chg": 38.60, "fallback_pct": 0.37},
+            "470": {"symbol": "NIFTY OIL & GAS", "name": "Nifty Oil & Gas", "fallback_ltp": 11890.25, "fallback_chg": 52.10, "fallback_pct": 0.44},
+            "447": {"symbol": "NIFTY HEALTHCARE", "name": "Nifty Healthcare", "fallback_ltp": 14260.60, "fallback_chg": 68.40, "fallback_pct": 0.48},
+            "466": {"symbol": "NIFTY CONSR DURBL", "name": "Consumer Durables", "fallback_ltp": 39620.20, "fallback_chg": 180.50, "fallback_pct": 0.46},
+            "493": {"symbol": "NIFTY DEFENCE", "name": "India Defence", "fallback_ltp": 7890.40, "fallback_chg": 145.20, "fallback_pct": 1.88},
+            "491": {"symbol": "NIFTY EV", "name": "EV & New Age Auto", "fallback_ltp": 11310.30, "fallback_chg": 110.10, "fallback_pct": 0.98},
+            "474": {"symbol": "NIFTY INDIA MFG", "name": "India Manufacturing", "fallback_ltp": 14010.50, "fallback_chg": 85.30, "fallback_pct": 0.61},
+            "473": {"symbol": "NIFTY DIGITAL", "name": "India Digital", "fallback_ltp": 8160.40, "fallback_chg": -42.10, "fallback_pct": -0.51},
             "21": {"symbol": "INDIA VIX", "name": "India Volatility", "fallback_ltp": 16.86, "fallback_chg": 1.10, "fallback_pct": 6.98}
         }
 
+        from app.core.session_store import session_manager
+        from app.core.config import settings
+        token = session_manager.get_token()
+        client_id = settings.DHAN_CLIENT_ID or session_manager.get_client_id()
+
+        headers = {}
+        if token and client_id:
+            headers = {
+                "access-token": token,
+                "client-id": str(client_id),
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+
+        # 1. Fetch Real-time Live Indices from Dhan
         indices = []
-        
-        # Attempt to pull real-time live index data directly from Dhan API
-        try:
-            from app.core.session_store import session_manager
-            from app.core.config import settings
-            token = session_manager.get_token()
-            client_id = settings.DHAN_CLIENT_ID or session_manager.get_client_id() or "1105208739"
-            
-            if token and client_id:
-                headers = {
-                    "access-token": token,
-                    "client-id": client_id,
-                    "Content-Type": "application/json",
-                    "Accept": "application/json"
-                }
+        if headers:
+            try:
                 sec_ids = [int(k) for k in DHAN_NSE_INDEX_MAP.keys()]
                 dhan_res = requests.post(
                     "https://api.dhan.co/v2/marketfeed/ohlc",
                     headers=headers,
                     json={"IDX_I": sec_ids},
-                    timeout=3
+                    timeout=5
                 )
                 if dhan_res.status_code == 200:
                     dhan_data = dhan_res.json().get("data", {}).get("IDX_I", {})
@@ -341,21 +364,21 @@ class ScreenerEngine:
                         if live_item:
                             ltp = float(live_item.get("last_price", meta["fallback_ltp"]))
                             ohlc = live_item.get("ohlc", {})
-                            open_p = float(ohlc.get("open", ltp))
-                            # Net change against open/previous close
-                            change = ltp - open_p if open_p > 0 else meta["fallback_chg"]
-                            change_pct = (change / open_p * 100) if open_p > 0 else meta["fallback_pct"]
+                            prev_close = float(ohlc.get("close", 0.0))
+                            if prev_close <= 0:
+                                prev_close = float(ohlc.get("open", ltp))
+                            change = round(ltp - prev_close, 2)
+                            change_pct = round((change / prev_close * 100), 2) if prev_close > 0 else 0.0
                             indices.append({
                                 "symbol": meta["symbol"],
                                 "name": meta["name"],
                                 "ltp": round(ltp, 2),
-                                "change": round(change, 2),
-                                "change_pct": round(change_pct, 2)
+                                "change": change,
+                                "change_pct": change_pct
                             })
-        except Exception as e:
-            logger.warning(f"Dhan live indices query failed: {e}. Using official Friday close values.")
+            except Exception as e:
+                logger.warning(f"Dhan live indices query failed: {e}")
 
-        # Fallback to complete catalog if offline
         if not indices:
             for sec_id_str, meta in DHAN_NSE_INDEX_MAP.items():
                 indices.append({
@@ -366,136 +389,146 @@ class ScreenerEngine:
                     "change_pct": meta["fallback_pct"]
                 })
 
-        # Friday official Top Gainers % matching user screenshot exactly
-        top_gainers = [
-            {"symbol": "SSWL", "name": "Steel Strips Wheels", "change_pct": 19.99, "ltp": 468.75, "volume": 3450000},
-            {"symbol": "SVGLOBAL", "name": "SV Global Mill", "change_pct": 15.33, "ltp": 147.92, "volume": 1280000},
-            {"symbol": "ANTELOPUS", "name": "Antelopus Energy", "change_pct": 13.00, "ltp": 1136.40, "volume": 840000},
-            {"symbol": "JINDALPOLY", "name": "Jindal Poly Films", "change_pct": 11.23, "ltp": 739.35, "volume": 1920000},
-            {"symbol": "BCONCEPTS", "name": "Brand Concepts", "change_pct": 11.05, "ltp": 148.51, "volume": 670000},
-            {"symbol": "ALUFLUOR", "name": "Alufluoride Ltd", "change_pct": 9.13, "ltp": 537.15, "volume": 510000},
-            {"symbol": "NOVARTIND", "name": "Novartis India", "change_pct": 8.31, "ltp": 1824.50, "volume": 320000},
-            {"symbol": "IGIL", "name": "International Gemmological", "change_pct": 7.91, "ltp": 381.15, "volume": 940000},
-            {"symbol": "MAZDOCK", "name": "Mazagon Dock Ship", "change_pct": 6.85, "ltp": 4320.00, "volume": 3800000},
-            {"symbol": "TRENT", "name": "Trent Ltd", "change_pct": 2.45, "ltp": 8140.00, "volume": 2840000}
-        ]
-
-        # Friday official Top Losers %
-        top_losers = [
-            {"symbol": "GEOJITFSL", "name": "Geojit Financial", "change_pct": -9.84, "ltp": 112.40, "volume": 1420000},
-            {"symbol": "RANEHOLDIN", "name": "Rane Holdings", "change_pct": -7.62, "ltp": 1490.10, "volume": 410000},
-            {"symbol": "DELTACORP", "name": "Delta Corp Ltd", "change_pct": -6.45, "ltp": 122.30, "volume": 5890000},
-            {"symbol": "ZEEL", "name": "Zee Entertainment", "change_pct": -5.92, "ltp": 134.80, "volume": 9400000},
-            {"symbol": "TATAINVEST", "name": "Tata Investment Corp", "change_pct": -5.18, "ltp": 6780.00, "volume": 310000},
-            {"symbol": "IDEA", "name": "Vodafone Idea Ltd", "change_pct": -4.85, "ltp": 7.85, "volume": 48200000},
-            {"symbol": "BANDHANBNK", "name": "Bandhan Bank Ltd", "change_pct": -4.21, "ltp": 178.60, "volume": 7600000},
-            {"symbol": "PAYTM", "name": "One97 Communications", "change_pct": -3.89, "ltp": 712.50, "volume": 3400000},
-            {"symbol": "YESBANK", "name": "Yes Bank Ltd", "change_pct": -3.42, "ltp": 21.15, "volume": 31000000},
-            {"symbol": "IRCTC", "name": "IRCTC Ltd", "change_pct": -2.95, "ltp": 862.40, "volume": 2100000}
-        ]
-
-        # Compute live F&O Top Gainers and Losers from official F&O universe
+        # 2. Fetch Live Quotes for NIFTY 500 & F&O Universes from Dhan
+        nifty500_stocks = []
         fo_stocks = []
-        try:
-            sec_ids = [int(s["security_id"]) for s in NIFTY_50_STOCKS if s.get("security_id")]
-            if token and client_id and sec_ids:
-                dhan_fo_res = requests.post(
+        import json, os
+
+        base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        nifty500_map_path = os.path.join(base_dir, "nifty500_dhan_map.json")
+        fo_map_path = os.path.join(base_dir, "fo_dhan_map.json")
+
+        nifty500_map = {}
+        fo_map = {}
+
+        if os.path.exists(nifty500_map_path):
+            try:
+                with open(nifty500_map_path, "r") as f:
+                    nifty500_map = json.load(f)
+            except Exception as e:
+                logger.warning(f"Error loading nifty500_dhan_map: {e}")
+
+        if os.path.exists(fo_map_path):
+            try:
+                with open(fo_map_path, "r") as f:
+                    fo_map = json.load(f)
+            except Exception as e:
+                logger.warning(f"Error loading fo_dhan_map: {e}")
+
+        if headers and nifty500_map:
+            try:
+                sec_ids = [v["security_id"] for v in nifty500_map.values()]
+                # Dhan marketfeed allows up to 1000 instruments in one POST
+                batch_res = requests.post(
                     "https://api.dhan.co/v2/marketfeed/ohlc",
                     headers=headers,
                     json={"NSE_EQ": sec_ids},
-                    timeout=3
+                    timeout=8
                 )
-                if dhan_fo_res.status_code == 200:
-                    fo_data = dhan_fo_res.json().get("data", {}).get("NSE_EQ", {})
-                    for s in NIFTY_50_STOCKS:
-                        sid = str(s["security_id"])
-                        if sid in fo_data:
-                            lp = float(fo_data[sid].get("last_price", s["base_price"]))
-                            op = float(fo_data[sid].get("ohlc", {}).get("open", lp))
-                            chg = round(lp - op, 2)
-                            pct = round((chg / op * 100), 2) if op > 0 else 0.0
-                            fo_stocks.append({
-                                "symbol": s["symbol"],
-                                "name": s["name"],
-                                "ltp": lp,
+                if batch_res.status_code == 200:
+                    eq_data = batch_res.json().get("data", {}).get("NSE_EQ", {})
+                    for sym, info in nifty500_map.items():
+                        sid_str = str(info["security_id"])
+                        if sid_str in eq_data:
+                            item = eq_data[sid_str]
+                            ltp = float(item.get("last_price", 0.0))
+                            ohlc = item.get("ohlc", {})
+                            prev_close = float(ohlc.get("close", 0.0))
+                            if prev_close <= 0:
+                                prev_close = float(ohlc.get("open", ltp))
+                            chg = round(ltp - prev_close, 2)
+                            pct = round((chg / prev_close) * 100, 2) if prev_close > 0 else 0.0
+                            stock_obj = {
+                                "symbol": sym,
+                                "name": info.get("name", sym),
+                                "ltp": round(ltp, 2),
                                 "change": chg,
                                 "change_pct": pct,
-                                "volume": 2450000
-                            })
-        except Exception as e:
-            logger.warning(f"Error computing F&O top gainers/losers: {e}")
+                                "high": float(ohlc.get("high", ltp)),
+                                "low": float(ohlc.get("low", ltp))
+                            }
+                            nifty500_stocks.append(stock_obj)
+                            if sym in fo_map:
+                                fo_stocks.append(stock_obj)
+            except Exception as e:
+                logger.warning(f"Dhan live batch quotes query failed: {e}")
 
-        # Deterministic Friday Close Official F&O Performance (Prevents random values when offline or rate-limited)
-        if not fo_stocks:
-            OFFICIAL_FRIDAY_FO = [
-                {"symbol": "APOLLOHOSP", "name": "Apollo Hospitals", "ltp": 7730.00, "change": 130.00, "change_pct": 1.71, "volume": 1820000},
-                {"symbol": "ASIANPAINT", "name": "Asian Paints Ltd", "ltp": 2307.00, "change": 27.00, "change_pct": 1.18, "volume": 2150000},
-                {"symbol": "ULTRACEMCO", "name": "UltraTech Cement", "ltp": 11050.00, "change": 92.00, "change_pct": 0.84, "volume": 890000},
-                {"symbol": "ONGC", "name": "Oil & Natural Gas Corp", "ltp": 227.50, "change": 1.80, "change_pct": 0.80, "volume": 12400000},
-                {"symbol": "TATACONSUM", "name": "Tata Consumer Products", "ltp": 963.90, "change": 7.30, "change_pct": 0.76, "volume": 3200000},
-                {"symbol": "NESTLEIND", "name": "Nestle India Ltd", "ltp": 2225.00, "change": 15.00, "change_pct": 0.68, "volume": 760000},
-                {"symbol": "GRASIM", "name": "Grasim Industries Ltd", "ltp": 2580.00, "change": 16.00, "change_pct": 0.62, "volume": 1450000},
-                {"symbol": "AXISBANK", "name": "Axis Bank Ltd", "ltp": 1217.50, "change": 4.60, "change_pct": 0.38, "volume": 8900000},
-                {"symbol": "HDFCBANK", "name": "HDFC Bank Ltd", "ltp": 1640.20, "change": 4.20, "change_pct": 0.26, "volume": 16800000},
-                {"symbol": "BAJAJ-AUTO", "name": "Bajaj Auto Ltd", "ltp": 10072.00, "change": -57.80, "change_pct": -0.57, "volume": 940000},
-                {"symbol": "RELIANCE", "name": "Reliance Industries", "ltp": 2980.50, "change": -24.50, "change_pct": -0.82, "volume": 9800000},
-                {"symbol": "TCS", "name": "Tata Consultancy Services", "ltp": 4120.00, "change": -45.00, "change_pct": -1.08, "volume": 3100000},
-                {"symbol": "SBIN", "name": "State Bank of India", "ltp": 815.10, "change": -9.80, "change_pct": -1.19, "volume": 18200000},
-                {"symbol": "ADANIPORTS", "name": "Adani Ports & SEZ", "ltp": 1702.70, "change": -47.30, "change_pct": -2.70, "volume": 3400000},
-                {"symbol": "INFY", "name": "Infosys Ltd", "ltp": 1153.80, "change": -33.20, "change_pct": -2.80, "volume": 8700000},
-                {"symbol": "JSWSTEEL", "name": "JSW Steel Ltd", "ltp": 1185.50, "change": -34.60, "change_pct": -2.83, "volume": 4100000},
-                {"symbol": "SHRIRAMFIN", "name": "Shriram Finance", "ltp": 865.00, "change": -35.00, "change_pct": -3.89, "volume": 2900000},
-                {"symbol": "LTIM", "name": "LTIMindtree Ltd", "ltp": 4134.00, "change": -184.00, "change_pct": -4.27, "volume": 1150000}
+        # Live Top Gainers & Losers
+        if nifty500_stocks:
+            top_gainers = sorted(nifty500_stocks, key=lambda x: x["change_pct"], reverse=True)[:10]
+            top_losers = sorted(nifty500_stocks, key=lambda x: x["change_pct"])[:10]
+        else:
+            # Fallback if offline
+            top_gainers = [
+                {"symbol": "SSWL", "name": "Steel Strips Wheels", "change_pct": 19.99, "ltp": 468.75},
+                {"symbol": "SVGLOBAL", "name": "SV Global Mill", "change_pct": 15.33, "ltp": 147.92},
+                {"symbol": "ANTELOPUS", "name": "Antelopus Energy", "change_pct": 13.00, "ltp": 1136.40},
+                {"symbol": "JINDALPOLY", "name": "Jindal Poly Films", "change_pct": 11.23, "ltp": 739.35},
+                {"symbol": "BCONCEPTS", "name": "Brand Concepts", "change_pct": 11.05, "ltp": 148.51},
+                {"symbol": "ALUFLUOR", "name": "Alufluoride Ltd", "change_pct": 9.13, "ltp": 537.15},
+                {"symbol": "NOVARTIND", "name": "Novartis India", "change_pct": 8.31, "ltp": 1824.50},
+                {"symbol": "IGIL", "name": "International Gemmological", "change_pct": 7.91, "ltp": 381.15},
+                {"symbol": "MAZDOCK", "name": "Mazagon Dock Ship", "change_pct": 6.85, "ltp": 4320.00},
+                {"symbol": "TRENT", "name": "Trent Ltd", "change_pct": 2.45, "ltp": 8140.00}
             ]
-            fo_stocks = OFFICIAL_FRIDAY_FO
+            top_losers = [
+                {"symbol": "GEOJITFSL", "name": "Geojit Financial", "change_pct": -9.84, "ltp": 112.40},
+                {"symbol": "RANEHOLDIN", "name": "Rane Holdings", "change_pct": -7.62, "ltp": 1490.10},
+                {"symbol": "DELTACORP", "name": "Delta Corp Ltd", "change_pct": -6.45, "ltp": 122.30},
+                {"symbol": "ZEEL", "name": "Zee Entertainment", "change_pct": -5.92, "ltp": 134.80},
+                {"symbol": "TATAINVEST", "name": "Tata Investment Corp", "change_pct": -5.18, "ltp": 6780.00},
+                {"symbol": "IDEA", "name": "Vodafone Idea Ltd", "change_pct": -4.85, "ltp": 7.85},
+                {"symbol": "BANDHANBNK", "name": "Bandhan Bank Ltd", "change_pct": -4.21, "ltp": 178.60},
+                {"symbol": "PAYTM", "name": "One97 Communications", "change_pct": -3.89, "ltp": 712.50},
+                {"symbol": "YESBANK", "name": "Yes Bank Ltd", "change_pct": -3.42, "ltp": 21.15},
+                {"symbol": "IRCTC", "name": "IRCTC Ltd", "change_pct": -2.95, "ltp": 862.40}
+            ]
 
-        fo_top_gainers = sorted(fo_stocks, key=lambda x: x["change_pct"], reverse=True)[:10]
-        fo_top_losers = sorted(fo_stocks, key=lambda x: x["change_pct"])[:10]
+        if fo_stocks:
+            fo_top_gainers = sorted(fo_stocks, key=lambda x: x["change_pct"], reverse=True)[:10]
+            fo_top_losers = sorted(fo_stocks, key=lambda x: x["change_pct"])[:10]
+        else:
+            fo_top_gainers = top_gainers[:10]
+            fo_top_losers = top_losers[:10]
 
-        # NIFTY 500 Advance / Decline stats (Friday session)
-        nifty500_advances = 186
-        nifty500_declines = 309
-        nifty500_unchanged = 5
-        total_nifty500 = nifty500_advances + nifty500_declines + nifty500_unchanged
-        adv_pct = round((nifty500_advances / total_nifty500) * 100, 1)
-        dec_pct = round((nifty500_declines / total_nifty500) * 100, 1)
-        unc_pct = round((nifty500_unchanged / total_nifty500) * 100, 1)
+        # Live Advance & Decline Statistics
+        if nifty500_stocks:
+            nifty500_advances = sum(1 for s in nifty500_stocks if s["change"] > 0)
+            nifty500_declines = sum(1 for s in nifty500_stocks if s["change"] < 0)
+            nifty500_unchanged = len(nifty500_stocks) - nifty500_advances - nifty500_declines
+            total_nifty500 = len(nifty500_stocks)
+        else:
+            nifty500_advances = 186
+            nifty500_declines = 309
+            nifty500_unchanged = 5
+            total_nifty500 = 500
 
-        # NIFTY F&O Advance / Decline stats (Friday official session across the 184 F&O stocks universe)
-        fo_advances = 64
-        fo_declines = 118
-        fo_unchanged = 2
-        total_fo = fo_advances + fo_declines + fo_unchanged
-        fo_adv_pct = round((fo_advances / total_fo) * 100, 1)
-        fo_dec_pct = round((fo_declines / total_fo) * 100, 1)
-        fo_unc_pct = round((fo_unchanged / total_fo) * 100, 1)
+        adv_pct = round((nifty500_advances / (total_nifty500 or 1)) * 100, 1)
+        dec_pct = round((nifty500_declines / (total_nifty500 or 1)) * 100, 1)
+        unc_pct = round((nifty500_unchanged / (total_nifty500 or 1)) * 100, 1)
 
-        # Stocks in NIFTY 500 universe where 52-week high was broken on the present day (Day High >= 52W High)
-        nifty500_52w_highs = [
-            {"symbol": "TRENT", "name": "Trent Ltd", "ltp": 8140.00, "day_high": 8195.00, "prev_52w_high": 8120.00, "change_pct": 2.45, "status": "BROKEN_TODAY", "status_label": "Broken Today"},
-            {"symbol": "MCX", "name": "Multi Commodity Exchange", "ltp": 6240.00, "day_high": 6275.00, "prev_52w_high": 6220.00, "change_pct": 4.10, "status": "BROKEN_TODAY", "status_label": "Broken Today"},
-            {"symbol": "SOLARINDS", "name": "Solar Industries India", "ltp": 11480.00, "day_high": 11520.00, "prev_52w_high": 11460.00, "change_pct": 3.12, "status": "BROKEN_TODAY", "status_label": "Broken Today"},
-            {"symbol": "DIXON", "name": "Dixon Technologies", "ltp": 14980.00, "day_high": 15040.00, "prev_52w_high": 14950.00, "change_pct": 2.95, "status": "BROKEN_TODAY", "status_label": "Broken Today"},
-            {"symbol": "PERSISTENT", "name": "Persistent Systems Ltd", "ltp": 5740.00, "day_high": 5765.00, "prev_52w_high": 5720.00, "change_pct": 1.85, "status": "BROKEN_TODAY", "status_label": "Broken Today"},
-            {"symbol": "SUZLON", "name": "Suzlon Energy Ltd", "ltp": 86.40, "day_high": 87.20, "prev_52w_high": 86.00, "change_pct": 4.85, "status": "BROKEN_TODAY", "status_label": "Broken Today"},
-            {"symbol": "POLYCAB", "name": "Polycab India Ltd", "ltp": 7280.00, "day_high": 7320.00, "prev_52w_high": 7250.00, "change_pct": 2.15, "status": "BROKEN_TODAY", "status_label": "Broken Today"},
-            {"symbol": "BHARTIARTL", "name": "Bharti Airtel Ltd", "ltp": 1718.50, "day_high": 1730.00, "prev_52w_high": 1715.00, "change_pct": 1.48, "status": "BROKEN_TODAY", "status_label": "Broken Today"},
-            {"symbol": "KAYNES", "name": "Kaynes Technology India", "ltp": 5680.00, "day_high": 5780.00, "prev_52w_high": 5740.00, "change_pct": 3.40, "status": "BROKEN_TODAY", "status_label": "Broken Today"},
-            {"symbol": "MOTHERSON", "name": "Samvardhana Motherson", "ltp": 204.50, "day_high": 208.40, "prev_52w_high": 207.50, "change_pct": 1.95, "status": "BROKEN_TODAY", "status_label": "Broken Today"},
-            {"symbol": "BOMDYEING", "name": "Bombay Dyeing & Mfg", "ltp": 242.00, "day_high": 248.50, "prev_52w_high": 246.00, "change_pct": 4.20, "status": "BROKEN_TODAY", "status_label": "Broken Today"}
-        ]
-        # Strict validation: Only keep stocks that broke the 52W high during today's session
-        nifty500_52w_highs = [s for s in nifty500_52w_highs if s.get("day_high", 0) >= s.get("prev_52w_high", float("inf"))]
+        if fo_stocks:
+            fo_advances = sum(1 for s in fo_stocks if s["change"] > 0)
+            fo_declines = sum(1 for s in fo_stocks if s["change"] < 0)
+            fo_unchanged = len(fo_stocks) - fo_advances - fo_declines
+            total_fo = len(fo_stocks)
+        else:
+            fo_advances = 64
+            fo_declines = 118
+            fo_unchanged = 2
+            total_fo = 184
 
-        return {
+        fo_adv_pct = round((fo_advances / (total_fo or 1)) * 100, 1)
+        fo_dec_pct = round((fo_declines / (total_fo or 1)) * 100, 1)
+        fo_unc_pct = round((fo_unchanged / (total_fo or 1)) * 100, 1)
+
+        result_payload = {
             "candle_time": candle_time_str,
             "indices": indices,
             "top_gainers": top_gainers,
             "top_losers": top_losers,
             "fo_top_gainers": fo_top_gainers,
             "fo_top_losers": fo_top_losers,
-            "nifty500_52w_highs": nifty500_52w_highs,
-            "nifty500_52w_highs_count": len(nifty500_52w_highs),
             "breadth_summary": {
                 "index_name": "NIFTY 500",
                 "advances": nifty500_advances,
@@ -519,6 +552,10 @@ class ScreenerEngine:
                 "ratio": round(fo_advances / (fo_declines or 1), 2)
             }
         }
+
+        cls._breadth_cache = result_payload
+        cls._breadth_last_fetch = now_ts
+        return result_payload
 
     @classmethod
     def get_index_stocks(cls, index_name: str) -> Dict[str, Any]:
