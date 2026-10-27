@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none">
+  <defs>
+    <linearGradient id="poleGrad" x1="0%" y1="100%" x2="0%" y2="0%">
+      <stop offset="0%" stop-color="#1E3A8A"/>
+      <stop offset="50%" stop-color="#2563EB"/>
+      <stop offset="100%" stop-color="#38BDF8"/>
+    </linearGradient>
+
+    <linearGradient id="breakoutGrad" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#059669"/>
+      <stop offset="50%" stop-color="#10B981"/>
+      <stop offset="100%" stop-color="#00F5A0"/>
+    </linearGradient>
+
+    <linearGradient id="pennantFill" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#3B82F6" stop-opacity="0.18"/>
+      <stop offset="100%" stop-color="#10B981" stop-opacity="0.25"/>
+    </linearGradient>
+
+    <filter id="breakoutGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3.5" flood-color="#00F5A0" flood-opacity="0.5"/>
+    </filter>
+  </defs>
+
+  <!-- Dark Rounded Container -->
+  <rect x="3" y="3" width="114" height="114" rx="26" fill="#0A0E17" stroke="#1E293B" stroke-width="2"/>
+
+  <!-- Grid / Technical Chart Background lines -->
+  <line x1="20" y1="92" x2="100" y2="92" stroke="#162235" stroke-width="1.5" stroke-dasharray="3 3"/>
+  <line x1="20" y1="68" x2="100" y2="68" stroke="#162235" stroke-width="1.5" stroke-dasharray="3 3"/>
+  <line x1="20" y1="44" x2="100" y2="44" stroke="#162235" stroke-width="1.5" stroke-dasharray="3 3"/>
+
+  <!-- Flagpole: Strong Momentum Impulse Rally -->
+  <path d="M 28 92 L 28 32" stroke="url(#poleGrad)" stroke-width="7" stroke-linecap="round"/>
+  <!-- Base support foundation dot -->
+  <circle cx="28" cy="92" r="4.5" fill="#2563EB"/>
+
+  <!-- Symmetrical Pennant Triangle Consolidation Zone -->
+  <!-- Upper Descending Trendline: from (28, 32) down to apex (68, 52) -->
+  <!-- Lower Ascending Trendline: from (28, 72) up to apex (68, 52) -->
+  <polygon points="28,32 68,52 28,72" fill="url(#pennantFill)" stroke="#2563EB" stroke-width="1.5" stroke-linejoin="round" stroke-opacity="0.6"/>
+  <line x1="28" y1="32" x2="68" y2="52" stroke="#60A5FA" stroke-width="3" stroke-linecap="round"/>
+  <line x1="28" y1="72" x2="68" y2="52" stroke="#38BDF8" stroke-width="3" stroke-linecap="round"/>
+
+  <!-- Internal Price Waves inside the pennant -->
+  <path d="M 33 67 L 43 40 L 53 60 L 61 48 L 68 52" 
+        stroke="#93C5FD" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.7"/>
+
+  <!-- Explosive Bullish Breakout Vector out of Apex -->
+  <g filter="url(#breakoutGlow)">
+    <!-- Breakout impulse trajectory -->
+    <path d="M 68 52 L 95 24" stroke="url(#breakoutGrad)" stroke-width="6.5" stroke-linecap="round"/>
+    
+    <!-- Sharp Breakout Arrowhead -->
+    <path d="M 80 20 L 100 19 L 98 39 Z" fill="url(#breakoutGrad)"/>
+    
+    <!-- Breakout Confirmation Pulse Node -->
+    <circle cx="68" cy="52" r="4.5" fill="#00F5A0"/>
+  </g>
+</svg>

@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none">
+  <defs>
+    <linearGradient id="blueRing" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3B82F6" />
+      <stop offset="100%" stop-color="#1D4ED8" />
+    </linearGradient>
+    <linearGradient id="emeraldArrow" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#10B981" />
+      <stop offset="50%" stop-color="#22C55E" />
+      <stop offset="100%" stop-color="#4ADE80" />
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#10B981" flood-opacity="0.3"/>
+    </filter>
+  </defs>
+  <!-- Background subtle badge -->
+  <rect width="100" height="100" rx="22" fill="#0C121E" />
+  <rect width="100" height="100" rx="22" stroke="#1E293B" stroke-width="2" />
+  
+  <!-- Outer Blue Ring (Q loop) -->
+  <path d="M 45 22 C 28 22 18 36 18 53 C 18 70 30 82 48 82 C 60 82 70 74 74 63" 
+        stroke="url(#blueRing)" stroke-width="9" stroke-linecap="round" fill="none" />
+        
+  <!-- Alpha inner loop & Breakout Arrow -->
+  <g filter="url(#glow)">
+    <!-- Alpha loop -->
+    <path d="M 52 46 C 42 46 36 53 36 62 C 36 71 43 78 52 78 C 61 78 69 70 72 58 L 81 33" 
+          stroke="url(#emeraldArrow)" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+    <!-- Arrow Head -->
+    <polygon points="84,20 72,34 91,33" fill="url(#emeraldArrow)" />
+  </g>
+</svg>

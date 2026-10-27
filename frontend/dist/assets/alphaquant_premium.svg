@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none">
+  <defs>
+    <linearGradient id="blueGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0284C7" />
+      <stop offset="50%" stop-color="#2563EB" />
+      <stop offset="100%" stop-color="#1E40AF" />
+    </linearGradient>
+    <linearGradient id="greenGradient" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#10B981" />
+      <stop offset="40%" stop-color="#22C55E" />
+      <stop offset="100%" stop-color="#4ADE80" />
+    </linearGradient>
+    <filter id="vectorGlow" x="-15%" y="-15%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-color="#10B981" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+
+  <!-- Blue Arc: Outer Q Body -->
+  <path d="M 46 16 C 26 16 12 30 12 50 C 12 68 25 82 46 82 C 60 82 72 72 76 58" 
+        stroke="url(#blueGradient)" stroke-width="10.5" stroke-linecap="round" fill="none" />
+
+  <!-- Green Alpha & Ascending Trend Arrow -->
+  <g filter="url(#vectorGlow)">
+    <!-- Alpha Loop -->
+    <path d="M 52 42 C 38 42 28 51 28 62 C 28 72 38 79 50 79 C 64 79 74 65 78 50 L 86 26" 
+          stroke="url(#greenGradient)" stroke-width="9.5" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+    <!-- Sharp Arrowhead -->
+    <path d="M 72 23 L 90 20 L 87 38 Z" fill="url(#greenGradient)" />
+  </g>
+</svg>

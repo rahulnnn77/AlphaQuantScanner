@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none">
+  <defs>
+    <linearGradient id="c1_bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0F172A"/>
+      <stop offset="100%" stop-color="#020617"/>
+    </linearGradient>
+    <linearGradient id="c1_line" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#2563EB"/>
+      <stop offset="40%" stop-color="#38BDF8"/>
+      <stop offset="70%" stop-color="#10B981"/>
+      <stop offset="100%" stop-color="#4ADE80"/>
+    </linearGradient>
+    <linearGradient id="c1_flag" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38BDF8" stop-opacity="0.3"/>
+      <stop offset="100%" stop-color="#10B981" stop-opacity="0.05"/>
+    </linearGradient>
+    <filter id="c1_glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="1" stdDeviation="2.5" flood-color="#4ADE80" flood-opacity="0.5"/>
+    </filter>
+  </defs>
+  <rect width="100" height="100" rx="22" fill="url(#c1_bg)" stroke="#1E293B" stroke-width="2"/>
+  
+  <!-- Flagpole: 45 degree sharp momentum ascent -->
+  <path d="M 18 80 L 44 32" stroke="url(#c1_line)" stroke-width="6" stroke-linecap="round"/>
+  
+  <!-- Symmetrical Pennant Triangle -->
+  <polygon points="44,32 72,46 44,60" fill="url(#c1_flag)" stroke="#38BDF8" stroke-width="2.5" stroke-linejoin="round"/>
+  
+  <!-- Inner trend zig-zag -->
+  <path d="M 48 56 L 56 38 L 64 50 L 72 46" stroke="#93C5FD" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  
+  <!-- Breakout Surge -->
+  <g filter="url(#c1_glow)">
+    <path d="M 72 46 L 86 24" stroke="#4ADE80" stroke-width="5" stroke-linecap="round"/>
+    <path d="M 76 21 L 90 20 L 88 34 Z" fill="#4ADE80"/>
+  </g>
+</svg>
