@@ -207,8 +207,110 @@ def run_mean_reversion_scan():
         }, f, indent=2)
     logger.info("Saved fresh HPS Mean Reversion cache.")
 
+def broadcast_scan_summary_to_telegram():
+    """
+    Sends automated alerts for breakout stocks across 4H, Daily, Weekly, and Monthly
+    explicitly mentioning the Timeframe and F&O segment tag.
+    """
+    try:
+        from app.core.database import SessionLocal
+        from app.models.entities import TelegramSettings, User
+        import requests, pytz
+        from datetime import datetime
+
+        db = SessionLocal()
+        settings = db.query(TelegramSettings).first()
+        if not settings or not settings.is_enabled or not settings.bot_token:
+            db.close()
+            return
+
+        cache_file = os.path.join(BASE_DIR, "hps_screener_cache.json")
+        if not os.path.exists(cache_file):
+            db.close()
+            return
+
+        with open(cache_file, "r") as f:
+            hps_data = json.load(f).get("results", {})
+
+        ist = pytz.timezone("Asia/Kolkata")
+        now_str = datetime.now(ist).strftime("%d %b %Y, %I:%M %p IST")
+
+        # 1. Prepare message with explicit Timeframes and F&O tags
+        lines = [
+            "<b>AlphaQuant Screener Alert</b>",
+            f"<b>Session:</b> {now_str}",
+            "<b>Scan Type:</b> HPS Breakout & Breakdown (Multi-Timeframe)",
+            ""
+        ]
+
+        tf_labels = {
+            "daily": "Daily (1D Trend)",
+            "4h": "4-Hour (4H Swing)",
+            "weekly": "Weekly (1W Positional)",
+            "monthly": "Monthly (1M Macro)"
+        }
+
+        has_stocks = False
+        for tf in ["daily", "weekly", "4h", "monthly"]:
+            items = hps_data.get(tf, [])
+            fo_stocks = [s for s in items if s.get("is_fo")]
+            other_stocks = [s for s in items if not s.get("is_fo")]
+
+            bullish = [s for s in (fo_stocks + other_stocks) if s.get("status") == "BROKEN_ABOVE"][:3]
+            bearish = [s for s in (fo_stocks + other_stocks) if s.get("status") == "BROKEN_BELOW"][:3]
+
+            if not bullish and not bearish:
+                continue
+
+            has_stocks = True
+            lines.append(f"<b>[{tf_labels.get(tf, tf.upper())}]</b>")
+            if bullish:
+                lines.append("  <b>Bullish Breakout:</b>")
+                for s in bullish:
+                    tag = " [F&amp;O]" if s.get("is_fo") else ""
+                    lines.append(f"   • <code>{s['symbol']}</code>: ₹{s.get('ltp', 0.0):,.2f} (+{s.get('diff_pct', 0.0):.2f}%){tag}")
+            if bearish:
+                lines.append("  <b>Bearish Breakdown:</b>")
+                for s in bearish:
+                    tag = " [F&amp;O]" if s.get("is_fo") else ""
+                    lines.append(f"   • <code>{s['symbol']}</code>: ₹{s.get('ltp', 0.0):,.2f} ({s.get('diff_pct', 0.0):.2f}%){tag}")
+            lines.append("")
+
+        if not has_stocks:
+            db.close()
+            return
+
+        lines.append("<i>Live scan from AlphaQuant Terminal</i>")
+        msg = "\n".join(lines)
+
+        # Recipients
+        users = db.query(User).filter(
+            User.telegram_chat_id.isnot(None),
+            User.is_active == True,
+            User.telegram_alerts_enabled == True
+        ).all()
+
+        chat_ids = set()
+        if settings.default_channel_id:
+            chat_ids.add(settings.default_channel_id)
+        for u in users:
+            chat_ids.add(u.telegram_chat_id)
+
+        url = f"https://api.telegram.org/bot{settings.bot_token}/sendMessage"
+        for cid in chat_ids:
+            try:
+                requests.post(url, json={"chat_id": cid, "text": msg, "parse_mode": "HTML"}, timeout=8)
+            except Exception as e:
+                logger.warning(f"Error sending to {cid}: {e}")
+
+        db.close()
+        logger.info(f"Broadcasted scan summary to {len(chat_ids)} chats.")
+    except Exception as e:
+        logger.error(f"Error broadcasting scan summary to Telegram: {e}")
+
 if __name__ == "__main__":
     t0 = time.time()
     run_hps_breakout_scan()
     run_mean_reversion_scan()
+    broadcast_scan_summary_to_telegram()
     logger.info(f"Full scanner update finished in {round(time.time() - t0, 1)}s")
