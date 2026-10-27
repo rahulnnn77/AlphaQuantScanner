@@ -1632,6 +1632,8 @@
 
       useEffect(() => {
         fetchHpsData();
+        const intervalId = setInterval(fetchHpsData, 10000);
+        return () => clearInterval(intervalId);
       }, [universe]);
 
       const currentList = dataByTimeframe[activeTimeframe] || [];
@@ -1661,15 +1663,22 @@
           {/* Top Banner / Header */}
           <div className="bg-[#0E1524] border border-[#1A2538] rounded-xl p-5 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
-              <div className="flex items-center space-x-3">
-                <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-pulse"></span>
-                <h1 className="text-lg font-bold text-white tracking-tight">HPS Stocks (Breakout Tracker)</h1>
-                <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-400 font-bold border border-cyan-500/25">
-                  Multi-Timeframe Strategy
-                </span>
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="flex items-center space-x-3">
+                  <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-pulse"></span>
+                  <h1 className="text-lg font-bold text-white tracking-tight">HPS Stocks (Breakout Tracker)</h1>
+                  <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-400 font-bold border border-cyan-500/25">
+                    Multi-Timeframe Strategy
+                  </span>
+                </div>
+                {lastUpdated && (
+                  <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-[#10192A] text-slate-300 border border-[#1E2E48]">
+                    {lastUpdated}
+                  </span>
+                )}
               </div>
               <p className="text-xs text-slate-400 mt-1">
-                Stocks that triggered high-probability breakout and breakdown signals across key timeframe levels.
+                Stocks that triggered high-probability breakout and breakdown signals across key timeframe levels with live Dhan prices.
               </p>
             </div>
 
@@ -1983,6 +1992,8 @@
 
       useEffect(() => {
         fetchMeanReversionData();
+        const intervalId = setInterval(fetchMeanReversionData, 10000);
+        return () => clearInterval(intervalId);
       }, [universe]);
 
       const tfData = dataByTimeframe[timeframe] || { level1: [], level2: [], level3: [] };
@@ -2026,15 +2037,22 @@
           {/* Top Banner / Header */}
           <div className="bg-[#0E1524] border border-[#1A2538] rounded-xl p-5 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
-              <div className="flex items-center space-x-3">
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                <h1 className="text-lg font-bold text-white tracking-tight">HPS Mean Reversion</h1>
-                <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 font-bold border border-emerald-500/25">
-                  Institutional Value Zones
-                </span>
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="flex items-center space-x-3">
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                  <h1 className="text-lg font-bold text-white tracking-tight">HPS Mean Reversion</h1>
+                  <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 font-bold border border-emerald-500/25">
+                    Institutional Value Zones
+                  </span>
+                </div>
+                {lastUpdated && (
+                  <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-[#10192A] text-slate-300 border border-[#1E2E48]">
+                    {lastUpdated}
+                  </span>
+                )}
               </div>
               <p className="text-xs text-slate-400 mt-1">
-                Identifies stocks currently testing high-probability support levels for potential mean-reversion bounces.
+                Identifies stocks currently testing high-probability support levels for potential mean-reversion bounces with live Dhan prices.
               </p>
             </div>
 

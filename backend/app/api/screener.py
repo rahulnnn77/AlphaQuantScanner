@@ -59,22 +59,88 @@ def get_hps_stocks(
     results_by_tf = data.get("results", {"4h": [], "daily": [], "weekly": [], "monthly": []})
     last_updated = data.get("last_updated", "Recent")
     
-    # Filter universe if requested
+    # Fetch live Dhan quotes cache to enrich LTP and spreads dynamically
+    dhan_quotes = {}
+    try:
+        from app.services.screener_engine import ScreenerEngine
+        breadth = ScreenerEngine.get_market_breadth()
+        # ScreenerEngine caches 495 live equity prices
+        # We also enrich from live Dhan batch if needed
+        dhan_quotes = getattr(ScreenerEngine, "_last_eq_quotes", {})
+    except Exception:
+        pass
+
+    # Ensure live prices from Dhan are populated
+    if not dhan_quotes:
+        try:
+            from app.core.session_store import session_manager
+            from app.core.config import settings
+            token = session_manager.get_token()
+            client_id = settings.DHAN_CLIENT_ID or session_manager.get_client_id()
+            if token and client_id:
+                headers = {
+                    "access-token": token,
+                    "client-id": str(client_id),
+                    "Content-Type": "application/json",
+                    "Accept": "application/json"
+                }
+                base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+                map_file = os.path.join(base_dir, "nifty500_dhan_map.json")
+                if os.path.exists(map_file):
+                    with open(map_file, "r") as mf:
+                        d_map = json.load(mf)
+                    sec_ids = [v["security_id"] for v in d_map.values()]
+                    res = requests.post("https://api.dhan.co/v2/marketfeed/ohlc", headers=headers, json={"NSE_EQ": sec_ids}, timeout=5)
+                    if res.status_code == 200:
+                        raw = res.json().get("data", {}).get("NSE_EQ", {})
+                        for sym, inf in d_map.items():
+                            sid_s = str(inf["security_id"])
+                            if sid_s in raw:
+                                dhan_quotes[sym] = float(raw[sid_s].get("last_price", 0.0))
+        except Exception:
+            pass
+
+    import pytz
+    from datetime import datetime
+    ist = pytz.timezone("Asia/Kolkata")
+    now_ist = datetime.now(ist)
+    day_suffix = "th" if 11 <= now_ist.day <= 13 else {1: "st", 2: "nd", 3: "rd"}.get(now_ist.day % 10, "th")
+    formatted_date = now_ist.strftime(f"%A {now_ist.day}{day_suffix} %b")
+    is_weekday = now_ist.weekday() < 5
+    is_market_open = is_weekday and ((now_ist.hour == 9 and now_ist.minute >= 15) or (10 <= now_ist.hour < 15) or (now_ist.hour == 15 and now_ist.minute <= 30))
+    if is_market_open:
+        live_timestamp = f"Live: {formatted_date} ({now_ist.strftime('%I:%M%p').lower().lstrip('0')})"
+    else:
+        live_timestamp = f"{formatted_date} Close (3:30pm)"
+
+    # Filter universe if requested and enrich with live LTP
     is_fo_only = (universe.lower() == "fo")
     
     filtered_results = {}
     counts = {}
     for tf_key, items in results_by_tf.items():
-        if is_fo_only:
-            tf_items = [it for it in items if it.get("is_fo")]
-        else:
-            tf_items = items
-        filtered_results[tf_key] = tf_items
-        counts[tf_key] = len(tf_items)
+        enriched_items = []
+        for it in items:
+            if is_fo_only and not it.get("is_fo"):
+                continue
+            item_copy = dict(it)
+            sym = item_copy.get("symbol")
+            if sym and sym in dhan_quotes and dhan_quotes[sym] > 0:
+                live_ltp = dhan_quotes[sym]
+                item_copy["ltp"] = live_ltp
+                # recalculate diff_pct against confidential baseline reference
+                base_ref = it.get("ltp") or live_ltp
+                orig_diff = it.get("diff_pct", 0.0)
+                if base_ref > 0:
+                    delta_pct = ((live_ltp - base_ref) / base_ref) * 100
+                    item_copy["diff_pct"] = round(orig_diff + delta_pct, 2)
+            enriched_items.append(item_copy)
+        filtered_results[tf_key] = enriched_items
+        counts[tf_key] = len(enriched_items)
 
     return {
         "status": "success",
-        "last_updated": last_updated,
+        "last_updated": live_timestamp,
         "universe": universe.upper(),
         "counts": counts,
         "timeframe": timeframe,
@@ -89,10 +155,10 @@ def get_hps_mean_reversion_stocks(
 ):
     """
     Returns HPS Mean Reversion Stocks at Level-1, Level-2, and Level-3 support/reversion zones
-    across daily, weekly, and monthly timeframes.
+    across daily, weekly, and monthly timeframes with live Dhan LTP prices and dynamic session timestamps.
     Supports filtering by universe (Nifty 500 vs Nifty F&O).
     """
-    import os, json
+    import os, json, requests
     cache_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "hps_mean_reversion_cache.json")
     if not os.path.exists(cache_path):
         cache_path = "hps_mean_reversion_cache.json"
@@ -110,7 +176,49 @@ def get_hps_mean_reversion_stocks(
         "weekly": {"level1": [], "level2": [], "level3": []},
         "monthly": {"level1": [], "level2": [], "level3": []}
     })
-    last_updated = data.get("last_updated", "Recent")
+
+    # Fetch live Dhan quotes cache to enrich LTP dynamically
+    dhan_quotes = {}
+    try:
+        from app.core.session_store import session_manager
+        from app.core.config import settings
+        token = session_manager.get_token()
+        client_id = settings.DHAN_CLIENT_ID or session_manager.get_client_id()
+        if token and client_id:
+            headers = {
+                "access-token": token,
+                "client-id": str(client_id),
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            }
+            base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+            map_file = os.path.join(base_dir, "nifty500_dhan_map.json")
+            if os.path.exists(map_file):
+                with open(map_file, "r") as mf:
+                    d_map = json.load(mf)
+                sec_ids = [v["security_id"] for v in d_map.values()]
+                res = requests.post("https://api.dhan.co/v2/marketfeed/ohlc", headers=headers, json={"NSE_EQ": sec_ids}, timeout=5)
+                if res.status_code == 200:
+                    raw = res.json().get("data", {}).get("NSE_EQ", {})
+                    for sym, inf in d_map.items():
+                        sid_s = str(inf["security_id"])
+                        if sid_s in raw:
+                            dhan_quotes[sym] = float(raw[sid_s].get("last_price", 0.0))
+    except Exception:
+        pass
+
+    import pytz
+    from datetime import datetime
+    ist = pytz.timezone("Asia/Kolkata")
+    now_ist = datetime.now(ist)
+    day_suffix = "th" if 11 <= now_ist.day <= 13 else {1: "st", 2: "nd", 3: "rd"}.get(now_ist.day % 10, "th")
+    formatted_date = now_ist.strftime(f"%A {now_ist.day}{day_suffix} %b")
+    is_weekday = now_ist.weekday() < 5
+    is_market_open = is_weekday and ((now_ist.hour == 9 and now_ist.minute >= 15) or (10 <= now_ist.hour < 15) or (now_ist.hour == 15 and now_ist.minute <= 30))
+    if is_market_open:
+        live_timestamp = f"Live: {formatted_date} ({now_ist.strftime('%I:%M%p').lower().lstrip('0')})"
+    else:
+        live_timestamp = f"{formatted_date} Close (3:30pm)"
     
     is_fo_only = (universe.lower() == "fo")
     
@@ -121,12 +229,25 @@ def get_hps_mean_reversion_stocks(
         filtered_results[tf_key] = {}
         counts[tf_key] = {}
         for l_key, items in level_dict.items():
-            if is_fo_only:
-                l_items = [it for it in items if it.get("is_fo")]
-            else:
-                l_items = items
-            filtered_results[tf_key][l_key] = l_items
-            counts[tf_key][l_key] = len(l_items)
+            enriched_items = []
+            for it in items:
+                if is_fo_only and not it.get("is_fo"):
+                    continue
+                item_copy = dict(it)
+                sym = item_copy.get("symbol")
+                if sym and sym in dhan_quotes and dhan_quotes[sym] > 0:
+                    live_ltp = dhan_quotes[sym]
+                    item_copy["ltp"] = live_ltp
+                    base_ref = it.get("ltp") or live_ltp
+                    orig_spread = it.get("spread_pct", 0.0)
+                    if base_ref > 0:
+                        delta_pct = ((live_ltp - base_ref) / base_ref) * 100
+                        new_spread = round(orig_spread + delta_pct, 2)
+                        item_copy["spread_pct"] = new_spread
+                        item_copy["status"] = "At Support Level" if new_spread >= 0 else "Testing Level"
+                enriched_items.append(item_copy)
+            filtered_results[tf_key][l_key] = enriched_items
+            counts[tf_key][l_key] = len(enriched_items)
 
     tf_norm = timeframe.lower()
     lvl_norm = level.lower()
@@ -142,7 +263,7 @@ def get_hps_mean_reversion_stocks(
 
     return {
         "status": "success",
-        "last_updated": last_updated,
+        "last_updated": live_timestamp,
         "universe": universe.upper(),
         "timeframe": timeframe,
         "level": level,
