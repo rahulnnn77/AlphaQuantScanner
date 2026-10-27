@@ -272,6 +272,7 @@ class ScreenerEngine:
 
     _breadth_cache: Dict[str, Any] = {}
     _breadth_last_fetch: float = 0.0
+    _last_eq_quotes: Dict[str, float] = {}
 
     @classmethod
     def get_market_breadth(cls) -> Dict[str, Any]:
@@ -411,11 +412,14 @@ class ScreenerEngine:
                             })
 
                     eq_data = data.get("NSE_EQ", {})
+                    cls._last_eq_quotes = {}
                     for sym, info in nifty500_map.items():
                         sid_str = str(info["security_id"])
                         if sid_str in eq_data:
                             item = eq_data[sid_str]
                             ltp = float(item.get("last_price", 0.0))
+                            if ltp > 0:
+                                cls._last_eq_quotes[sym] = round(ltp, 2)
                             ohlc = item.get("ohlc", {})
                             prev_close = float(ohlc.get("close", 0.0))
                             if prev_close <= 0:
@@ -547,7 +551,8 @@ class ScreenerEngine:
                 "declines_pct": fo_dec_pct,
                 "unchanged_pct": fo_unc_pct,
                 "ratio": round(fo_advances / (fo_declines or 1), 2)
-            }
+            },
+            "live_quotes": cls._last_eq_quotes
         }
 
         cls._breadth_cache = result_payload

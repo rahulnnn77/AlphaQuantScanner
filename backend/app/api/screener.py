@@ -64,41 +64,9 @@ def get_hps_stocks(
     try:
         from app.services.screener_engine import ScreenerEngine
         breadth = ScreenerEngine.get_market_breadth()
-        # ScreenerEngine caches 495 live equity prices
-        # We also enrich from live Dhan batch if needed
-        dhan_quotes = getattr(ScreenerEngine, "_last_eq_quotes", {})
-    except Exception:
+        dhan_quotes = breadth.get("live_quotes", {}) or getattr(ScreenerEngine, "_last_eq_quotes", {})
+    except Exception as e:
         pass
-
-    # Ensure live prices from Dhan are populated
-    if not dhan_quotes:
-        try:
-            from app.core.session_store import session_manager
-            from app.core.config import settings
-            token = session_manager.get_token()
-            client_id = settings.DHAN_CLIENT_ID or session_manager.get_client_id()
-            if token and client_id:
-                headers = {
-                    "access-token": token,
-                    "client-id": str(client_id),
-                    "Content-Type": "application/json",
-                    "Accept": "application/json"
-                }
-                base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-                map_file = os.path.join(base_dir, "nifty500_dhan_map.json")
-                if os.path.exists(map_file):
-                    with open(map_file, "r") as mf:
-                        d_map = json.load(mf)
-                    sec_ids = [v["security_id"] for v in d_map.values()]
-                    res = requests.post("https://api.dhan.co/v2/marketfeed/ohlc", headers=headers, json={"NSE_EQ": sec_ids}, timeout=5)
-                    if res.status_code == 200:
-                        raw = res.json().get("data", {}).get("NSE_EQ", {})
-                        for sym, inf in d_map.items():
-                            sid_s = str(inf["security_id"])
-                            if sid_s in raw:
-                                dhan_quotes[sym] = float(raw[sid_s].get("last_price", 0.0))
-        except Exception:
-            pass
 
     import pytz
     from datetime import datetime
@@ -180,30 +148,9 @@ def get_hps_mean_reversion_stocks(
     # Fetch live Dhan quotes cache to enrich LTP dynamically
     dhan_quotes = {}
     try:
-        from app.core.session_store import session_manager
-        from app.core.config import settings
-        token = session_manager.get_token()
-        client_id = settings.DHAN_CLIENT_ID or session_manager.get_client_id()
-        if token and client_id:
-            headers = {
-                "access-token": token,
-                "client-id": str(client_id),
-                "Content-Type": "application/json",
-                "Accept": "application/json"
-            }
-            base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-            map_file = os.path.join(base_dir, "nifty500_dhan_map.json")
-            if os.path.exists(map_file):
-                with open(map_file, "r") as mf:
-                    d_map = json.load(mf)
-                sec_ids = [v["security_id"] for v in d_map.values()]
-                res = requests.post("https://api.dhan.co/v2/marketfeed/ohlc", headers=headers, json={"NSE_EQ": sec_ids}, timeout=5)
-                if res.status_code == 200:
-                    raw = res.json().get("data", {}).get("NSE_EQ", {})
-                    for sym, inf in d_map.items():
-                        sid_s = str(inf["security_id"])
-                        if sid_s in raw:
-                            dhan_quotes[sym] = float(raw[sid_s].get("last_price", 0.0))
+        from app.services.screener_engine import ScreenerEngine
+        breadth = ScreenerEngine.get_market_breadth()
+        dhan_quotes = breadth.get("live_quotes", {}) or getattr(ScreenerEngine, "_last_eq_quotes", {})
     except Exception:
         pass
 
