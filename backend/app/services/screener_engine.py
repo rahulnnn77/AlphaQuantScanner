@@ -346,50 +346,8 @@ class ScreenerEngine:
                 "Accept": "application/json"
             }
 
-        # 1. Fetch Real-time Live Indices from Dhan
+        # 1. Fetch Real-time Live Indices and Stocks from Dhan in ONE combined batch query
         indices = []
-        if headers:
-            try:
-                sec_ids = [int(k) for k in DHAN_NSE_INDEX_MAP.keys()]
-                dhan_res = requests.post(
-                    "https://api.dhan.co/v2/marketfeed/ohlc",
-                    headers=headers,
-                    json={"IDX_I": sec_ids},
-                    timeout=5
-                )
-                if dhan_res.status_code == 200:
-                    dhan_data = dhan_res.json().get("data", {}).get("IDX_I", {})
-                    for sec_id_str, meta in DHAN_NSE_INDEX_MAP.items():
-                        live_item = dhan_data.get(sec_id_str)
-                        if live_item:
-                            ltp = float(live_item.get("last_price", meta["fallback_ltp"]))
-                            ohlc = live_item.get("ohlc", {})
-                            prev_close = float(ohlc.get("close", 0.0))
-                            if prev_close <= 0:
-                                prev_close = float(ohlc.get("open", ltp))
-                            change = round(ltp - prev_close, 2)
-                            change_pct = round((change / prev_close * 100), 2) if prev_close > 0 else 0.0
-                            indices.append({
-                                "symbol": meta["symbol"],
-                                "name": meta["name"],
-                                "ltp": round(ltp, 2),
-                                "change": change,
-                                "change_pct": change_pct
-                            })
-            except Exception as e:
-                logger.warning(f"Dhan live indices query failed: {e}")
-
-        if not indices:
-            for sec_id_str, meta in DHAN_NSE_INDEX_MAP.items():
-                indices.append({
-                    "symbol": meta["symbol"],
-                    "name": meta["name"],
-                    "ltp": meta["fallback_ltp"],
-                    "change": meta["fallback_chg"],
-                    "change_pct": meta["fallback_pct"]
-                })
-
-        # 2. Fetch Live Quotes for NIFTY 500 & F&O Universes from Dhan
         nifty500_stocks = []
         fo_stocks = []
         import json, os
@@ -415,18 +373,44 @@ class ScreenerEngine:
             except Exception as e:
                 logger.warning(f"Error loading fo_dhan_map: {e}")
 
-        if headers and nifty500_map:
+        if headers:
             try:
-                sec_ids = [v["security_id"] for v in nifty500_map.values()]
-                # Dhan marketfeed allows up to 1000 instruments in one POST
-                batch_res = requests.post(
+                idx_sec_ids = [int(k) for k in DHAN_NSE_INDEX_MAP.keys()]
+                eq_sec_ids = [v["security_id"] for v in nifty500_map.values()] if nifty500_map else []
+                
+                payload = {"IDX_I": idx_sec_ids}
+                if eq_sec_ids:
+                    payload["NSE_EQ"] = eq_sec_ids
+
+                # Single combined POST to avoid Dhan 429 rate limiting
+                dhan_res = requests.post(
                     "https://api.dhan.co/v2/marketfeed/ohlc",
                     headers=headers,
-                    json={"NSE_EQ": sec_ids},
+                    json=payload,
                     timeout=8
                 )
-                if batch_res.status_code == 200:
-                    eq_data = batch_res.json().get("data", {}).get("NSE_EQ", {})
+                if dhan_res.status_code == 200:
+                    data = dhan_res.json().get("data", {})
+                    dhan_idx_data = data.get("IDX_I", {})
+                    for sec_id_str, meta in DHAN_NSE_INDEX_MAP.items():
+                        live_item = dhan_idx_data.get(sec_id_str)
+                        if live_item:
+                            ltp = float(live_item.get("last_price", meta["fallback_ltp"]))
+                            ohlc = live_item.get("ohlc", {})
+                            prev_close = float(ohlc.get("close", 0.0))
+                            if prev_close <= 0:
+                                prev_close = float(ohlc.get("open", ltp))
+                            change = round(ltp - prev_close, 2)
+                            change_pct = round((change / prev_close * 100), 2) if prev_close > 0 else 0.0
+                            indices.append({
+                                "symbol": meta["symbol"],
+                                "name": meta["name"],
+                                "ltp": round(ltp, 2),
+                                "change": change,
+                                "change_pct": change_pct
+                            })
+
+                    eq_data = data.get("NSE_EQ", {})
                     for sym, info in nifty500_map.items():
                         sid_str = str(info["security_id"])
                         if sid_str in eq_data:
@@ -436,22 +420,35 @@ class ScreenerEngine:
                             prev_close = float(ohlc.get("close", 0.0))
                             if prev_close <= 0:
                                 prev_close = float(ohlc.get("open", ltp))
-                            chg = round(ltp - prev_close, 2)
-                            pct = round((chg / prev_close) * 100, 2) if prev_close > 0 else 0.0
-                            stock_obj = {
-                                "symbol": sym,
-                                "name": info.get("name", sym),
-                                "ltp": round(ltp, 2),
-                                "change": chg,
-                                "change_pct": pct,
-                                "high": float(ohlc.get("high", ltp)),
-                                "low": float(ohlc.get("low", ltp))
-                            }
-                            nifty500_stocks.append(stock_obj)
-                            if sym in fo_map:
-                                fo_stocks.append(stock_obj)
+                            if prev_close > 0 and ltp > 0:
+                                chg = round(ltp - prev_close, 2)
+                                pct = round((chg / prev_close) * 100, 2)
+                                stock_obj = {
+                                    "symbol": sym,
+                                    "name": info.get("name", sym),
+                                    "ltp": round(ltp, 2),
+                                    "change": chg,
+                                    "change_pct": pct,
+                                    "high": float(ohlc.get("high", ltp)),
+                                    "low": float(ohlc.get("low", ltp))
+                                }
+                                nifty500_stocks.append(stock_obj)
+                                if sym in fo_map:
+                                    fo_stocks.append(stock_obj)
+                else:
+                    logger.warning(f"Dhan batch marketfeed returned {dhan_res.status_code}: {dhan_res.text[:200]}")
             except Exception as e:
                 logger.warning(f"Dhan live batch quotes query failed: {e}")
+
+        if not indices:
+            for sec_id_str, meta in DHAN_NSE_INDEX_MAP.items():
+                indices.append({
+                    "symbol": meta["symbol"],
+                    "name": meta["name"],
+                    "ltp": meta["fallback_ltp"],
+                    "change": meta["fallback_chg"],
+                    "change_pct": meta["fallback_pct"]
+                })
 
         # Live Top Gainers & Losers
         if nifty500_stocks:
