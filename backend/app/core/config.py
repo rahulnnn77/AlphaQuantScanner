@@ -2,6 +2,10 @@ from pydantic_settings import BaseSettings
 from typing import Optional
 import os
 
+BACKEND_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+DATA_DIR = os.path.join(BACKEND_DIR, "data")
+os.makedirs(DATA_DIR, exist_ok=True)
+
 class Settings(BaseSettings):
     PROJECT_NAME: str = "AlphaQuant Dhan Market Screener"
     API_V1_STR: str = "/api/v1"
@@ -9,9 +13,9 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7  # 7 days
     ALGORITHM: str = "HS256"
     
-    # Session & Database configuration
-    DATABASE_URL: str = "sqlite:///./backend/data/alphaquant.db"
-    SESSION_STORAGE_PATH: str = "./backend/data/.session.json"
+    # Session & Database configuration (canonical absolute paths)
+    DATABASE_URL: str = f"sqlite:///{os.path.join(DATA_DIR, 'alphaquant.db')}"
+    SESSION_STORAGE_PATH: str = os.path.join(DATA_DIR, ".session.json")
     ENCRYPTION_KEY: Optional[str] = os.getenv("ENCRYPTION_KEY", "DhanAlphaEncryptionKeySecret32b!")
     
     # Default Admin Credentials

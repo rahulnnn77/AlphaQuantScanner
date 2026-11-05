@@ -1,4 +1,3 @@
-import random
 import logging
 from datetime import datetime, time
 import pytz
@@ -89,6 +88,40 @@ class ScreenerEngine:
     _last_scan_time: Optional[datetime] = None
 
     @classmethod
+    def get_session_timestamp_str(cls) -> str:
+        """
+        Returns dynamic session timestamp:
+        - Live: Wednesday 28th Oct (10:45am) during market hours (9:15 AM - 3:30 PM IST Mon-Fri)
+        - Last completed trading session close (e.g. Wednesday 28th Oct Close (3:30pm)) outside market hours,
+          including overnight (12:00 AM - 9:15 AM) and weekends.
+        """
+        from datetime import timedelta
+        ist = pytz.timezone("Asia/Kolkata")
+        now_ist = datetime.now(ist)
+        is_weekday = now_ist.weekday() < 5
+        is_open = is_weekday and (
+            (now_ist.hour == 9 and now_ist.minute >= 15)
+            or (10 <= now_ist.hour < 15)
+            or (now_ist.hour == 15 and now_ist.minute <= 30)
+        )
+        if is_open:
+            day_suffix = "th" if 11 <= now_ist.day <= 13 else {1: "st", 2: "nd", 3: "rd"}.get(now_ist.day % 10, "th")
+            formatted_date = now_ist.strftime(f"%A {now_ist.day}{day_suffix} %b")
+            time_str = now_ist.strftime("%I:%M%p").lower().lstrip("0")
+            return f"Live: {formatted_date} ({time_str})"
+
+        # Determine last completed trading day
+        ref_dt = now_ist
+        if ref_dt.weekday() < 5 and (ref_dt.hour < 9 or (ref_dt.hour == 9 and ref_dt.minute < 15)):
+            ref_dt = ref_dt - timedelta(days=1)
+        while ref_dt.weekday() >= 5:
+            ref_dt = ref_dt - timedelta(days=1)
+
+        day_suffix = "th" if 11 <= ref_dt.day <= 13 else {1: "st", 2: "nd", 3: "rd"}.get(ref_dt.day % 10, "th")
+        formatted_date = ref_dt.strftime(f"%A {ref_dt.day}{day_suffix} %b")
+        return f"{formatted_date} Close (3:30pm)"
+
+    @classmethod
     def is_market_open(cls) -> bool:
         """NSE/BSE Trading hours check: 09:15 to 15:30 IST on weekdays."""
         try:
@@ -103,65 +136,214 @@ class ScreenerEngine:
         except Exception:
             return False
 
+    _adx_cache: Dict[str, Dict[str, float]] = {}
+    _adx_last_fetch: float = 0.0
+
+    @classmethod
+    def fetch_timeframe_adx_map(cls, symbols: List[str]) -> Dict[str, Dict[str, float]]:
+        """
+        Fetches real-time / session ADX(14) values across 4H, Daily, Weekly, and Monthly timeframes
+        for the given NSE symbols in a single batch call.
+        """
+        import time as time_mod
+        if not symbols:
+            return {}
+        now_ts = time_mod.time()
+        cache_ttl = 15.0 if cls.is_market_open() else 300.0
+        missing = [s for s in symbols if s not in cls._adx_cache]
+        if not missing and (now_ts - cls._adx_last_fetch < cache_ttl):
+            return cls._adx_cache
+
+        try:
+            tickers = [f"NSE:{s}" for s in list(set(symbols))]
+            resp = requests.post(
+                "https://scanner.tradingview.com/india/scan",
+                json={
+                    "symbols": {"tickers": tickers, "query": {"types": []}},
+                    "columns": [
+                        "name",
+                        "ADX|240",
+                        "ADX",
+                        "ADX|1W",
+                        "ADX|1M"
+                    ]
+                },
+                timeout=6
+            )
+            if resp.status_code == 200:
+                rows = resp.json().get("data", [])
+                for row in rows:
+                    d = row.get("d", [])
+                    if len(d) < 5:
+                        continue
+                    sym = d[0] or row.get("s", "").replace("NSE:", "")
+                    cls._adx_cache[sym] = {
+                        "4h": round(float(d[1] or 0.0), 2),
+                        "daily": round(float(d[2] or 0.0), 2),
+                        "weekly": round(float(d[3] or 0.0), 2),
+                        "monthly": round(float(d[4] or 0.0), 2)
+                    }
+                cls._adx_last_fetch = now_ts
+        except Exception as e:
+            logger.warning(f"Failed to fetch timeframe ADX map: {e}")
+
+        return cls._adx_cache
+
+    @classmethod
+    def _fetch_tradingview_equities(cls, symbols: List[str], name_map: Optional[Dict[str, str]] = None) -> Dict[str, Dict[str, Any]]:
+        """
+        Fetches real-time / official close NSE equity quotes & technicals from TradingView Scanner API
+        in a single sub-second batch request.
+        """
+        if not symbols:
+            return {}
+        try:
+            tickers = [f"NSE:{s}" for s in symbols]
+            resp = requests.post(
+                "https://scanner.tradingview.com/india/scan",
+                json={
+                    "symbols": {"tickers": tickers, "query": {"types": []}},
+                    "columns": [
+                        "name",
+                        "description",
+                        "close",
+                        "change",
+                        "change_abs",
+                        "high",
+                        "low",
+                        "open",
+                        "volume",
+                        "RSI",
+                        "SMA20",
+                        "EMA50",
+                        "relative_volume_10d_calc"
+                    ]
+                },
+                timeout=6
+            )
+            if resp.status_code != 200:
+                return {}
+            rows = resp.json().get("data", [])
+            result_map = {}
+            for row in rows:
+                d = row.get("d", [])
+                if len(d) < 9:
+                    continue
+                sym = d[0] or row.get("s", "").replace("NSE:", "")
+                ltp = float(d[2] or 0.0)
+                if ltp <= 0:
+                    continue
+                chg_pct = round(float(d[3] or 0.0), 2)
+                chg = round(float(d[4] or 0.0), 2)
+                prev_close = round(ltp - chg, 2)
+                high_p = round(float(d[5] or ltp), 2)
+                low_p = round(float(d[6] or ltp), 2)
+                open_p = round(float(d[7] or prev_close), 2)
+                vol = int(d[8] or 0)
+                rsi = round(float(d[9] if len(d) > 9 and d[9] is not None else 50.0), 1)
+                sma20 = round(float(d[10] if len(d) > 10 and d[10] is not None else ltp), 2)
+                ema50 = round(float(d[11] if len(d) > 11 and d[11] is not None else ltp), 2)
+                vol_surge = round(float(d[12] if len(d) > 12 and d[12] is not None else 1.0), 2)
+                comp_name = (name_map.get(sym) if name_map else None) or d[1] or sym
+                result_map[sym] = {
+                    "symbol": sym,
+                    "name": comp_name,
+                    "ltp": round(ltp, 2),
+                    "change": chg,
+                    "change_pct": chg_pct,
+                    "prev_close": prev_close,
+                    "open": open_p,
+                    "high": high_p,
+                    "low": low_p,
+                    "volume": vol,
+                    "volume_surge_x": vol_surge,
+                    "rsi": rsi,
+                    "sma20": sma20,
+                    "ema50": ema50
+                }
+            return result_map
+        except Exception as e:
+            logger.warning(f"TradingView scanner equity fetch failed: {e}")
+            return {}
+
+    @classmethod
+    def _fetch_nse_live_indices(cls) -> Dict[str, Dict[str, Any]]:
+        """
+        Fetches official NSE Sectoral & Benchmark Index performances directly from NSE India API.
+        """
+        try:
+            s = requests.Session()
+            s.headers.update({
+                "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                "Accept": "application/json"
+            })
+            r = s.get("https://www.nseindia.com/api/allIndices", timeout=5)
+            if r.status_code != 200:
+                return {}
+            data = r.json().get("data", [])
+            idx_lookup = {}
+            for item in data:
+                idx_name = (item.get("index") or "").upper().strip()
+                idx_sym = (item.get("indexSymbol") or "").upper().strip()
+                entry = {
+                    "ltp": round(float(item.get("last") or 0.0), 2),
+                    "change": round(float(item.get("variation") or 0.0), 2),
+                    "change_pct": round(float(item.get("percentChange") or 0.0), 2)
+                }
+                if entry["ltp"] > 0:
+                    if idx_name:
+                        idx_lookup[idx_name] = entry
+                    if idx_sym:
+                        idx_lookup[idx_sym] = entry
+            return idx_lookup
+        except Exception as e:
+            logger.warning(f"NSE allIndices fetch failed: {e}")
+            return {}
+
     @classmethod
     def fetch_market_quotes(cls, universe: str = "NIFTY50") -> List[Dict[str, Any]]:
         """
-        Retrieves live quotes via DhanHQ SDK or generates realistic real-time calculated
-        feed when outside market hours / offline.
+        Retrieves live quotes via TradingView NSE Scanner / DhanHQ feed.
+        Never synthesizes random prices, volumes, or technical indicators.
         """
         stocks = STOCK_UNIVERSE.get(universe, STOCK_UNIVERSE["NIFTY50"])
-        dhan = DhanClientService.get_dhan_instance()
-        
+        sym_list = [s["symbol"] for s in stocks]
+        name_map = {s["symbol"]: s["name"] for s in stocks}
+        tv_quotes = cls._fetch_tradingview_equities(sym_list, name_map=name_map)
+        dhan_cache = getattr(cls, "_last_eq_quotes", {}) or {}
+
         results = []
-        use_dhan_live = False
-
-        if dhan:
-            try:
-                # Security ID list query if supported
-                pass
-            except Exception as e:
-                logger.warning(f"Error fetching Dhan bulk quotes: {e}")
-
-        # Compute or synthesize high fidelity quotes with technical indicators
         for item in stocks:
-            base = item["base_price"]
-            # Realistic price fluctuation
-            noise_pct = random.uniform(-2.8, 3.8)
-            ltp = round(base * (1 + noise_pct / 100), 2)
-            prev_close = base
-            change = round(ltp - prev_close, 2)
-            change_pct = round((change / prev_close) * 100, 2)
-            
-            day_high = round(max(ltp, base * (1 + abs(noise_pct + 0.8) / 100)), 2)
-            day_low = round(min(ltp, base * (1 - abs(noise_pct - 0.7) / 100)), 2)
-            open_price = round(base * (1 + random.uniform(-0.5, 0.5) / 100), 2)
-            
-            base_vol = random.randint(350000, 4500000)
-            volume_surge = round(random.uniform(0.7, 3.2), 2)
-            volume = int(base_vol * volume_surge)
+            sym = item["symbol"]
+            if sym in tv_quotes:
+                q = dict(tv_quotes[sym])
+                q["universe"] = universe
+                results.append(q)
+                continue
 
-            # Simulated technicals (RSI 14, SMA 20, EMA 50)
-            rsi = round(random.uniform(32.0, 78.5), 1)
-            sma20 = round(base * (1 + random.uniform(-1.5, 1.5) / 100), 2)
-            ema50 = round(base * (1 + random.uniform(-2.5, 2.0) / 100), 2)
-
-            results.append({
-                "symbol": item["symbol"],
-                "name": item["name"],
-                "ltp": ltp,
-                "change": change,
-                "change_pct": change_pct,
-                "prev_close": prev_close,
-                "open": open_price,
-                "high": day_high,
-                "low": day_low,
-                "volume": volume,
-                "volume_surge_x": volume_surge,
-                "rsi": rsi,
-                "sma20": sma20,
-                "ema50": ema50,
-                "universe": universe
-            })
+            # Deterministic fallback to last known Dhan LTP if TradingView batch missed this symbol
+            cached_ltp = float(dhan_cache.get(sym, 0.0))
+            if cached_ltp > 0:
+                base = float(item.get("base_price") or cached_ltp)
+                change = round(cached_ltp - base, 2)
+                change_pct = round((change / base) * 100, 2) if base > 0 else 0.0
+                results.append({
+                    "symbol": sym,
+                    "name": item["name"],
+                    "ltp": round(cached_ltp, 2),
+                    "change": change,
+                    "change_pct": change_pct,
+                    "prev_close": base,
+                    "open": base,
+                    "high": max(cached_ltp, base),
+                    "low": min(cached_ltp, base),
+                    "volume": 0,
+                    "volume_surge_x": 1.0,
+                    "rsi": 50.0,
+                    "sma20": round(cached_ltp, 2),
+                    "ema50": round(cached_ltp, 2),
+                    "universe": universe
+                })
 
         return results
 
@@ -284,26 +466,33 @@ class ScreenerEngine:
         4. Live dynamic date & candle time string
         """
         import time as time_mod
+        import json, os
         now_ts = time_mod.time()
+        base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        snapshot_path = os.path.join(base_dir, "data", "market_breadth_snapshot.json")
+        is_market_open = cls.is_market_open()
+        candle_time_str = cls.get_session_timestamp_str()
 
-        # Cache live response for 3 seconds to avoid duplicate simultaneous calls
-        if cls._breadth_cache and (now_ts - cls._breadth_last_fetch < 3.0):
+        # Cache response (3s during live market hours, 60s when market is closed)
+        cache_ttl = 3.0 if is_market_open else 60.0
+        if cls._breadth_cache and (now_ts - cls._breadth_last_fetch < cache_ttl):
+            cls._breadth_cache["candle_time"] = candle_time_str
             return cls._breadth_cache
 
-        ist = pytz.timezone("Asia/Kolkata")
-        now_ist = datetime.now(ist)
-
-        # Dynamic live date & market session formatting
-        day_suffix = "th" if 11 <= now_ist.day <= 13 else {1: "st", 2: "nd", 3: "rd"}.get(now_ist.day % 10, "th")
-        formatted_date = now_ist.strftime(f"%A {now_ist.day}{day_suffix} %b")
-        is_weekday = now_ist.weekday() < 5
-        is_market_open = is_weekday and ((now_ist.hour == 9 and now_ist.minute >= 15) or (10 <= now_ist.hour < 15) or (now_ist.hour == 15 and now_ist.minute <= 30))
-
-        if is_market_open:
-            time_str = now_ist.strftime("%I:%M%p").lower().lstrip("0")
-            candle_time_str = f"Live: {formatted_date} ({time_str})"
-        else:
-            candle_time_str = f"{formatted_date} Close (3:30pm)"
+        if not cls._breadth_cache and not is_market_open and os.path.exists(snapshot_path):
+            try:
+                with open(snapshot_path, "r") as f:
+                    saved_snap = json.load(f)
+                if saved_snap and saved_snap.get("indices") and saved_snap.get("top_gainers"):
+                    has_valid_changes = any(abs(x.get("change_pct", 0.0)) > 0 for x in saved_snap.get("indices", []))
+                    if has_valid_changes:
+                        saved_snap["candle_time"] = candle_time_str
+                        cls._breadth_cache = saved_snap
+                        cls._breadth_last_fetch = now_ts
+                        cls._last_eq_quotes = saved_snap.get("live_quotes", {})
+                        return cls._breadth_cache
+            except Exception as e:
+                logger.warning(f"Error loading market_breadth_snapshot: {e}")
 
         # Complete Dictionary of Official NSE Sectoral & Benchmark Indices in Dhan Master Scrip
         DHAN_NSE_INDEX_MAP = {
@@ -390,19 +579,73 @@ class ScreenerEngine:
                     json=payload,
                     timeout=8
                 )
+                if dhan_res.status_code == 401:
+                    logger.info("Dhan returned 401 on marketfeed/ohlc. Attempting ensure_valid_session()...")
+                    if DhanClientService.ensure_valid_session():
+                        new_token = session_manager.get_token()
+                        new_cid = settings.DHAN_CLIENT_ID or session_manager.get_client_id()
+                        if new_token and new_cid:
+                            headers["access-token"] = new_token
+                            headers["client-id"] = str(new_cid)
+                            dhan_res = requests.post(
+                                "https://api.dhan.co/v2/marketfeed/ohlc",
+                                headers=headers,
+                                json=payload,
+                                timeout=8
+                            )
                 if dhan_res.status_code == 200:
                     data = dhan_res.json().get("data", {})
                     dhan_idx_data = data.get("IDX_I", {})
+                    nse_idx_lookup = cls._fetch_nse_live_indices()
+                    NSE_NAME_ALIASES = {
+                        "NIFTY 50": ["NIFTY 50"],
+                        "BANK NIFTY": ["NIFTY BANK", "BANK NIFTY"],
+                        "FINNIFTY": ["NIFTY FINANCIAL SERVICES", "NIFTY FIN SERVICE"],
+                        "NIFTY IT": ["NIFTY IT"],
+                        "NIFTY AUTO": ["NIFTY AUTO"],
+                        "NIFTY FMCG": ["NIFTY FMCG"],
+                        "NIFTY METAL": ["NIFTY METAL"],
+                        "NIFTY PHARMA": ["NIFTY PHARMA"],
+                        "NIFTY PSU BANK": ["NIFTY PSU BANK"],
+                        "NIFTY PVT BANK": ["NIFTY PRIVATE BANK", "NIFTY PVT BANK"],
+                        "NIFTY REALTY": ["NIFTY REALTY"],
+                        "NIFTY MEDIA": ["NIFTY MEDIA"],
+                        "NIFTY ENERGY": ["NIFTY ENERGY"],
+                        "NIFTY INFRA": ["NIFTY INFRASTRUCTURE", "NIFTY INFRA"],
+                        "NIFTY COMMODITIES": ["NIFTY COMMODITIES"],
+                        "NIFTY CONSUMPTION": ["NIFTY INDIA CONSUMPTION", "NIFTY CONSUMPTION"],
+                        "NIFTY OIL & GAS": ["NIFTY OIL & GAS", "NIFTY OIL AND GAS"],
+                        "NIFTY HEALTHCARE": ["NIFTY HEALTHCARE INDEX", "NIFTY HEALTHCARE"],
+                        "NIFTY CONSR DURBL": ["NIFTY CONSUMER DURABLES", "NIFTY CONSR DURBL"],
+                        "NIFTY DEFENCE": ["NIFTY INDIA DEFENCE", "NIFTY IND DEFENCE"],
+                        "NIFTY EV": ["NIFTY EV & NEW AGE AUTOMOTIVE", "NIFTY EV"],
+                        "NIFTY INDIA MFG": ["NIFTY INDIA MANUFACTURING", "NIFTY INDIA MFG"],
+                        "NIFTY DIGITAL": ["NIFTY INDIA DIGITAL", "NIFTY IND DIGITAL"],
+                        "INDIA VIX": ["INDIA VIX"]
+                    }
                     for sec_id_str, meta in DHAN_NSE_INDEX_MAP.items():
                         live_item = dhan_idx_data.get(sec_id_str)
                         if live_item:
                             ltp = float(live_item.get("last_price", meta["fallback_ltp"]))
                             ohlc = live_item.get("ohlc", {})
                             prev_close = float(ohlc.get("close", 0.0))
-                            if prev_close <= 0:
-                                prev_close = float(ohlc.get("open", ltp))
-                            change = round(ltp - prev_close, 2)
-                            change_pct = round((change / prev_close * 100), 2) if prev_close > 0 else 0.0
+                            if prev_close <= 0 or abs(ltp - prev_close) < 1e-6:
+                                # Post-market EOD sync on Dhan sets ohlc.close = last_price; use official NSE variation or open
+                                matched_idx = None
+                                for alias in NSE_NAME_ALIASES.get(meta["symbol"], [meta["symbol"]]):
+                                    if alias in nse_idx_lookup:
+                                        matched_idx = nse_idx_lookup[alias]
+                                        break
+                                if matched_idx and abs(matched_idx["change"]) > 0:
+                                    change = matched_idx["change"]
+                                    change_pct = matched_idx["change_pct"]
+                                else:
+                                    open_p = float(ohlc.get("open", ltp))
+                                    change = round(ltp - open_p, 2)
+                                    change_pct = round((change / open_p * 100), 2) if open_p > 0 else 0.0
+                            else:
+                                change = round(ltp - prev_close, 2)
+                                change_pct = round((change / prev_close * 100), 2) if prev_close > 0 else 0.0
                             indices.append({
                                 "symbol": meta["symbol"],
                                 "name": meta["name"],
@@ -412,6 +655,18 @@ class ScreenerEngine:
                             })
 
                     eq_data = data.get("NSE_EQ", {})
+                    # Check if Dhan EOD reset has set ohlc.close == last_price across stocks
+                    sample_items = list(eq_data.values())[:25]
+                    eod_close_synced = all(
+                        abs(float(it.get("last_price", 0.0)) - float(it.get("ohlc", {}).get("close", 0.0))) < 1e-5
+                        for it in sample_items if float(it.get("last_price", 0.0)) > 0
+                    ) if sample_items else False
+
+                    tv_eq_ref = {}
+                    if eod_close_synced and nifty500_map:
+                        name_lookup = {s: info.get("name", s) for s, info in nifty500_map.items()}
+                        tv_eq_ref = cls._fetch_tradingview_equities(list(nifty500_map.keys()), name_map=name_lookup)
+
                     cls._last_eq_quotes = {}
                     for sym, info in nifty500_map.items():
                         sid_str = str(info["security_id"])
@@ -425,8 +680,16 @@ class ScreenerEngine:
                             if prev_close <= 0:
                                 prev_close = float(ohlc.get("open", ltp))
                             if prev_close > 0 and ltp > 0:
-                                chg = round(ltp - prev_close, 2)
-                                pct = round((chg / prev_close) * 100, 2)
+                                if eod_close_synced and sym in tv_eq_ref:
+                                    chg = tv_eq_ref[sym]["change"]
+                                    pct = tv_eq_ref[sym]["change_pct"]
+                                elif eod_close_synced:
+                                    open_p = float(ohlc.get("open", ltp))
+                                    chg = round(ltp - open_p, 2)
+                                    pct = round((chg / open_p) * 100, 2) if open_p > 0 else 0.0
+                                else:
+                                    chg = round(ltp - prev_close, 2)
+                                    pct = round((chg / prev_close) * 100, 2)
                                 stock_obj = {
                                     "symbol": sym,
                                     "name": info.get("name", sym),
@@ -444,15 +707,81 @@ class ScreenerEngine:
             except Exception as e:
                 logger.warning(f"Dhan live batch quotes query failed: {e}")
 
-        if not indices:
-            for sec_id_str, meta in DHAN_NSE_INDEX_MAP.items():
-                indices.append({
-                    "symbol": meta["symbol"],
-                    "name": meta["name"],
-                    "ltp": meta["fallback_ltp"],
-                    "change": meta["fallback_chg"],
-                    "change_pct": meta["fallback_pct"]
-                })
+        if not indices or not nifty500_stocks:
+            # Automatic Live Market Feed Fallback (NSE Official Indices + TradingView NSE Scanner)
+            if not indices:
+                nse_idx_lookup = cls._fetch_nse_live_indices()
+                NSE_NAME_ALIASES = {
+                    "NIFTY 50": ["NIFTY 50"],
+                    "BANK NIFTY": ["NIFTY BANK", "BANK NIFTY"],
+                    "FINNIFTY": ["NIFTY FINANCIAL SERVICES", "NIFTY FIN SERVICE"],
+                    "NIFTY IT": ["NIFTY IT"],
+                    "NIFTY AUTO": ["NIFTY AUTO"],
+                    "NIFTY FMCG": ["NIFTY FMCG"],
+                    "NIFTY METAL": ["NIFTY METAL"],
+                    "NIFTY PHARMA": ["NIFTY PHARMA"],
+                    "NIFTY PSU BANK": ["NIFTY PSU BANK"],
+                    "NIFTY PVT BANK": ["NIFTY PRIVATE BANK", "NIFTY PVT BANK"],
+                    "NIFTY REALTY": ["NIFTY REALTY"],
+                    "NIFTY MEDIA": ["NIFTY MEDIA"],
+                    "NIFTY ENERGY": ["NIFTY ENERGY"],
+                    "NIFTY INFRA": ["NIFTY INFRASTRUCTURE", "NIFTY INFRA"],
+                    "NIFTY COMMODITIES": ["NIFTY COMMODITIES"],
+                    "NIFTY CONSUMPTION": ["NIFTY INDIA CONSUMPTION", "NIFTY CONSUMPTION"],
+                    "NIFTY OIL & GAS": ["NIFTY OIL & GAS", "NIFTY OIL AND GAS"],
+                    "NIFTY HEALTHCARE": ["NIFTY HEALTHCARE INDEX", "NIFTY HEALTHCARE"],
+                    "NIFTY CONSR DURBL": ["NIFTY CONSUMER DURABLES", "NIFTY CONSR DURBL"],
+                    "NIFTY DEFENCE": ["NIFTY INDIA DEFENCE", "NIFTY IND DEFENCE"],
+                    "NIFTY EV": ["NIFTY EV & NEW AGE AUTOMOTIVE", "NIFTY EV"],
+                    "NIFTY INDIA MFG": ["NIFTY INDIA MANUFACTURING", "NIFTY INDIA MFG"],
+                    "NIFTY DIGITAL": ["NIFTY INDIA DIGITAL", "NIFTY IND DIGITAL"],
+                    "INDIA VIX": ["INDIA VIX"]
+                }
+                for sec_id_str, meta in DHAN_NSE_INDEX_MAP.items():
+                    sym = meta["symbol"]
+                    matched_idx = None
+                    for alias in NSE_NAME_ALIASES.get(sym, [sym]):
+                        if alias in nse_idx_lookup:
+                            matched_idx = nse_idx_lookup[alias]
+                            break
+                    if matched_idx:
+                        indices.append({
+                            "symbol": sym,
+                            "name": meta["name"],
+                            "ltp": matched_idx["ltp"],
+                            "change": matched_idx["change"],
+                            "change_pct": matched_idx["change_pct"]
+                        })
+                    else:
+                        indices.append({
+                            "symbol": sym,
+                            "name": meta["name"],
+                            "ltp": meta["fallback_ltp"],
+                            "change": meta["fallback_chg"],
+                            "change_pct": meta["fallback_pct"]
+                        })
+
+            if not nifty500_stocks and nifty500_map:
+                sym_list = list(nifty500_map.keys())
+                name_lookup = {s: info.get("name", s) for s, info in nifty500_map.items()}
+                tv_eq = cls._fetch_tradingview_equities(sym_list, name_map=name_lookup)
+                if tv_eq:
+                    cls._last_eq_quotes = {}
+                    for sym, q in tv_eq.items():
+                        cls._last_eq_quotes[sym] = q["ltp"]
+                        stock_obj = {
+                            "symbol": sym,
+                            "name": q["name"],
+                            "ltp": q["ltp"],
+                            "change": q["change"],
+                            "change_pct": q["change_pct"],
+                            "high": q["high"],
+                            "low": q["low"],
+                            "volume": q.get("volume", 0)
+                        }
+                        nifty500_stocks.append(stock_obj)
+                        if sym in fo_map:
+                            fo_stocks.append(stock_obj)
 
         # Live Top Gainers & Losers
         if nifty500_stocks:
@@ -557,6 +886,15 @@ class ScreenerEngine:
 
         cls._breadth_cache = result_payload
         cls._breadth_last_fetch = now_ts
+
+        # Persist official session snapshot to disk so it stays locked across restarts & overnight until next market open
+        try:
+            os.makedirs(os.path.dirname(snapshot_path), exist_ok=True)
+            with open(snapshot_path, "w") as f:
+                json.dump(result_payload, f)
+        except Exception as e:
+            logger.warning(f"Failed to persist market_breadth_snapshot: {e}")
+
         return result_payload
 
     @classmethod
@@ -723,7 +1061,7 @@ class ScreenerEngine:
         else:
             stocks = NIFTY_50_STOCKS
 
-        # Fetch live Friday closing data directly from Dhan API if available
+        # Fetch live quotes directly from Dhan API if available, otherwise fallback to TradingView live scanner
         live_quotes_map = {}
         try:
             from app.core.session_store import session_manager
@@ -750,20 +1088,54 @@ class ScreenerEngine:
         except Exception as e:
             logger.warning(f"Error fetching live stock quotes: {e}")
 
+        tv_quotes_map = {}
+        eod_close_synced = False
+        if live_quotes_map:
+            sample_vals = list(live_quotes_map.values())[:10]
+            eod_close_synced = all(
+                abs(float(it.get("last_price", 0.0)) - float(it.get("ohlc", {}).get("close", 0.0))) < 1e-5
+                for it in sample_vals if float(it.get("last_price", 0.0)) > 0
+            ) if sample_vals else False
+
+        if not live_quotes_map or eod_close_synced:
+            sym_list = [s["symbol"] for s in stocks]
+            name_map = {s["symbol"]: s["name"] for s in stocks}
+            tv_quotes_map = cls._fetch_tradingview_equities(sym_list, name_map=name_map)
+
         items = []
         for s in stocks:
             sec_id = str(s.get("security_id", ""))
             live_item = live_quotes_map.get(sec_id)
+            tv_item = tv_quotes_map.get(s["symbol"])
 
             if live_item:
                 ltp = float(live_item.get("last_price", s["base_price"]))
                 ohlc = live_item.get("ohlc", {})
-                open_p = float(ohlc.get("open", ltp))
-                day_high = float(ohlc.get("high", max(ltp, open_p)))
-                day_low = float(ohlc.get("low", min(ltp, open_p)))
-                chg = round(ltp - open_p, 2)
-                pct = round((chg / open_p * 100), 2) if open_p > 0 else 0.0
-                vol = int(random.randint(850000, 3800000))
+                prev_c = float(ohlc.get("close", 0.0))
+                if prev_c <= 0:
+                    prev_c = float(ohlc.get("open", ltp))
+                day_high = float(ohlc.get("high", max(ltp, prev_c)))
+                day_low = float(ohlc.get("low", min(ltp, prev_c)))
+                if eod_close_synced and tv_item:
+                    chg = tv_item["change"]
+                    pct = tv_item["change_pct"]
+                    vol = tv_item["volume"]
+                elif eod_close_synced:
+                    open_p = float(ohlc.get("open", ltp))
+                    chg = round(ltp - open_p, 2)
+                    pct = round((chg / open_p * 100), 2) if open_p > 0 else 0.0
+                    vol = int(live_item.get("volume", 0) or 0)
+                else:
+                    chg = round(ltp - prev_c, 2)
+                    pct = round((chg / prev_c * 100), 2) if prev_c > 0 else 0.0
+                    vol = tv_item["volume"] if tv_item else int(live_item.get("volume", 0) or 0)
+            elif tv_item:
+                ltp = tv_item["ltp"]
+                chg = tv_item["change"]
+                pct = tv_item["change_pct"]
+                day_high = tv_item["high"]
+                day_low = tv_item["low"]
+                vol = tv_item["volume"]
             else:
                 base = s["base_price"]
                 change = s.get("change", round(base * (s.get("change_pct", 0.0) / 100), 2))
@@ -790,4 +1162,666 @@ class ScreenerEngine:
             "total_constituents": len(items),
             "stocks": items
         }
+
+    # ----------------- FEATURE 5: WEEKLY POSITION STRATEGY (NIFTY 50 TUESDAY 1H BREAKOUT) ----------------- #
+    _weekly_pos_cache: Optional[Dict[str, Any]] = None
+    _weekly_pos_last_fetch: float = 0.0
+
+    @classmethod
+    def get_weekly_position_strategy(cls, force_refresh: bool = False) -> Dict[str, Any]:
+        """
+        Evaluates the NIFTY 50 Index Weekly Position Strategy across Tuesday-to-Monday weekly cycles:
+        1. Reference Candle: Marks every Tuesday's 1st 1-Hour candle (09:15 AM - 10:15 AM IST) High, Low, and Range.
+        2. Trigger (2nd) Candle: Identifies the first subsequent 1-Hour candle that CLOSES above Ref High (Bullish)
+           or CLOSES below Ref Low (Bearish), marking that candle's High and Low.
+        3. Entry Alert: Triggered when subsequent market action breaks above Trigger Candle High (Long Entry)
+           or breaks below Trigger Candle Low (Short Entry).
+        4. Exit Alert: When Long Entry is active and market breaks Tuesday 1st Candle Low (Ref Low) -> Exit Long.
+           When Short Entry is active and market breaks Tuesday 1st Candle High (Ref High) -> Exit Short.
+        """
+        import time as time_mod
+        import os, json
+        from datetime import datetime, timedelta
+        import pytz
+        import yfinance as yf
+        import pandas as pd
+
+        now_ts = time_mod.time()
+        cache_ttl = 30.0 if cls.is_market_open() else 180.0
+        if not force_refresh and cls._weekly_pos_cache and (now_ts - cls._weekly_pos_last_fetch < cache_ttl):
+            # Overlay freshest Nifty 50 LTP from breadth cache if available
+            try:
+                if cls._breadth_cache:
+                    n50 = next((ix for ix in cls._breadth_cache.get("indices", []) if ix.get("symbol") == "NIFTY 50"), None)
+                    if n50 and n50.get("ltp"):
+                        cls._weekly_pos_cache["live_ltp"] = n50["ltp"]
+                        cls._weekly_pos_cache["live_change"] = n50.get("change", 0.0)
+                        cls._weekly_pos_cache["live_change_pct"] = n50.get("change_pct", 0.0)
+            except Exception:
+                pass
+            return cls._weekly_pos_cache
+
+        ist = pytz.timezone("Asia/Kolkata")
+        now_ist = datetime.now(ist)
+
+        # Fetch live Nifty 50 LTP from Market Breadth (Dhan / NSE / TV)
+        live_ltp = 24536.60
+        live_change = 0.0
+        live_change_pct = 0.0
+        try:
+            breadth = cls.get_market_breadth()
+            n50 = next((ix for ix in breadth.get("indices", []) if ix.get("symbol") == "NIFTY 50"), None)
+            if n50 and n50.get("ltp"):
+                live_ltp = float(n50["ltp"])
+                live_change = float(n50.get("change", 0.0))
+                live_change_pct = float(n50.get("change_pct", 0.0))
+        except Exception:
+            pass
+
+        # Download 60 days of 1-Hour NIFTY 50 (^NSEI) candles
+        df = yf.download("^NSEI", period="60d", interval="1h", progress=False)
+        if df is None or df.empty:
+            return cls._weekly_pos_cache or {"status": "error", "message": "Unable to load Nifty 50 1H data"}
+
+        if isinstance(df.columns, pd.MultiIndex):
+            df.columns = df.columns.get_level_values(0)
+        df = df.dropna(subset=["Open", "High", "Low", "Close"])
+        if df.index.tz is None:
+            df.index = df.index.tz_localize("UTC").tz_convert(ist)
+        else:
+            df.index = df.index.tz_convert(ist)
+
+        # Find all Tuesdays in the 60d dataset
+        all_dates = sorted(list({ts.date() for ts in df.index}))
+        tuesdays = [d for d in all_dates if d.weekday() == 1]
+
+        def fmt_ts(ts_obj):
+            return ts_obj.strftime("%a, %d %b %Y • %I:%M %p")
+
+        def fmt_short_ts(ts_obj):
+            return ts_obj.strftime("%d %b, %I:%M %p")
+
+        weeks_evaluated = []
+        for idx, tue_date in enumerate(tuesdays):
+            next_tue_date = tuesdays[idx + 1] if (idx + 1) < len(tuesdays) else (tue_date + timedelta(days=7))
+            # Filter candles belonging to this weekly cycle: [tue_date, next_tue_date)
+            cycle_df = df[(df.index.date >= tue_date) & (df.index.date < next_tue_date)]
+            if cycle_df.empty:
+                continue
+
+            # Step 1: Tuesday's 1st 1-Hour Candle (09:15 - 10:15 IST)
+            tue_candles = cycle_df[cycle_df.index.date == tue_date]
+            if tue_candles.empty:
+                continue
+
+            ref_ts = tue_candles.index[0]
+            ref_row = tue_candles.iloc[0]
+            ref_open = round(float(ref_row["Open"]), 2)
+            ref_high = round(float(ref_row["High"]), 2)
+            ref_low = round(float(ref_row["Low"]), 2)
+            ref_close = round(float(ref_row["Close"]), 2)
+            ref_range = round(ref_high - ref_low, 2)
+            ref_range_pct = round((ref_range / ref_low) * 100, 2) if ref_low > 0 else 0.0
+
+            is_current_week = (idx == len(tuesdays) - 1)
+
+            # State machine across subsequent 1H candles in this weekly cycle
+            trigger_candle = None
+            direction = None  # "LONG" or "SHORT"
+            entry_alert = None
+            exit_alert = None
+            status_code = "WAITING_BREAKOUT_CLOSE"
+            status_label = "Monitoring Institutional Range"
+            events = [
+                {
+                    "step": 1,
+                    "type": "REFERENCE",
+                    "title": "Weekly Reference Zone Established",
+                    "timestamp": fmt_ts(ref_ts),
+                    "short_time": fmt_short_ts(ref_ts),
+                    "time": fmt_short_ts(ref_ts),
+                    "detail": f"Upper: ₹{ref_high:,.2f} | Lower: ₹{ref_low:,.2f} | Zone Width: {ref_range:,.2f} pts ({ref_range_pct}%)",
+                    "price_info": f"High: {ref_high:,.2f} | Low: {ref_low:,.2f} | Range: {ref_range:,.2f} pts",
+                    "level": ref_high,
+                    "badge": "PHASE 01"
+                }
+            ]
+
+            subsequent_df = cycle_df.iloc[1:]
+            peak_favorable = None
+
+            for c_ts, c_row in subsequent_df.iterrows():
+                c_open = round(float(c_row["Open"]), 2)
+                c_high = round(float(c_row["High"]), 2)
+                c_low = round(float(c_row["Low"]), 2)
+                c_close = round(float(c_row["Close"]), 2)
+
+                # Step 2: Waiting for a 1H candle to CLOSE above Ref High or CLOSE below Ref Low
+                if trigger_candle is None:
+                    if c_close > ref_high:
+                        direction = "LONG"
+                        trigger_candle = {
+                            "timestamp": fmt_ts(c_ts),
+                            "short_time": fmt_short_ts(c_ts),
+                            "day_name": c_ts.strftime("%A"),
+                            "open": c_open,
+                            "high": c_high,
+                            "low": c_low,
+                            "close": c_close,
+                            "range_pts": round(c_high - c_low, 2),
+                            "direction": "LONG",
+                            "break_type": "Bullish Setup Armed",
+                            "breakout_type": "BULLISH",
+                            "trigger_level": c_high
+                        }
+                        status_code = "WAITING_LONG_ENTRY"
+                        status_label = f"Bullish Setup Armed — Watching ₹{c_high:,.2f}"
+                        events.append({
+                            "step": 2,
+                            "type": "TRIGGER_CANDLE",
+                            "title": "Bullish Signal Level Locked",
+                            "timestamp": fmt_ts(c_ts),
+                            "short_time": fmt_short_ts(c_ts),
+                            "time": fmt_short_ts(c_ts),
+                            "detail": f"Signal Level Armed at ₹{c_high:,.2f} (Close: ₹{c_close:,.2f})",
+                            "price_info": f"Signal Level: {c_high:,.2f}",
+                            "level": c_high,
+                            "badge": "PHASE 02"
+                        })
+                    elif c_close < ref_low:
+                        direction = "SHORT"
+                        trigger_candle = {
+                            "timestamp": fmt_ts(c_ts),
+                            "short_time": fmt_short_ts(c_ts),
+                            "day_name": c_ts.strftime("%A"),
+                            "open": c_open,
+                            "high": c_high,
+                            "low": c_low,
+                            "close": c_close,
+                            "range_pts": round(c_high - c_low, 2),
+                            "direction": "SHORT",
+                            "break_type": "Bearish Setup Armed",
+                            "breakout_type": "BEARISH",
+                            "trigger_level": c_low
+                        }
+                        status_code = "WAITING_SHORT_ENTRY"
+                        status_label = f"Bearish Setup Armed — Watching ₹{c_low:,.2f}"
+                        events.append({
+                            "step": 2,
+                            "type": "TRIGGER_CANDLE",
+                            "title": "Bearish Signal Level Locked",
+                            "timestamp": fmt_ts(c_ts),
+                            "short_time": fmt_short_ts(c_ts),
+                            "time": fmt_short_ts(c_ts),
+                            "detail": f"Signal Level Armed at ₹{c_low:,.2f} (Close: ₹{c_close:,.2f})",
+                            "price_info": f"Signal Level: {c_low:,.2f}",
+                            "level": c_low,
+                            "badge": "PHASE 02"
+                        })
+                    continue
+
+                # Step 3: Waiting for Trigger Candle High (Long) or Low (Short) to be taken out
+                if entry_alert is None:
+                    if direction == "LONG":
+                        if c_high > trigger_candle["high"]:
+                            entry_price = trigger_candle["high"]
+                            entry_alert = {
+                                "direction": "LONG",
+                                "entry_price": entry_price,
+                                "stop_loss": ref_low,
+                                "risk_pts": round(entry_price - ref_low, 2),
+                                "timestamp": fmt_ts(c_ts),
+                                "short_time": fmt_short_ts(c_ts),
+                                "trigger_candle_high": trigger_candle["high"],
+                                "trigger_candle_low": trigger_candle["low"],
+                                "trigger_candle_close": trigger_candle["close"]
+                            }
+                            peak_favorable = c_high
+                            status_code = "LONG_ACTIVE"
+                            status_label = "LONG ENTRY TRIGGERED — Active Position"
+                            events.append({
+                                "step": 3,
+                                "type": "ENTRY_ALERT",
+                                "title": "LONG ENTRY ALERT TRIGGERED",
+                                "timestamp": fmt_ts(c_ts),
+                                "short_time": fmt_short_ts(c_ts),
+                                "time": fmt_short_ts(c_ts),
+                                "detail": f"Entry @ ₹{entry_price:,.2f} | Exit Level: ₹{ref_low:,.2f}",
+                                "price_info": f"Long Entry @ {entry_price:,.2f} | Exit Level: {ref_low:,.2f}",
+                                "level": entry_price,
+                                "badge": "ENTRY"
+                            })
+                            # Check if the same candle subsequently broke Ref Low after entry
+                            if c_low < ref_low and c_close < ref_low:
+                                exit_alert = {
+                                    "exit_price": ref_low,
+                                    "reason": "Exit Level Triggered",
+                                    "timestamp": fmt_ts(c_ts),
+                                    "short_time": fmt_short_ts(c_ts),
+                                    "pnl_pts": round(ref_low - entry_price, 2)
+                                }
+                                status_code = "EXITED_STOP"
+                                status_label = "EXIT ALERT TRIGGERED"
+                                events.append({
+                                    "step": 4,
+                                    "type": "EXIT_ALERT",
+                                    "title": "EXIT ALERT TRIGGERED",
+                                    "timestamp": fmt_ts(c_ts),
+                                    "short_time": fmt_short_ts(c_ts),
+                                    "time": fmt_short_ts(c_ts),
+                                    "detail": f"Exit @ ₹{ref_low:,.2f} | Net: {round(ref_low - entry_price, 2):+,.2f} pts",
+                                    "price_info": f"Exit @ {ref_low:,.2f} | Net: {round(ref_low - entry_price, 2):+,.2f} pts",
+                                    "level": ref_low,
+                                    "badge": "EXIT"
+                                })
+                                break
+                    elif direction == "SHORT":
+                        if c_low < trigger_candle["low"]:
+                            entry_price = trigger_candle["low"]
+                            entry_alert = {
+                                "direction": "SHORT",
+                                "entry_price": entry_price,
+                                "stop_loss": ref_high,
+                                "risk_pts": round(ref_high - entry_price, 2),
+                                "timestamp": fmt_ts(c_ts),
+                                "short_time": fmt_short_ts(c_ts),
+                                "trigger_candle_high": trigger_candle["high"],
+                                "trigger_candle_low": trigger_candle["low"],
+                                "trigger_candle_close": trigger_candle["close"]
+                            }
+                            peak_favorable = c_low
+                            status_code = "SHORT_ACTIVE"
+                            status_label = "SHORT ENTRY TRIGGERED — Active Position"
+                            events.append({
+                                "step": 3,
+                                "type": "ENTRY_ALERT",
+                                "title": "SHORT ENTRY ALERT TRIGGERED",
+                                "timestamp": fmt_ts(c_ts),
+                                "short_time": fmt_short_ts(c_ts),
+                                "time": fmt_short_ts(c_ts),
+                                "detail": f"Entry @ ₹{entry_price:,.2f} | Exit Level: ₹{ref_high:,.2f}",
+                                "price_info": f"Short Entry @ {entry_price:,.2f} | Exit Level: {ref_high:,.2f}",
+                                "level": entry_price,
+                                "badge": "ENTRY"
+                            })
+                            if c_high > ref_high and c_close > ref_high:
+                                exit_alert = {
+                                    "exit_price": ref_high,
+                                    "reason": "Exit Level Triggered",
+                                    "timestamp": fmt_ts(c_ts),
+                                    "short_time": fmt_short_ts(c_ts),
+                                    "pnl_pts": round(entry_price - ref_high, 2)
+                                }
+                                status_code = "EXITED_STOP"
+                                status_label = "EXIT ALERT TRIGGERED"
+                                events.append({
+                                    "step": 4,
+                                    "type": "EXIT_ALERT",
+                                    "title": "EXIT ALERT TRIGGERED",
+                                    "timestamp": fmt_ts(c_ts),
+                                    "short_time": fmt_short_ts(c_ts),
+                                    "time": fmt_short_ts(c_ts),
+                                    "detail": f"Exit @ ₹{ref_high:,.2f} | Net: {round(entry_price - ref_high, 2):+,.2f} pts",
+                                    "price_info": f"Exit @ {ref_high:,.2f} | Net: {round(entry_price - ref_high, 2):+,.2f} pts",
+                                    "level": ref_high,
+                                    "badge": "EXIT"
+                                })
+                                break
+                    continue
+
+                # Step 4: Position is active — check for Exit Alert
+                if exit_alert is None:
+                    if direction == "LONG":
+                        if peak_favorable is None or c_high > peak_favorable:
+                            peak_favorable = c_high
+                        if c_low < ref_low:
+                            exit_alert = {
+                                "exit_price": ref_low,
+                                "reason": "Exit Level Triggered",
+                                "timestamp": fmt_ts(c_ts),
+                                "short_time": fmt_short_ts(c_ts),
+                                "pnl_pts": round(ref_low - entry_alert["entry_price"], 2)
+                            }
+                            status_code = "EXITED_STOP"
+                            status_label = "EXIT ALERT TRIGGERED"
+                            events.append({
+                                "step": 4,
+                                "type": "EXIT_ALERT",
+                                "title": "EXIT ALERT TRIGGERED",
+                                "timestamp": fmt_ts(c_ts),
+                                "short_time": fmt_short_ts(c_ts),
+                                "time": fmt_short_ts(c_ts),
+                                "detail": f"Exit @ ₹{ref_low:,.2f} | Net: {round(ref_low - entry_alert['entry_price'], 2):+,.2f} pts",
+                                "price_info": f"Exit @ {ref_low:,.2f} | Net: {round(ref_low - entry_alert['entry_price'], 2):+,.2f} pts",
+                                "level": ref_low,
+                                "badge": "EXIT"
+                            })
+                            break
+                    elif direction == "SHORT":
+                        if peak_favorable is None or c_low < peak_favorable:
+                            peak_favorable = c_low
+                        if c_high > ref_high:
+                            exit_alert = {
+                                "exit_price": ref_high,
+                                "reason": "Exit Level Triggered",
+                                "timestamp": fmt_ts(c_ts),
+                                "short_time": fmt_short_ts(c_ts),
+                                "pnl_pts": round(entry_alert["entry_price"] - ref_high, 2)
+                            }
+                            status_code = "EXITED_STOP"
+                            status_label = "EXIT ALERT TRIGGERED"
+                            events.append({
+                                "step": 4,
+                                "type": "EXIT_ALERT",
+                                "title": "EXIT ALERT TRIGGERED",
+                                "timestamp": fmt_ts(c_ts),
+                                "short_time": fmt_short_ts(c_ts),
+                                "time": fmt_short_ts(c_ts),
+                                "detail": f"Exit @ ₹{ref_high:,.2f} | Net: {round(entry_alert['entry_price'] - ref_high, 2):+,.2f} pts",
+                                "price_info": f"Exit @ {ref_high:,.2f} | Net: {round(entry_alert['entry_price'] - ref_high, 2):+,.2f} pts",
+                                "level": ref_high,
+                                "badge": "EXIT"
+                            })
+                            break
+
+            # Also check live_ltp for the current week if a break just happened intrabar
+            if is_current_week and trigger_candle is not None:
+                if entry_alert is None:
+                    if direction == "LONG" and live_ltp > trigger_candle["high"]:
+                        entry_price = trigger_candle["high"]
+                        entry_alert = {
+                            "direction": "LONG",
+                            "entry_price": entry_price,
+                            "stop_loss": ref_low,
+                            "risk_pts": round(entry_price - ref_low, 2),
+                            "timestamp": fmt_ts(now_ist),
+                            "short_time": fmt_short_ts(now_ist),
+                            "trigger_candle_high": trigger_candle["high"],
+                            "trigger_candle_low": trigger_candle["low"]
+                        }
+                        peak_favorable = max(live_ltp, entry_price)
+                        status_code = "LONG_ACTIVE"
+                        status_label = "LONG ENTRY TRIGGERED — Active Position"
+                        events.append({
+                            "step": 3,
+                            "type": "ENTRY_ALERT",
+                            "title": "LONG ENTRY ALERT TRIGGERED (Live)",
+                            "timestamp": fmt_ts(now_ist),
+                            "short_time": fmt_short_ts(now_ist),
+                            "time": fmt_short_ts(now_ist),
+                            "detail": f"Entry @ ₹{entry_price:,.2f} | Exit Level: ₹{ref_low:,.2f}",
+                            "price_info": f"Long Entry @ {entry_price:,.2f} | Exit Level: {ref_low:,.2f}",
+                            "level": entry_price,
+                            "badge": "ENTRY"
+                        })
+                    elif direction == "SHORT" and live_ltp < trigger_candle["low"]:
+                        entry_price = trigger_candle["low"]
+                        entry_alert = {
+                            "direction": "SHORT",
+                            "entry_price": entry_price,
+                            "stop_loss": ref_high,
+                            "risk_pts": round(ref_high - entry_price, 2),
+                            "timestamp": fmt_ts(now_ist),
+                            "short_time": fmt_short_ts(now_ist),
+                            "trigger_candle_high": trigger_candle["high"],
+                            "trigger_candle_low": trigger_candle["low"]
+                        }
+                        peak_favorable = min(live_ltp, entry_price)
+                        status_code = "SHORT_ACTIVE"
+                        status_label = "SHORT ENTRY TRIGGERED — Active Position"
+                        events.append({
+                            "step": 3,
+                            "type": "ENTRY_ALERT",
+                            "title": "SHORT ENTRY ALERT TRIGGERED (Live)",
+                            "timestamp": fmt_ts(now_ist),
+                            "short_time": fmt_short_ts(now_ist),
+                            "time": fmt_short_ts(now_ist),
+                            "detail": f"Entry @ ₹{entry_price:,.2f} | Exit Level: ₹{ref_high:,.2f}",
+                            "price_info": f"Short Entry @ {entry_price:,.2f} | Exit Level: {ref_high:,.2f}",
+                            "level": entry_price,
+                            "badge": "ENTRY"
+                        })
+                elif exit_alert is None:
+                    if direction == "LONG" and live_ltp < ref_low:
+                        exit_alert = {
+                            "exit_price": ref_low,
+                            "reason": "Exit Level Triggered (Live)",
+                            "timestamp": fmt_ts(now_ist),
+                            "short_time": fmt_short_ts(now_ist),
+                            "pnl_pts": round(ref_low - entry_alert["entry_price"], 2)
+                        }
+                        status_code = "EXITED_STOP"
+                        status_label = "EXIT ALERT TRIGGERED"
+                    elif direction == "SHORT" and live_ltp > ref_high:
+                        exit_alert = {
+                            "exit_price": ref_high,
+                            "reason": "Exit Level Triggered (Live)",
+                            "timestamp": fmt_ts(now_ist),
+                            "short_time": fmt_short_ts(now_ist),
+                            "pnl_pts": round(entry_alert["entry_price"] - ref_high, 2)
+                        }
+                        status_code = "EXITED_STOP"
+                        status_label = "EXIT ALERT TRIGGERED"
+
+            # Compute P&L / excursion metrics
+            cycle_end_close = live_ltp if is_current_week else round(float(cycle_df.iloc[-1]["Close"]), 2)
+            active_pnl_pts = 0.0
+            max_favorable_pts = 0.0
+            if entry_alert:
+                ep = entry_alert["entry_price"]
+                if exit_alert:
+                    active_pnl_pts = exit_alert["pnl_pts"]
+                else:
+                    active_pnl_pts = round((cycle_end_close - ep) if direction == "LONG" else (ep - cycle_end_close), 2)
+                if peak_favorable is not None:
+                    if is_current_week:
+                        peak_favorable = max(peak_favorable, live_ltp) if direction == "LONG" else min(peak_favorable, live_ltp)
+                    max_favorable_pts = round((peak_favorable - ep) if direction == "LONG" else (ep - peak_favorable), 2)
+
+            # Build recent 1H candles list for chart/table display (for current week or cycle)
+            candle_bars = []
+            for bar_idx, (b_ts, b_row) in enumerate(cycle_df.iterrows(), start=1):
+                b_o = round(float(b_row["Open"]), 2)
+                b_h = round(float(b_row["High"]), 2)
+                b_l = round(float(b_row["Low"]), 2)
+                b_c = round(float(b_row["Close"]), 2)
+                role = "SESSION_BAR"
+                role_label = "Session Bar"
+                if b_ts == ref_ts:
+                    role = "REFERENCE_1H"
+                    role_label = f"Anchor Range ({round(b_h - b_l, 2)}p)"
+                elif trigger_candle and fmt_ts(b_ts) == trigger_candle["timestamp"]:
+                    role = "TRIGGER_2ND_CANDLE"
+                    role_label = f"Signal Bar ({direction})"
+                elif entry_alert and fmt_ts(b_ts) == entry_alert["timestamp"] and exit_alert and fmt_ts(b_ts) == exit_alert["timestamp"]:
+                    role = "ENTRY_AND_EXIT"
+                    role_label = "Entry & Exit Triggered"
+                elif entry_alert and fmt_ts(b_ts) == entry_alert["timestamp"]:
+                    role = "ENTRY_ALERT"
+                    role_label = f"{direction} Entry @ ₹{entry_alert['entry_price']:,.2f}"
+                elif exit_alert and fmt_ts(b_ts) == exit_alert["timestamp"]:
+                    role = "EXIT_ALERT"
+                    role_label = f"Exit @ ₹{exit_alert['exit_price']:,.2f}"
+                candle_bars.append({
+                    "bar_index": bar_idx,
+                    "timestamp": fmt_ts(b_ts),
+                    "short_time": fmt_short_ts(b_ts),
+                    "day_name": b_ts.strftime("%a"),
+                    "open": b_o,
+                    "high": b_h,
+                    "low": b_l,
+                    "close": b_c,
+                    "range_pts": round(b_h - b_l, 2),
+                    "role": role,
+                    "role_label": role_label
+                })
+
+            if exit_alert:
+                stage = "EXITED_SL"
+                stage_number = 4
+            elif entry_alert:
+                stage = "ENTRY_ACTIVE" if is_current_week else "CYCLE_CLOSED"
+                stage_number = 3
+            elif trigger_candle:
+                stage = "TRIGGER_SET"
+                stage_number = 2
+            else:
+                stage = "REFERENCE_ONLY"
+                stage_number = 1
+
+            bias = "BULLISH" if direction == "LONG" else "BEARISH" if direction == "SHORT" else "NEUTRAL"
+            end_date_str = cycle_df.index[-1].strftime("%d %b %Y")
+
+            weeks_evaluated.append({
+                "tuesday_date": tue_date.strftime("%Y-%m-%d"),
+                "end_date": end_date_str,
+                "week_label": f"Tue, {tue_date.strftime('%d %b %Y')}",
+                "is_current_week": is_current_week,
+                "stage": stage,
+                "stage_number": stage_number,
+                "stage_label": status_label,
+                "status_code": status_code,
+                "status_label": status_label,
+                "direction": direction or "NEUTRAL",
+                "bias": bias,
+                "reference_candle": {
+                    "date": tue_date.strftime("%Y-%m-%d"),
+                    "timestamp": fmt_ts(ref_ts),
+                    "short_time": fmt_short_ts(ref_ts),
+                    "window": "09:15 AM – 10:15 AM IST",
+                    "open": ref_open,
+                    "high": ref_high,
+                    "low": ref_low,
+                    "close": ref_close,
+                    "range_pts": ref_range,
+                    "range_pct": ref_range_pct
+                },
+                "trigger_candle": trigger_candle,
+                "entry_alert": entry_alert,
+                "exit_alert": exit_alert,
+                "current_price": cycle_end_close,
+                "current_or_close_ltp": cycle_end_close,
+                "active_pnl_pts": active_pnl_pts,
+                "pnl_pts": active_pnl_pts,
+                "max_favorable_pts": max_favorable_pts,
+                "max_favorable_price": peak_favorable,
+                "risk_pts": entry_alert["risk_pts"] if entry_alert else (round(abs(trigger_candle["trigger_level"] - (ref_low if direction == "LONG" else ref_high)), 2) if trigger_candle else None),
+                "events": events,
+                "candles": candle_bars
+            })
+
+        weeks_evaluated.reverse()  # Newest week first
+        current_week = weeks_evaluated[0] if weeks_evaluated else None
+
+        # Dispatch automated Telegram Entry/Exit alert if a new state transition occurred in the current week
+        if current_week:
+            cls._check_and_send_weekly_position_telegram(current_week, live_ltp)
+
+        recent_weeks = weeks_evaluated[:10]
+        entries_cnt = sum(1 for w in recent_weeks if w.get("entry_alert"))
+        avg_range = round(sum(w["reference_candle"]["range_pts"] for w in recent_weeks) / len(recent_weeks), 2) if recent_weeks else 0.0
+
+        result = {
+            "status": "success",
+            "instrument": "NIFTY 50 INDEX",
+            "timeframe": "1-Hour (1H)",
+            "last_updated": cls.get_session_timestamp_str(),
+            "live_ltp": live_ltp,
+            "live_change": live_change,
+            "live_change_pct": live_change_pct,
+            "current_week": current_week,
+            "weeks": recent_weeks,
+            "history_weeks": recent_weeks,
+            "summary": {
+                "total_weeks_analyzed": len(recent_weeks),
+                "entries_triggered": entries_cnt,
+                "avg_tuesday_range_pts": avg_range
+            }
+        }
+        cls._weekly_pos_cache = result
+        cls._weekly_pos_last_fetch = now_ts
+        return result
+
+    @classmethod
+    def _check_and_send_weekly_position_telegram(cls, current_week: Dict[str, Any], live_ltp: float):
+        """
+        Persists the last notified state for the current Tuesday cycle so Entry Alert and Exit Alert
+        are automatically dispatched to Telegram once per trigger.
+        """
+        import os, json
+        try:
+            base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+            data_dir = os.path.join(base_dir, "data")
+            os.makedirs(data_dir, exist_ok=True)
+            state_file = os.path.join(data_dir, "weekly_position_alert_state.json")
+
+            saved = {}
+            if os.path.exists(state_file):
+                try:
+                    with open(state_file, "r") as f:
+                        saved = json.load(f)
+                except Exception:
+                    saved = {}
+
+            tue_date = current_week.get("tuesday_date", "")
+            week_state = saved.get(tue_date, {"entry_sent": False, "exit_sent": False})
+            ref = current_week.get("reference_candle") or {}
+            trig = current_week.get("trigger_candle") or {}
+            entry = current_week.get("entry_alert")
+            exit_a = current_week.get("exit_alert")
+            changed = False
+
+            from app.core.database import SessionLocal
+            from app.models.entities import TelegramSettings, User
+
+            def _send_to_configured_chats(msg_html: str):
+                db = SessionLocal()
+                tg = db.query(TelegramSettings).first()
+                if not tg or not tg.is_enabled or not tg.bot_token:
+                    db.close()
+                    return
+                chat_ids = set()
+                if tg.default_channel_id:
+                    chat_ids.add(tg.default_channel_id.strip())
+                for u in db.query(User).filter(User.telegram_chat_id.isnot(None), User.is_active == True, User.telegram_alerts_enabled == True).all():
+                    chat_ids.add(u.telegram_chat_id.strip())
+                token = tg.bot_token.strip()
+                db.close()
+                url = f"https://api.telegram.org/bot{token}/sendMessage"
+                for cid in chat_ids:
+                    try:
+                        requests.post(url, json={"chat_id": cid, "text": msg_html, "parse_mode": "HTML"}, timeout=8)
+                    except Exception:
+                        pass
+
+            if entry and not week_state.get("entry_sent"):
+                msg = (
+                    f"<b>AlphaQuant — NIFTY 50 Weekly Position ENTRY ALERT ({entry['direction']})</b>\n\n"
+                    f"<b>Cycle:</b> {current_week.get('week_label')}\n"
+                    f"<b>Reference Zone:</b> <code>{ref.get('low', 0):,.2f} – {ref.get('high', 0):,.2f}</code> ({ref.get('range_pts', 0):,.2f} pts)\n"
+                    f"<b>Entry Triggered At:</b> <code>₹{entry['entry_price']:,.2f}</code> ({entry['short_time']})\n"
+                    f"<b>Exit Level:</b> <code>₹{entry['stop_loss']:,.2f}</code>\n"
+                    f"<b>Current Nifty 50 LTP:</b> <code>₹{live_ltp:,.2f}</code>"
+                )
+                _send_to_configured_chats(msg)
+                week_state["entry_sent"] = True
+                changed = True
+
+            if exit_a and not week_state.get("exit_sent"):
+                msg = (
+                    f"<b>AlphaQuant — NIFTY 50 Weekly Position EXIT ALERT</b>\n\n"
+                    f"<b>Cycle:</b> {current_week.get('week_label')}\n"
+                    f"<b>Exit Triggered At:</b> <code>₹{exit_a.get('exit_price', 0):,.2f}</code> ({exit_a.get('short_time')})\n"
+                    f"<b>Reference Zone:</b> <code>{ref.get('low', 0):,.2f} – {ref.get('high', 0):,.2f}</code> ({ref.get('range_pts', 0):,.2f} pts)"
+                )
+                _send_to_configured_chats(msg)
+                week_state["exit_sent"] = True
+                changed = True
+
+            if changed:
+                saved[tue_date] = week_state
+                with open(state_file, "w") as f:
+                    json.dump(saved, f, indent=2)
+        except Exception as e:
+            logger.warning(f"Weekly Position Telegram check error: {e}")
 

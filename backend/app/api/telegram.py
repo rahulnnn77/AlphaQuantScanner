@@ -92,7 +92,9 @@ def test_telegram_connection(
     payload: Dict[str, str] = Body(...),
     current_user: User = Depends(get_current_user)
 ) -> Dict[str, Any]:
-    """Validates any given Bot Token."""
+    """Admin-only: Validates any given Bot Token."""
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Only admins can test Telegram bot tokens")
     token = payload.get("bot_token", "").strip()
     if not token:
         raise HTTPException(status_code=400, detail="Bot token is required")
@@ -104,14 +106,23 @@ def send_test_message(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ) -> Dict[str, Any]:
-    """Sends a test broadcast or DM to verify chat ID."""
+    """Sends a test broadcast or DM to verify chat ID. Viewers may only test their own configured Chat ID."""
     settings = TelegramAlertService.get_settings(db)
     if not settings.bot_token:
         raise HTTPException(status_code=400, detail="Bot token is not configured yet")
 
-    chat_id = payload.chat_id or settings.default_channel_id
+    if current_user.role == "admin":
+        chat_id = payload.chat_id or settings.default_channel_id
+    else:
+        # Non-admin users can only send a test DM to their own personal telegram_chat_id
+        user_cid = (current_user.telegram_chat_id or "").strip()
+        req_cid = (payload.chat_id or "").strip()
+        if req_cid and user_cid and req_cid != user_cid:
+            raise HTTPException(status_code=403, detail="Viewers can only send test alerts to their own linked Chat ID")
+        chat_id = req_cid or user_cid
+
     if not chat_id:
-        raise HTTPException(status_code=400, detail="No Target Chat ID or Channel ID provided")
+        raise HTTPException(status_code=400, detail="No Target Chat ID provided")
 
     sample_msg = (
         "<b>AlphaQuant Screener - Test Alert</b>\n\n"
@@ -123,6 +134,38 @@ def send_test_message(
     if res.get("status") != "success":
         raise HTTPException(status_code=400, detail=res.get("message", "Failed to dispatch message"))
     return {"status": "success", "message": "Test alert dispatched successfully"}
+
+@router.post("/toggle-pause")
+def toggle_telegram_pause(
+    payload: Dict[str, Any] = Body(...),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+) -> Dict[str, Any]:
+    """Admin endpoint to immediately Pause or Resume (Send) automated Telegram notifications."""
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Only admins can pause or resume Telegram notifications")
+    is_enabled = bool(payload.get("is_enabled", False))
+    settings = TelegramAlertService.update_settings(db, {"is_enabled": is_enabled})
+    state_label = "ACTIVE (Sending every 1 hour)" if settings.is_enabled else "PAUSED (Notifications muted)"
+    return {
+        "status": "success",
+        "is_enabled": settings.is_enabled,
+        "message": f"Telegram notifications are now {state_label}"
+    }
+
+@router.post("/broadcast-now")
+def broadcast_telegram_now(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+) -> Dict[str, Any]:
+    """Admin endpoint to immediately send the current HPS scan summary notification to all configured Telegram recipients."""
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Only admins can trigger a manual Telegram broadcast")
+    from run_scanner_job import broadcast_scan_summary_to_telegram
+    res = broadcast_scan_summary_to_telegram(force_send=True)
+    if not res or res.get("status") == "error":
+        raise HTTPException(status_code=400, detail=(res or {}).get("message", "Failed to broadcast Telegram notification"))
+    return res
 
 @router.get("/user-pref")
 def get_user_telegram_preferences(

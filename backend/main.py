@@ -6,8 +6,8 @@ from fastapi.responses import FileResponse
 from app.core.config import settings
 from app.core.database import Base, engine, SessionLocal
 from app.core.security import get_password_hash
-from app.models.entities import User, ScreenerRule, TelegramSettings
-from app.api import auth, users, screener, profile, telegram
+from app.models.entities import User, ScreenerRule, TelegramSettings, Watchlist, WatchlistStock
+from app.api import auth, users, screener, profile, telegram, watchlist
 
 # Initialize Database tables
 Base.metadata.create_all(bind=engine)
@@ -93,6 +93,21 @@ app = FastAPI(
     version="1.0.0"
 )
 
+@app.on_event("startup")
+async def start_dhan_health_monitor():
+    import asyncio
+    from app.services.dhan_service import DhanClientService
+
+    async def _monitor_loop():
+        while True:
+            try:
+                await asyncio.to_thread(DhanClientService.ensure_valid_session)
+            except Exception:
+                pass
+            await asyncio.sleep(300)  # Check every 5 minutes in background
+
+    asyncio.create_task(_monitor_loop())
+
 # CORS setup
 app.add_middleware(
     CORSMiddleware,
@@ -108,6 +123,7 @@ app.include_router(users.router, prefix="/api/v1/users", tags=["User Management"
 app.include_router(screener.router, prefix="/api/v1/screener", tags=["Screener Engine"])
 app.include_router(profile.router, prefix="/api/v1/profile", tags=["Dhan Profile"])
 app.include_router(telegram.router, prefix="/api/v1/telegram", tags=["Telegram Alerts"])
+app.include_router(watchlist.router, prefix="/api/v1/watchlists", tags=["Personal Watchlists"])
 
 @app.get("/health")
 def health_check():
@@ -122,11 +138,18 @@ if os.path.exists(dist_dir):
         
     @app.get("/")
     def serve_react_root():
-        return FileResponse(os.path.join(dist_dir, "index.html"))
+        return FileResponse(
+            os.path.join(dist_dir, "index.html"),
+            headers={"Cache-Control": "no-cache, no-store, must-revalidate", "Pragma": "no-cache", "Expires": "0"}
+        )
 
     @app.get("/{full_path:path}")
     def serve_react_app(full_path: str):
-        file_path = os.path.join(dist_dir, full_path)
-        if os.path.exists(file_path) and os.path.isfile(file_path):
-            return FileResponse(file_path)
-        return FileResponse(os.path.join(dist_dir, "index.html"))
+        real_dist = os.path.realpath(dist_dir)
+        candidate = os.path.realpath(os.path.join(dist_dir, full_path))
+        if candidate.startswith(real_dist + os.sep) and os.path.exists(candidate) and os.path.isfile(candidate):
+            return FileResponse(candidate)
+        return FileResponse(
+            os.path.join(dist_dir, "index.html"),
+            headers={"Cache-Control": "no-cache, no-store, must-revalidate", "Pragma": "no-cache", "Expires": "0"}
+        )

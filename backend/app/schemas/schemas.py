@@ -17,6 +17,8 @@ class DhanLoginRequest(BaseModel):
     api_key: str  # Dhan Client ID or App ID
     api_secret: Optional[str] = None
     request_token: Optional[str] = None # Or access token if direct
+    pin: Optional[str] = None
+    totp: Optional[str] = None
 
 class DhanLoginResponse(BaseModel):
     status: str
@@ -28,6 +30,9 @@ class SessionStatusResponse(BaseModel):
     authenticated: bool
     client_id: Optional[str] = None
     last_updated: Optional[str] = None
+    token_validity: Optional[str] = None
+    active_segment: Optional[str] = None
+    data_plan: Optional[str] = None
     market_open: bool = False
 
 # User Management Schemas

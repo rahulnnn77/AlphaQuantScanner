@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <linearGradient id="aq_pennant_pole" x1="14" y1="52" x2="14" y2="18" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#1E3A8A" />
+      <stop offset="50%" stop-color="#2563EB" />
+      <stop offset="100%" stop-color="#38BDF8" />
+    </linearGradient>
+    <linearGradient id="aq_pennant_fill" x1="14" y1="18" x2="38" y2="32" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#3B82F6" stop-opacity="0.22" />
+      <stop offset="100%" stop-color="#10B981" stop-opacity="0.18" />
+    </linearGradient>
+    <linearGradient id="aq_pennant_breakout" x1="38" y1="32" x2="56" y2="14" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#059669" />
+      <stop offset="50%" stop-color="#10B981" />
+      <stop offset="100%" stop-color="#34D399" />
+    </linearGradient>
+  </defs>
+
+  <!-- Technical Price Grid Lines -->
+  <line x1="8" y1="52" x2="56" y2="52" stroke="#1E293B" stroke-width="1.2" stroke-dasharray="2 3" stroke-linecap="round" />
+  <line x1="8" y1="35" x2="56" y2="35" stroke="#162235" stroke-width="1" stroke-dasharray="2 3" stroke-linecap="round" />
+
+  <!-- Impulse Flagpole (Bullish Momentum Rally) -->
+  <line x1="14" y1="52" x2="14" y2="18" stroke="url(#aq_pennant_pole)" stroke-width="4.5" stroke-linecap="round" />
+  <circle cx="14" cy="52" r="2.75" fill="#2563EB" />
+
+  <!-- Symmetrical Pennant Triangle Consolidation -->
+  <polygon points="14,18 38,32 14,46" fill="url(#aq_pennant_fill)" stroke="#1D4ED8" stroke-width="1.2" stroke-linejoin="round" />
+  
+  <!-- Upper Resistance Trendline -->
+  <line x1="14" y1="18" x2="38" y2="32" stroke="#60A5FA" stroke-width="2.6" stroke-linecap="round" />
+  
+  <!-- Lower Support Trendline -->
+  <line x1="14" y1="46" x2="38" y2="32" stroke="#38BDF8" stroke-width="2.6" stroke-linecap="round" />
+
+  <!-- Harmonic Price Wave Consolidation Inside Triangle -->
+  <path d="M 17 43 L 23 23 L 29 38 L 34 29 L 38 32" 
+        stroke="#93C5FD" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="0.85" />
+
+  <!-- Explosive Breakout Surge Vector -->
+  <line x1="38" y1="32" x2="56" y2="14" stroke="url(#aq_pennant_breakout)" stroke-width="4.5" stroke-linecap="round" />
+  
+  <!-- Precision Breakout Arrowhead -->
+  <path d="M 46 12 L 57 13 L 56 24 Z" fill="url(#aq_pennant_breakout)" />
+
+  <!-- Breakout Apex Trigger Beacon -->
+  <circle cx="38" cy="32" r="2.6" fill="#10B981" />
+  <circle cx="56" cy="14" r="2" fill="#34D399" />
+</svg>
