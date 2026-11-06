@@ -632,6 +632,73 @@
   animation: badgeNotificationPulse 2s ease-in-out infinite;
 }
 
+
+/* --------------------------------------------------------------------------
+   Apple-Grade Fluid Animation & Motion System
+   -------------------------------------------------------------------------- */
+
+@keyframes appleFluidFadeUp {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 14px, 0);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes progressiveLineDraw {
+  from { stroke-dashoffset: 400; }
+  to { stroke-dashoffset: 0; }
+}
+
+.anim-progressive-chart {
+  stroke-dasharray: 400;
+  stroke-dashoffset: 400;
+  animation: progressiveLineDraw 1.1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.aq-nav-active-pill {
+  position: relative;
+  background: rgba(255, 255, 255, 0.08);
+  color: #FFFFFF !important;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12), 0 2px 8px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.aq-nav-active-pill::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 6px;
+  bottom: 6px;
+  width: 3px;
+  border-radius: 4px;
+  background: #38BDF8;
+  box-shadow: 0 0 8px rgba(56, 189, 248, 0.6);
+}
+
+.apple-page-view {
+  animation: appleFluidFadeUp 0.48s cubic-bezier(0.16, 1, 0.3, 1) both;
+  will-change: opacity, transform;
+}
+
+.aq-stagger-row {
+  opacity: 0;
+  animation: appleFluidFadeUp 0.42s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .apple-page-view, .aq-stagger-row, .anim-progressive-chart, .apple-app-shell {
+    animation: none !important;
+    transition: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+    stroke-dashoffset: 0 !important;
+  }
+}
+
   </style>
 </head>
 <body class="bg-[#0A0E17] text-slate-100 min-h-screen select-none">
@@ -694,6 +761,7 @@
             strokeLinecap="round"
             strokeLinejoin="round"
             points={polyPoints}
+            className="anim-progressive-chart"
           />
         </svg>
       );
@@ -3014,7 +3082,7 @@
                     onClick={() => handleSelectNav('breadth')}
                     className={`apple-nav-pill w-full flex items-center px-3.5 py-2.5 rounded-lg font-medium ${
                       activeNav === 'breadth'
-                        ? 'bg-white/[0.08] text-white'
+                        ? 'aq-nav-active-pill'
                         : 'text-slate-400 hover:text-slate-200 hover:bg-white/[0.03]'
                     }`}
                   >
@@ -3026,7 +3094,7 @@
                       onClick={() => handleSelectNav('screener')}
                       className={`apple-nav-pill w-full flex items-center px-3.5 py-2.5 rounded-lg font-medium ${
                         activeNav === 'screener'
-                          ? 'bg-white/[0.08] text-white'
+                          ? 'aq-nav-active-pill'
                           : 'text-slate-400 hover:text-slate-200 hover:bg-white/[0.03]'
                       }`}
                     >
@@ -3038,7 +3106,7 @@
                     onClick={() => handleSelectNav('hps')}
                     className={`apple-nav-pill w-full flex items-center px-3.5 py-2.5 rounded-lg font-medium ${
                       activeNav === 'hps'
-                        ? 'bg-white/[0.08] text-white'
+                        ? 'aq-nav-active-pill'
                         : 'text-slate-400 hover:text-slate-200 hover:bg-white/[0.03]'
                     }`}
                   >
@@ -3049,7 +3117,7 @@
                     onClick={() => handleSelectNav('hps_selected')}
                     className={`apple-nav-pill w-full flex items-center px-3.5 py-2.5 rounded-lg font-medium ${
                       activeNav === 'hps_selected'
-                        ? 'bg-white/[0.08] text-white'
+                        ? 'aq-nav-active-pill'
                         : 'text-slate-400 hover:text-slate-200 hover:bg-white/[0.03]'
                     }`}
                   >
@@ -3060,7 +3128,7 @@
                     onClick={() => handleSelectNav('hps_mean_reversion')}
                     className={`apple-nav-pill w-full flex items-center px-3.5 py-2.5 rounded-lg font-medium ${
                       activeNav === 'hps_mean_reversion'
-                        ? 'bg-white/[0.08] text-white'
+                        ? 'aq-nav-active-pill'
                         : 'text-slate-400 hover:text-slate-200 hover:bg-white/[0.03]'
                     }`}
                   >
@@ -3071,7 +3139,7 @@
                     onClick={() => handleSelectNav('weekly_position')}
                     className={`apple-nav-pill w-full flex items-center px-3.5 py-2.5 rounded-lg font-medium ${
                       activeNav === 'weekly_position'
-                        ? 'bg-white/[0.08] text-white'
+                        ? 'aq-nav-active-pill'
                         : 'text-slate-400 hover:text-slate-200 hover:bg-white/[0.03]'
                     }`}
                   >
@@ -3082,7 +3150,7 @@
                     onClick={() => handleSelectNav('watchlist')}
                     className={`apple-nav-pill w-full flex items-center px-3.5 py-2.5 rounded-lg font-medium ${
                       activeNav === 'watchlist'
-                        ? 'bg-white/[0.08] text-white'
+                        ? 'aq-nav-active-pill'
                         : 'text-slate-400 hover:text-slate-200 hover:bg-white/[0.03]'
                     }`}
                   >
@@ -3095,7 +3163,7 @@
                         onClick={() => handleSelectNav('rules')}
                         className={`apple-nav-pill w-full flex items-center px-3.5 py-2.5 rounded-lg font-medium ${
                           activeNav === 'rules'
-                            ? 'bg-white/[0.08] text-white'
+                            ? 'aq-nav-active-pill'
                             : 'text-slate-400 hover:text-slate-200 hover:bg-white/[0.03]'
                         }`}
                       >
@@ -3106,7 +3174,7 @@
                         onClick={() => handleSelectNav('access_management')}
                         className={`apple-nav-pill w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg font-medium ${
                           activeNav === 'access_management'
-                            ? 'bg-white/[0.08] text-white'
+                            ? 'aq-nav-active-pill'
                             : 'text-slate-400 hover:text-slate-200 hover:bg-white/[0.03]'
                         }`}
                       >
@@ -3124,7 +3192,7 @@
                         onClick={() => handleSelectNav('users')}
                         className={`apple-nav-pill w-full flex items-center px-3.5 py-2.5 rounded-lg font-medium ${
                           activeNav === 'users'
-                            ? 'bg-white/[0.08] text-white'
+                            ? 'aq-nav-active-pill'
                             : 'text-slate-400 hover:text-slate-200 hover:bg-white/[0.03]'
                         }`}
                       >
@@ -3135,7 +3203,7 @@
                         onClick={() => handleSelectNav('broker_auth')}
                         className={`apple-nav-pill w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg font-medium ${
                           activeNav === 'broker_auth'
-                            ? 'bg-white/[0.08] text-white'
+                            ? 'aq-nav-active-pill'
                             : 'text-slate-400 hover:text-slate-200 hover:bg-white/[0.03]'
                         }`}
                       >
@@ -3147,7 +3215,7 @@
                         onClick={() => handleSelectNav('telegram_alerts')}
                         className={`apple-nav-pill w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg font-medium ${
                           activeNav === 'telegram_alerts'
-                            ? 'bg-white/[0.08] text-white'
+                            ? 'aq-nav-active-pill'
                             : 'text-slate-400 hover:text-slate-200 hover:bg-white/[0.03]'
                         }`}
                       >
@@ -3161,7 +3229,7 @@
                     onClick={() => handleSelectNav('profile')}
                     className={`apple-nav-pill w-full flex items-center px-3.5 py-2.5 rounded-lg font-medium ${
                       activeNav === 'profile'
-                        ? 'bg-white/[0.08] text-white'
+                        ? 'aq-nav-active-pill'
                         : 'text-slate-400 hover:text-slate-200 hover:bg-white/[0.03]'
                     }`}
                   >
