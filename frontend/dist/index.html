@@ -1574,51 +1574,342 @@
           {/* 3. SHOWCASE ALL 7 ALPHAQUANT FEATURES (APPLE HARDWARE-GRADE VISUALS) */}
           <section id="platform" className="max-w-6xl mx-auto px-6 py-24 space-y-32">
 
-            {/* A. MARKET BREADTH (Split-screen) */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
-              <div className="lg:col-span-5 space-y-3">
-                <span className="text-xs font-mono uppercase tracking-widest text-sky-400 font-semibold">Institutional Participation</span>
-                <h2 className="text-3xl sm:text-4xl font-semibold text-white tracking-tight">Market Breadth</h2>
-                <p className="text-sm text-slate-400 font-normal leading-relaxed">
-                  Understand overall market participation, market strength and breadth conditions across the entire Indian stock universe. Track advance/decline ratios, sector momentum dispersion, and volume distribution in real time.
-                </p>
-                <div className="pt-2">
-                  <span className="inline-flex items-center space-x-1.5 text-xs text-slate-300 font-mono">
-                    <span className="text-emerald-400">✓</span>
-                    <span>Real-time NSE & BSE breadth tracking</span>
-                  </span>
+            {/* A. MARKET BREADTH & SECTORAL HEAT MAP */}
+            <div className="space-y-6">
+              <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+                <div className="space-y-2 max-w-2xl">
+                  <span className="text-xs font-mono uppercase tracking-widest text-sky-400 font-semibold">Institutional Participation & Rotation</span>
+                  <h2 className="text-3xl sm:text-4xl font-semibold text-white tracking-tight">Market Breadth Analyser</h2>
+                  <p className="text-sm text-slate-400 font-normal leading-relaxed">
+                    Understand overall market participation, capital flows, and sector rotation across the Indian equity universe. Real-time Advance/Decline breadth ratio combined with full 24-sector performance heat mapping.
+                  </p>
+                </div>
+                <div className="flex items-center space-x-2 text-xs font-mono text-slate-400">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                  <span>Live Feed • NSE Breadth</span>
                 </div>
               </div>
 
-              <div className="lg:col-span-7 bg-[#0C121E] border border-white/[0.08] rounded-3xl p-6 sm:p-8 shadow-2xl backdrop-blur-xl space-y-5">
-                <div className="flex items-center justify-between pb-3 border-b border-white/[0.06] text-xs font-mono">
-                  <span className="text-slate-400 uppercase tracking-widest text-[10px]">NIFTY 50 ADVANCE / DECLINE</span>
-                  <span className="text-emerald-400 font-semibold">68% ADVANCING</span>
+              {/* Advance / Decline Bar Card */}
+              <div className="bg-[#0C121E] border border-white/[0.08] rounded-2xl p-5 shadow-xl backdrop-blur-xl space-y-3">
+                <div className="flex items-center justify-between text-xs font-mono">
+                  <span className="text-slate-400 uppercase tracking-widest text-[11px] font-semibold">NIFTY 50 ADVANCE / DECLINE</span>
+                  <span className="text-emerald-400 font-bold">68% ADVANCING (BULLISH BREADTH)</span>
                 </div>
-                {/* Visual Ratio Bar */}
-                <div className="space-y-2">
-                  <div className="h-3 w-full rounded-full bg-slate-800 overflow-hidden flex">
-                    <div className="w-[68%] bg-emerald-500 rounded-l-full"></div>
-                    <div className="w-[32%] bg-rose-500 rounded-r-full"></div>
+                <div className="h-2.5 w-full rounded-full bg-slate-800 overflow-hidden flex">
+                  <div className="w-[68%] bg-emerald-500 rounded-l-full"></div>
+                  <div className="w-[32%] bg-rose-500 rounded-r-full"></div>
+                </div>
+                <div className="flex justify-between text-[11px] font-mono">
+                  <span className="text-emerald-400 font-semibold">34 Advancing</span>
+                  <span className="text-slate-500">Neutral: 0</span>
+                  <span className="text-rose-400 font-semibold">16 Declining</span>
+                </div>
+              </div>
+
+              {/* 24-Sector Performance Heat Map Preview */}
+              <div className="bg-[#0C121E] border border-white/[0.08] rounded-3xl p-5 sm:p-6 shadow-2xl backdrop-blur-xl space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-white/[0.06] text-xs font-mono gap-2">
+                  <div className="flex items-center space-x-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                    <span className="font-semibold text-slate-200 uppercase tracking-wider text-[11px]">
+                      SECTORAL PERFORMANCE HEAT MAP (24 SECTORS)
+                    </span>
+                    <span className="text-[10px] text-slate-500 hidden md:inline">
+                      (Highest Green ➔ Lowest Red)
+                    </span>
                   </div>
-                  <div className="flex justify-between text-[11px] font-mono text-slate-400">
-                    <span className="text-emerald-400 font-semibold">34 Advancing</span>
-                    <span className="text-rose-400 font-semibold">16 Declining</span>
+                  <div className="flex items-center space-x-2 text-[10px]">
+                    <span className="px-2.5 py-1 rounded-md bg-blue-600 text-white font-semibold">Rank by % Chg</span>
+                    <span className="px-2.5 py-1 rounded-md bg-white/[0.04] text-slate-400">Standard</span>
+                    <span className="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 font-semibold border border-emerald-500/20">Live Feed</span>
                   </div>
                 </div>
-                {/* Sector Performance Grid */}
-                <div className="grid grid-cols-3 gap-2.5 font-mono text-xs pt-1">
-                  <div className="bg-[#070A10] p-3 rounded-xl border border-white/[0.04]">
-                    <div className="text-[10px] text-slate-500">NIFTY AUTO</div>
-                    <div className="text-emerald-400 font-semibold mt-0.5">+1.84%</div>
+
+                {/* 24-Sector Tiles Grid matching Terminal image */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2 font-mono">
+                  {/* Row 1 - Highest Gainers */}
+                  <div className="p-2.5 rounded-xl bg-emerald-700/80 border border-emerald-500/40 text-white space-y-1">
+                    <div className="flex justify-between items-center text-[10px] font-bold">
+                      <span className="truncate">INDIA VIX</span>
+                      <span>↗</span>
+                    </div>
+                    <div className="text-sm font-bold tracking-tight">+10.85%</div>
+                    <div className="flex justify-between items-center text-[9px] text-white/80">
+                      <span>₹17.27</span>
+                      <span className="px-1 rounded bg-black/30 font-bold uppercase">▲ GAIN</span>
+                    </div>
                   </div>
-                  <div className="bg-[#070A10] p-3 rounded-xl border border-white/[0.04]">
-                    <div className="text-[10px] text-slate-500">NIFTY BANK</div>
-                    <div className="text-emerald-400 font-semibold mt-0.5">+1.22%</div>
+
+                  <div className="p-2.5 rounded-xl bg-emerald-800/80 border border-emerald-500/40 text-white space-y-1">
+                    <div className="flex justify-between items-center text-[10px] font-bold">
+                      <span className="truncate">NIFTY PVT BANK</span>
+                      <span>↗</span>
+                    </div>
+                    <div className="text-sm font-bold tracking-tight">+2.13%</div>
+                    <div className="flex justify-between items-center text-[9px] text-white/80">
+                      <span>₹29,191.8</span>
+                      <span className="px-1 rounded bg-black/30 font-bold uppercase">▲ GAIN</span>
+                    </div>
                   </div>
-                  <div className="bg-[#070A10] p-3 rounded-xl border border-white/[0.04]">
-                    <div className="text-[10px] text-slate-500">NIFTY IT</div>
-                    <div className="text-rose-400 font-semibold mt-0.5">-0.45%</div>
+
+                  <div className="p-2.5 rounded-xl bg-emerald-800/70 border border-emerald-500/30 text-white space-y-1">
+                    <div className="flex justify-between items-center text-[10px] font-bold">
+                      <span className="truncate">BANK NIFTY</span>
+                      <span>↗</span>
+                    </div>
+                    <div className="text-sm font-bold tracking-tight">+1.44%</div>
+                    <div className="flex justify-between items-center text-[9px] text-white/80">
+                      <span>₹58,605.6</span>
+                      <span className="px-1 rounded bg-black/30 font-bold uppercase">▲ GAIN</span>
+                    </div>
+                  </div>
+
+                  <div className="p-2.5 rounded-xl bg-emerald-800/70 border border-emerald-500/30 text-white space-y-1">
+                    <div className="flex justify-between items-center text-[10px] font-bold">
+                      <span className="truncate">FINNIFTY</span>
+                      <span>↗</span>
+                    </div>
+                    <div className="text-sm font-bold tracking-tight">+1.37%</div>
+                    <div className="flex justify-between items-center text-[9px] text-white/80">
+                      <span>₹26,965.8</span>
+                      <span className="px-1 rounded bg-black/30 font-bold uppercase">▲ GAIN</span>
+                    </div>
+                  </div>
+
+                  <div className="p-2.5 rounded-xl bg-emerald-900/70 border border-emerald-600/30 text-white space-y-1">
+                    <div className="flex justify-between items-center text-[10px] font-bold">
+                      <span className="truncate">NIFTY 50</span>
+                      <span>↗</span>
+                    </div>
+                    <div className="text-sm font-bold tracking-tight">+1.09%</div>
+                    <div className="flex justify-between items-center text-[9px] text-white/80">
+                      <span>₹24,803.3</span>
+                      <span className="px-1 rounded bg-black/30 font-bold uppercase">▲ GAIN</span>
+                    </div>
+                  </div>
+
+                  <div className="p-2.5 rounded-xl bg-emerald-900/70 border border-emerald-600/30 text-white space-y-1">
+                    <div className="flex justify-between items-center text-[10px] font-bold">
+                      <span className="truncate">NIFTY CONSR DUR</span>
+                      <span>↗</span>
+                    </div>
+                    <div className="text-sm font-bold tracking-tight">+1.08%</div>
+                    <div className="flex justify-between items-center text-[9px] text-white/80">
+                      <span>₹37,774.3</span>
+                      <span className="px-1 rounded bg-black/30 font-bold uppercase">▲ GAIN</span>
+                    </div>
+                  </div>
+
+                  <div className="p-2.5 rounded-xl bg-emerald-900/70 border border-emerald-600/30 text-white space-y-1">
+                    <div className="flex justify-between items-center text-[10px] font-bold">
+                      <span className="truncate">NIFTY PHARMA</span>
+                      <span>↗</span>
+                    </div>
+                    <div className="text-sm font-bold tracking-tight">+1.04%</div>
+                    <div className="flex justify-between items-center text-[9px] text-white/80">
+                      <span>₹27,894.6</span>
+                      <span className="px-1 rounded bg-black/30 font-bold uppercase">▲ GAIN</span>
+                    </div>
+                  </div>
+
+                  <div className="p-2.5 rounded-xl bg-emerald-950/70 border border-emerald-700/30 text-white space-y-1">
+                    <div className="flex justify-between items-center text-[10px] font-bold">
+                      <span className="truncate">NIFTY CONSUMPT</span>
+                      <span>↗</span>
+                    </div>
+                    <div className="text-sm font-bold tracking-tight">+0.63%</div>
+                    <div className="flex justify-between items-center text-[9px] text-white/80">
+                      <span>₹11,879.8</span>
+                      <span className="px-1 rounded bg-black/30 font-bold uppercase">▲ GAIN</span>
+                    </div>
+                  </div>
+
+                  {/* Row 2 - Moderate Gainers to Mild Drops */}
+                  <div className="p-2.5 rounded-xl bg-emerald-950/60 border border-emerald-700/20 text-white space-y-1">
+                    <div className="flex justify-between items-center text-[10px] font-bold">
+                      <span className="truncate">NIFTY HEALTHCARE</span>
+                      <span>↗</span>
+                    </div>
+                    <div className="text-sm font-bold tracking-tight">+0.41%</div>
+                    <div className="flex justify-between items-center text-[9px] text-white/80">
+                      <span>₹16,886.6</span>
+                      <span className="px-1 rounded bg-black/30 font-bold uppercase">▲ GAIN</span>
+                    </div>
+                  </div>
+
+                  <div className="p-2.5 rounded-xl bg-emerald-950/60 border border-emerald-700/20 text-white space-y-1">
+                    <div className="flex justify-between items-center text-[10px] font-bold">
+                      <span className="truncate">NIFTY AUTO</span>
+                      <span>↗</span>
+                    </div>
+                    <div className="text-sm font-bold tracking-tight">+0.31%</div>
+                    <div className="flex justify-between items-center text-[9px] text-white/80">
+                      <span>₹27,687.2</span>
+                      <span className="px-1 rounded bg-black/30 font-bold uppercase">▲ GAIN</span>
+                    </div>
+                  </div>
+
+                  <div className="p-2.5 rounded-xl bg-emerald-950/50 border border-emerald-800/20 text-white space-y-1">
+                    <div className="flex justify-between items-center text-[10px] font-bold">
+                      <span className="truncate">NIFTY FMCG</span>
+                      <span>↗</span>
+                    </div>
+                    <div className="text-sm font-bold tracking-tight">+0.15%</div>
+                    <div className="flex justify-between items-center text-[9px] text-white/80">
+                      <span>₹46,541.2</span>
+                      <span className="px-1 rounded bg-black/30 font-bold uppercase">▲ GAIN</span>
+                    </div>
+                  </div>
+
+                  <div className="p-2.5 rounded-xl bg-emerald-950/50 border border-emerald-800/20 text-white space-y-1">
+                    <div className="flex justify-between items-center text-[10px] font-bold">
+                      <span className="truncate">NIFTY COMMODIT</span>
+                      <span>↗</span>
+                    </div>
+                    <div className="text-sm font-bold tracking-tight">+0.04%</div>
+                    <div className="flex justify-between items-center text-[9px] text-white/80">
+                      <span>₹9,621.2</span>
+                      <span className="px-1 rounded bg-black/30 font-bold uppercase">▲ GAIN</span>
+                    </div>
+                  </div>
+
+                  <div className="p-2.5 rounded-xl bg-rose-950/60 border border-rose-800/20 text-white space-y-1">
+                    <div className="flex justify-between items-center text-[10px] font-bold">
+                      <span className="truncate">NIFTY INFRA</span>
+                      <span>↘</span>
+                    </div>
+                    <div className="text-sm font-bold tracking-tight text-rose-300">-0.07%</div>
+                    <div className="flex justify-between items-center text-[9px] text-white/80">
+                      <span>₹9,368.1</span>
+                      <span className="px-1 rounded bg-black/30 font-bold uppercase">▼ DROP</span>
+                    </div>
+                  </div>
+
+                  <div className="p-2.5 rounded-xl bg-rose-950/60 border border-rose-800/20 text-white space-y-1">
+                    <div className="flex justify-between items-center text-[10px] font-bold">
+                      <span className="truncate">NIFTY OIL & GAS</span>
+                      <span>↘</span>
+                    </div>
+                    <div className="text-sm font-bold tracking-tight text-rose-300">-0.11%</div>
+                    <div className="flex justify-between items-center text-[9px] text-white/80">
+                      <span>₹11,204.5</span>
+                      <span className="px-1 rounded bg-black/30 font-bold uppercase">▼ DROP</span>
+                    </div>
+                  </div>
+
+                  <div className="p-2.5 rounded-xl bg-rose-950/70 border border-rose-800/30 text-white space-y-1">
+                    <div className="flex justify-between items-center text-[10px] font-bold">
+                      <span className="truncate">NIFTY IT</span>
+                      <span>↘</span>
+                    </div>
+                    <div className="text-sm font-bold tracking-tight text-rose-300">-0.13%</div>
+                    <div className="flex justify-between items-center text-[9px] text-white/80">
+                      <span>₹32,794.6</span>
+                      <span className="px-1 rounded bg-black/30 font-bold uppercase">▼ DROP</span>
+                    </div>
+                  </div>
+
+                  <div className="p-2.5 rounded-xl bg-rose-950/70 border border-rose-800/30 text-white space-y-1">
+                    <div className="flex justify-between items-center text-[10px] font-bold">
+                      <span className="truncate">NIFTY DIGITAL</span>
+                      <span>↘</span>
+                    </div>
+                    <div className="text-sm font-bold tracking-tight text-rose-300">-0.29%</div>
+                    <div className="flex justify-between items-center text-[9px] text-white/80">
+                      <span>₹8,788.4</span>
+                      <span className="px-1 rounded bg-black/30 font-bold uppercase">▼ DROP</span>
+                    </div>
+                  </div>
+
+                  {/* Row 3 - Deeper Sector Drops */}
+                  <div className="p-2.5 rounded-xl bg-rose-950/80 border border-rose-700/30 text-white space-y-1">
+                    <div className="flex justify-between items-center text-[10px] font-bold">
+                      <span className="truncate">NIFTY INDIA MFG</span>
+                      <span>↘</span>
+                    </div>
+                    <div className="text-sm font-bold tracking-tight text-rose-300">-0.37%</div>
+                    <div className="flex justify-between items-center text-[9px] text-white/80">
+                      <span>₹15,741.3</span>
+                      <span className="px-1 rounded bg-black/30 font-bold uppercase">▼ DROP</span>
+                    </div>
+                  </div>
+
+                  <div className="p-2.5 rounded-xl bg-rose-900/70 border border-rose-700/35 text-white space-y-1">
+                    <div className="flex justify-between items-center text-[10px] font-bold">
+                      <span className="truncate">NIFTY METAL</span>
+                      <span>↘</span>
+                    </div>
+                    <div className="text-sm font-bold tracking-tight text-rose-200">-0.50%</div>
+                    <div className="flex justify-between items-center text-[9px] text-white/80">
+                      <span>₹12,531.8</span>
+                      <span className="px-1 rounded bg-black/30 font-bold uppercase">▼ DROP</span>
+                    </div>
+                  </div>
+
+                  <div className="p-2.5 rounded-xl bg-rose-900/80 border border-rose-600/40 text-white space-y-1">
+                    <div className="flex justify-between items-center text-[10px] font-bold">
+                      <span className="truncate">NIFTY ENERGY</span>
+                      <span>↘</span>
+                    </div>
+                    <div className="text-sm font-bold tracking-tight text-rose-200">-0.90%</div>
+                    <div className="flex justify-between items-center text-[9px] text-white/80">
+                      <span>₹36,552.5</span>
+                      <span className="px-1 rounded bg-black/30 font-bold uppercase">▼ DROP</span>
+                    </div>
+                  </div>
+
+                  <div className="p-2.5 rounded-xl bg-rose-900/80 border border-rose-600/40 text-white space-y-1">
+                    <div className="flex justify-between items-center text-[10px] font-bold">
+                      <span className="truncate">NIFTY EV</span>
+                      <span>↘</span>
+                    </div>
+                    <div className="text-sm font-bold tracking-tight text-rose-200">-0.94%</div>
+                    <div className="flex justify-between items-center text-[9px] text-white/80">
+                      <span>₹3,114.4</span>
+                      <span className="px-1 rounded bg-black/30 font-bold uppercase">▼ DROP</span>
+                    </div>
+                  </div>
+
+                  <div className="p-2.5 rounded-xl bg-rose-800/80 border border-rose-500/40 text-white space-y-1">
+                    <div className="flex justify-between items-center text-[10px] font-bold">
+                      <span className="truncate">NIFTY REALTY</span>
+                      <span>↘</span>
+                    </div>
+                    <div className="text-sm font-bold tracking-tight text-rose-200">-1.06%</div>
+                    <div className="flex justify-between items-center text-[9px] text-white/80">
+                      <span>₹886.4</span>
+                      <span className="px-1 rounded bg-black/30 font-bold uppercase">▼ DROP</span>
+                    </div>
+                  </div>
+
+                  <div className="p-2.5 rounded-xl bg-rose-800/85 border border-rose-500/40 text-white space-y-1">
+                    <div className="flex justify-between items-center text-[10px] font-bold">
+                      <span className="truncate">NIFTY MEDIA</span>
+                      <span>↘</span>
+                    </div>
+                    <div className="text-sm font-bold tracking-tight text-rose-100">-1.57%</div>
+                    <div className="flex justify-between items-center text-[9px] text-white/80">
+                      <span>₹1,669.6</span>
+                      <span className="px-1 rounded bg-black/30 font-bold uppercase">▼ DROP</span>
+                    </div>
+                  </div>
+
+                  <div className="p-2.5 rounded-xl bg-rose-700/90 border border-rose-500/50 text-white space-y-1">
+                    <div className="flex justify-between items-center text-[10px] font-bold">
+                      <span className="truncate">NIFTY DEFENCE</span>
+                      <span>↘</span>
+                    </div>
+                    <div className="text-sm font-bold tracking-tight text-rose-100">-1.95%</div>
+                    <div className="flex justify-between items-center text-[9px] text-white/80">
+                      <span>₹8,836.1</span>
+                      <span className="px-1 rounded bg-black/30 font-bold uppercase">▼ DROP</span>
+                    </div>
+                  </div>
+
+                  <div className="p-2.5 rounded-xl bg-[#080C14] border border-white/[0.08] text-slate-300 space-y-1 flex flex-col justify-center items-center text-center">
+                    <div className="text-[10px] font-mono text-sky-400 font-semibold">+All 24 Indices</div>
+                    <div className="text-[9px] text-slate-500 font-mono">Live In Terminal</div>
                   </div>
                 </div>
               </div>
