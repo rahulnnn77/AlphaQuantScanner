@@ -699,6 +699,46 @@
   }
 }
 
+
+/* Apple Launch Light Sweep Animation */
+@keyframes lightSweepAnimation {
+  0% {
+    transform: translate3d(-150%, 0, 0) rotate(25deg);
+    opacity: 0;
+  }
+  20% {
+    opacity: 0.85;
+  }
+  80% {
+    opacity: 0.85;
+  }
+  100% {
+    transform: translate3d(250%, 0, 0) rotate(25deg);
+    opacity: 0;
+  }
+}
+
+.aq-light-sweep-bar {
+  position: absolute;
+  top: -50%;
+  bottom: -50%;
+  width: 60px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.05) 20%,
+    rgba(255, 255, 255, 0.45) 50%,
+    rgba(56, 189, 248, 0.4) 75%,
+    transparent 100%
+  );
+  filter: blur(4px);
+  pointer-events-none;
+}
+
+.run-light-sweep {
+  animation: lightSweepAnimation 1.35s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+
   </style>
 </head>
 <body class="bg-[#0A0E17] text-slate-100 min-h-screen select-none">
@@ -919,88 +959,119 @@
     }
 
     /**
-     * Professional Cinematic Intro Animation Component
-     * Runs once per browser session with smooth sequential line drawing and progressive content reveal.
-     */
-    /**
-     * Professional Cinematic Login Animation Component
-     * Demonstrates pure Bullish Pennant Pattern with explosive upward breakout surge:
-     * 1. AlphaQuant Bullish Pennant Pattern appears at the centre
-     * 2. Momentum builds through the consolidation pennant triangle
-     * 3. Explosive green breakout arrow surges upward with dynamic emerald glow
-     * 4. Displays "Welcome, [User Name]" and "You're in. Let's get to work."
-     * 5. Smooth Apple-grade crossfade transition into the live AlphaQuant terminal
+     * Professional Cinematic Logo Reveal Component (Apple Launch Style)
+     * 1. Clean, dark background matching AlphaQuant's visual identity
+     * 2. Introduces the actual AlphaQuant symbol at the centre with smooth fade
+     * 3. Reveals technical vector drawing with subtle depth
+     * 4. Gradually reveals the AlphaQuant wordmark alongside the symbol
+     * 5. Runs a specular light sweep across the completed logo lockup
+     * 6. Displays the official tagline: "Precision in Research. Discipline in Execution."
+     * 7. Holds briefly, then transitions smoothly into the terminal
      */
     function BrandEntrySplash({ user, onComplete }) {
-      const [stage, setStage] = useState(1); // 1: Pennant Consolidation, 2: Breakout Surge, 3: Welcome Greeting, 4: Fade to terminal
-      const displayName = user?.full_name || user?.username || 'Trader';
+      const [stage, setStage] = useState(1); // 1: Symbol Fade, 2: Technical Draw, 3: Wordmark Reveal, 4: Light Sweep, 5: Tagline, 6: Fade out
 
       useEffect(() => {
-        // Stage 1 -> 2: Breakout surge triggers at 1100ms
-        const t1 = setTimeout(() => setStage(2), 1100);
-        // Stage 2 -> 3: Welcome greeting appears at 1800ms
-        const t2 = setTimeout(() => setStage(3), 1800);
-        // Stage 3 -> 4: Fade out overlay cleanly into dashboard at 3200ms
-        const t3 = setTimeout(() => setStage(4), 3200);
-        // Stage 4: Unmount callback at 3700ms
-        const t4 = setTimeout(() => {
+        // Step 2: Technical vector lines draw at 200ms
+        const t1 = setTimeout(() => setStage(2), 200);
+        // Step 3: Typography wordmark reveals alongside symbol at 900ms
+        const t2 = setTimeout(() => setStage(3), 900);
+        // Step 4: Specular light sweep across logo lockup at 1500ms
+        const t3 = setTimeout(() => setStage(4), 1500);
+        // Step 5: Official Tagline reveals at 2000ms
+        const t4 = setTimeout(() => setStage(5), 2000);
+        // Step 6: Smooth crossfade to terminal at 3400ms
+        const t5 = setTimeout(() => setStage(6), 3400);
+        // Callback unmount at 3900ms
+        const t6 = setTimeout(() => {
           if (onComplete) onComplete();
-        }, 3700);
+        }, 3900);
 
         return () => {
           clearTimeout(t1);
           clearTimeout(t2);
           clearTimeout(t3);
           clearTimeout(t4);
+          clearTimeout(t5);
+          clearTimeout(t6);
         };
       }, [onComplete]);
 
       return (
         <div 
-          className={`fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-[#070A10] pointer-events-none select-none transition-all duration-700 ease-out ${
-            stage === 4 ? 'opacity-0 scale-105' : 'opacity-100 scale-100'
+          className={`fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-[#05070D] pointer-events-none select-none transition-all duration-700 ease-out ${
+            stage === 6 ? 'opacity-0 scale-105' : 'opacity-100 scale-100'
           }`}
           style={{ willChange: 'opacity, transform' }}
         >
-          {/* Subtle Ambient Radial Glow that shifts from calm blue to energetic breakout green */}
+          {/* Subtle Ambient Radial Glow Flare */}
           <div 
-            className={`absolute rounded-full blur-[130px] pointer-events-none transition-all duration-1000 ${
-              stage >= 2 
-                ? 'w-[520px] h-[520px] bg-emerald-500/25' 
-                : 'w-[440px] h-[440px] bg-blue-600/15'
+            className={`absolute rounded-full blur-[140px] pointer-events-none transition-all duration-1000 ${
+              stage >= 4 
+                ? 'w-[560px] h-[560px] bg-sky-500/[0.18]' 
+                : 'w-[480px] h-[480px] bg-blue-600/[0.12]'
             }`}
           ></div>
 
-          <div className="relative z-10 flex flex-col items-center text-center">
+          <div className="relative z-10 flex flex-col items-center text-center px-6">
             
-            {/* Unified Bullish Pennant Pattern Card Lockup */}
+            {/* Logo Lockup Card with Specular Light Sweep */}
             <div 
-              className={`relative p-8 rounded-3xl bg-[#0B101D]/90 border shadow-[0_20px_60px_rgba(0,0,0,0.8)] backdrop-blur-xl mb-6 transition-all duration-700 flex items-center justify-center overflow-visible ${
-                stage >= 2 
-                  ? 'border-emerald-500/40 shadow-[0_20px_60px_rgba(16,185,129,0.35)] scale-105' 
-                  : 'border-white/[0.08] scale-100'
+              className={`relative p-7 sm:p-9 rounded-3xl bg-[#090E1A]/85 border shadow-[0_25px_70px_rgba(0,0,0,0.85)] backdrop-blur-2xl flex items-center space-x-5 overflow-hidden transition-all duration-700 ${
+                stage >= 4 
+                  ? 'border-sky-400/30 shadow-[0_25px_80px_rgba(56,189,248,0.22)]' 
+                  : 'border-white/[0.08]'
               }`}
             >
-              {/* Pure AlphaQuant Bullish Pennant Pattern Symbol */}
-              <div className="transition-transform duration-700">
-                <AlphaQuantSymbol size={110} animated={true} variant="dark" />
+              {/* Specular Light Sweep Bar */}
+              {stage >= 4 && (
+                <div className="aq-light-sweep-bar run-light-sweep"></div>
+              )}
+
+              {/* Actual AlphaQuant Symbol */}
+              <div 
+                className={`relative shrink-0 transition-all duration-700 ease-out ${
+                  stage >= 1 ? 'opacity-100 scale-100' : 'opacity-0 scale-90'
+                }`}
+              >
+                <AlphaQuantSymbol size={80} animated={stage >= 2} variant="dark" />
               </div>
+
+              {/* AlphaQuant Wordmark */}
+              <div 
+                className={`text-left leading-none transition-all duration-700 ease-out select-none ${
+                  stage >= 3 
+                    ? 'opacity-100 translate-x-0' 
+                    : 'opacity-0 translate-x-4 pointer-events-none'
+                }`}
+              >
+                <div className="text-3xl sm:text-4xl font-semibold tracking-tight text-white flex items-baseline">
+                  <span>Alpha</span>
+                  <span className="font-normal text-slate-400">Quant</span>
+                </div>
+                <div className="text-[10px] sm:text-xs font-mono tracking-widest text-sky-400 uppercase font-semibold mt-1.5 flex items-center space-x-1.5">
+                  <span>Terminal</span>
+                  <span className="text-slate-600">·</span>
+                  <span className="text-slate-400">Quantitative Research</span>
+                </div>
+              </div>
+
             </div>
 
-            {/* Stage 3: Welcome Greeting and Action Tagline */}
+            {/* Official Tagline: Precision in Research. Discipline in Execution. */}
             <div 
-              className={`transition-all duration-600 ease-out space-y-1.5 ${
-                stage >= 3 
+              className={`mt-6 transition-all duration-700 ease-out ${
+                stage >= 5 
                   ? 'opacity-100 translate-y-0' 
-                  : 'opacity-0 translate-y-3'
+                  : 'opacity-0 translate-y-3 pointer-events-none'
               }`}
             >
-              <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">
-                Welcome, {displayName}
-              </h2>
-              <p className="text-sm font-mono text-emerald-400 tracking-wide font-medium">
-                You're in. Let's get to work.
-              </p>
+              <div className="inline-flex items-center space-x-2.5 px-4 py-1.5 rounded-full bg-white/[0.04] border border-white/[0.08] backdrop-blur-md">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span className="text-xs sm:text-sm font-mono tracking-widest text-slate-200 uppercase font-medium">
+                  Precision in Research. Discipline in Execution.
+                </span>
+              </div>
             </div>
 
           </div>
@@ -10034,7 +10105,7 @@
 
               {/* Default Channel / Group Chat ID */}
               <div className="space-y-1.5">
-                <label className="text-xs font-mono font-bold text-slate-300">
+                <label classNam
                   Shared Broadcast Group / Channel ID
                 </label>
                 <input
