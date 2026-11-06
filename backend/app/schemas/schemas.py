@@ -50,15 +50,55 @@ class UserUpdateRequest(BaseModel):
 class UserResponse(BaseModel):
     id: int
     username: str
-    email: Optional[str]
+    email: Optional[str] = None
+    full_name: Optional[str] = None
+    phone_number: Optional[str] = None
+    organization: Optional[str] = None
     role: str
+    status: str = "APPROVED"
     is_active: bool
+    email_verified: bool = True
     created_at: datetime
     telegram_chat_id: Optional[str] = None
     telegram_alerts_enabled: Optional[bool] = True
     
     class Config:
         from_attributes = True
+
+# Public Registration Schemas
+class UserRegisterRequest(BaseModel):
+    full_name: str
+    email: str
+    phone_number: str
+    password: str
+    organization: Optional[str] = None
+
+class UserRegisterResponse(BaseModel):
+    status: str = "success"
+    message: str
+    username: str
+    email: str
+    account_status: str = "PENDING"
+
+# Access Request Schemas
+class AccessRequestResponse(BaseModel):
+    id: int
+    user_id: int
+    full_name: str
+    email: str
+    phone_number: str
+    organization: Optional[str] = None
+    status: str
+    decision_by: Optional[str] = None
+    decision_at: Optional[datetime] = None
+    decision_notes: Optional[str] = None
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+class AccessDecisionRequest(BaseModel):
+    notes: Optional[str] = None
 
 # Screener Schemas
 class ScreenerCriteria(BaseModel):

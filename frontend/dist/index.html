@@ -574,6 +574,64 @@
   animation: aqBeaconPulse 2.8s ease-in-out infinite;
 }
 
+  
+/* --------------------------------------------------------------------------
+   PUBLIC LANDING PAGE, AUTHENTICATION & ACCESS CONTROL STYLING
+   Apple Minimalist Financial Aesthetics
+   -------------------------------------------------------------------------- */
+
+.apple-glass-card {
+  background: rgba(14, 21, 36, 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.apple-glass-card-hover {
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.apple-glass-card-hover:hover {
+  transform: translateY(-4px);
+  border-color: rgba(56, 189, 248, 0.35);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5), 0 0 20px rgba(56, 189, 248, 0.08);
+}
+
+.apple-hero-glow {
+  background: radial-gradient(circle at 50% 30%, rgba(37, 99, 235, 0.15) 0%, rgba(14, 165, 233, 0.08) 35%, transparent 70%);
+}
+
+.apple-grid-mesh {
+  background-size: 40px 40px;
+  background-image: 
+    linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+}
+
+/* Subtle Animated Ambient Ticker */
+@keyframes heroTickerSlide {
+  0% { transform: translate3d(0, 0, 0); }
+  100% { transform: translate3d(-50%, 0, 0); }
+}
+
+.hero-ticker-track {
+  display: flex;
+  width: max-content;
+  animation: heroTickerSlide 45s linear infinite;
+}
+.hero-ticker-track:hover {
+  animation-play-state: paused;
+}
+
+/* Animated Notification Badge Pulse */
+@keyframes badgeNotificationPulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.15); opacity: 0.85; }
+}
+
+.aq-notify-badge {
+  animation: badgeNotificationPulse 2s ease-in-out infinite;
+}
+
   </style>
 </head>
 <body class="bg-[#0A0E17] text-slate-100 min-h-screen overflow-hidden select-none">
@@ -848,7 +906,1510 @@
       );
     }
 
+    
+    // =========================================================================
+    // USER ACCESS MANAGEMENT (ADMIN PANEL)
+    // =========================================================================
+
+    function UserAccessManagement({ onBack }) {
+      const [tab, setTab] = useState('pending'); // 'pending', 'approved', 'rejected'
+      const [requests, setRequests] = useState([]);
+      const [summary, setSummary] = useState({ pending_count: 0, approved_count: 0, rejected_count: 0, suspended_count: 0 });
+      const [users, setUsers] = useState([]);
+      const [auditLogs, setAuditLogs] = useState([]);
+      const [loading, setLoading] = useState(true);
+      const [feedback, setFeedback] = useState({ type: '', text: '' });
+      const [actionLoading, setActionLoading] = useState(null);
+
+      const fetchAllData = async () => {
+        try {
+          const [sumRes, reqRes, userRes, logRes] = await Promise.all([
+            api.get('/users/access-requests/summary'),
+            api.get('/users/access-requests'),
+            api.get('/users/'),
+            api.get('/users/audit-logs?limit=30')
+          ]);
+          setSummary(sumRes.data || { pending_count: 0, approved_count: 0, rejected_count: 0, suspended_count: 0 });
+          setRequests(reqRes.data || []);
+          setUsers(userRes.data || []);
+          setAuditLogs(logRes.data || []);
+        } catch (e) {
+          console.error('Failed to load access management data:', e);
+          setFeedback({ type: 'error', text: 'Failed to refresh access requests' });
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      useEffect(() => {
+        fetchAllData();
+        const interval = setInterval(fetchAllData, 10000); // 10s auto-refresh
+        return () => clearInterval(interval);
+      }, []);
+
+      const handleApprove = async (reqId) => {
+        setActionLoading(reqId);
+        try {
+          const res = await api.post(`/users/access-requests/${reqId}/approve`, { notes: 'Approved via Admin Panel' });
+          setFeedback({ type: 'success', text: res.data.message || 'Access approved successfully' });
+          fetchAllData();
+        } catch (e) {
+          setFeedback({ type: 'error', text: e.response?.data?.detail || 'Failed to approve request' });
+        } finally {
+          setActionLoading(null);
+        }
+      };
+
+      const handleReject = async (reqId) => {
+        if (!confirm('Are you sure you want to decline this applicant?')) return;
+        setActionLoading(reqId);
+        try {
+          const res = await api.post(`/users/access-requests/${reqId}/reject`, { notes: 'Declined by Administrator' });
+          setFeedback({ type: 'success', text: res.data.message || 'Access request rejected' });
+          fetchAllData();
+        } catch (e) {
+          setFeedback({ type: 'error', text: e.response?.data?.detail || 'Failed to reject request' });
+        } finally {
+          setActionLoading(null);
+        }
+      };
+
+      const handleSuspendUser = async (userId, username) => {
+        if (!confirm(`Are you sure you want to suspend access for ${username}? This immediately revokes their session.`)) return;
+        setActionLoading(`suspend-${userId}`);
+        try {
+          const res = await api.post(`/users/${userId}/suspend`);
+          setFeedback({ type: 'success', text: res.data.message || `User ${username} suspended.` });
+          fetchAllData();
+        } catch (e) {
+          setFeedback({ type: 'error', text: e.response?.data?.detail || 'Failed to suspend user' });
+        } finally {
+          setActionLoading(null);
+        }
+      };
+
+      const handleReinstateUser = async (userId, username) => {
+        setActionLoading(`reinstate-${userId}`);
+        try {
+          const res = await api.post(`/users/${userId}/reinstate`);
+          setFeedback({ type: 'success', text: res.data.message || `User ${username} reinstated.` });
+          fetchAllData();
+        } catch (e) {
+          setFeedback({ type: 'error', text: e.response?.data?.detail || 'Failed to reinstate user' });
+        } finally {
+          setActionLoading(null);
+        }
+      };
+
+      const pendingRequests = requests.filter(r => r.status === 'PENDING');
+      const approvedUsers = users.filter(u => (u.status === 'APPROVED' || !u.status) && u.is_active);
+      const suspendedOrRejectedUsers = users.filter(u => u.status === 'SUSPENDED' || u.status === 'REJECTED' || !u.is_active);
+
+      return (
+        <section className="space-y-6 max-w-7xl mx-auto py-2 px-1 font-sans apple-page-view">
+          {/* Header */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-6 border-b border-white/[0.08] gap-4">
+            <div className="space-y-1">
+              <div className="flex items-center space-x-2">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.7)] animate-pulse"></span>
+                <span className="text-[11px] font-mono uppercase tracking-widest text-emerald-400 font-semibold">
+                  Administrative Gatekeeper
+                </span>
+              </div>
+              <h1 className="text-3xl font-semibold tracking-tight text-white">
+                User Access & Security Management
+              </h1>
+              <p className="text-xs text-slate-400 max-w-2xl">
+                Review pending applicant registrations, authorize terminal access, suspend accounts, and inspect audit activity in real time.
+              </p>
+            </div>
+
+            <div className="flex items-center space-x-3">
+              <button
+                onClick={fetchAllData}
+                className="px-3.5 py-2 bg-white/[0.04] hover:bg-white/[0.08] text-slate-300 rounded-xl border border-white/[0.08] text-xs font-mono transition-colors flex items-center space-x-1.5"
+              >
+                <span>↻</span>
+                <span>Refresh</span>
+              </button>
+              <button
+                onClick={onBack}
+                className="px-4 py-2 bg-white text-slate-900 rounded-xl font-medium text-xs hover:bg-slate-200 transition-colors"
+              >
+                ← Return to Terminal
+              </button>
+            </div>
+          </div>
+
+          {/* Feedback alert */}
+          {feedback.text && (
+            <div className={`p-4 rounded-xl text-xs font-mono flex items-center justify-between ${
+              feedback.type === 'error' ? 'bg-rose-500/10 border border-rose-500/20 text-rose-300' : 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-300'
+            }`}>
+              <span>{feedback.text}</span>
+              <button onClick={() => setFeedback({ type: '', text: '' })} className="hover:opacity-75">✕</button>
+            </div>
+          )}
+
+          {/* Summary Metric Counters */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div 
+              onClick={() => setTab('pending')}
+              className={`p-4 rounded-2xl border cursor-pointer transition-all ${
+                tab === 'pending'
+                  ? 'bg-amber-500/[0.08] border-amber-500/40 shadow-[0_0_20px_rgba(245,158,11,0.1)]'
+                  : 'bg-[#0E1524]/60 border-white/[0.06] hover:border-white/[0.12]'
+              }`}
+            >
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[10px] font-mono uppercase tracking-widest text-slate-400">Pending Review</span>
+                {summary.pending_count > 0 && (
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-mono bg-amber-500/20 text-amber-300 font-bold aq-notify-badge">
+                    Action Req.
+                  </span>
+                )}
+              </div>
+              <div className="text-3xl font-bold font-mono text-amber-400">{summary.pending_count}</div>
+              <p className="text-[10px] text-slate-500 mt-1">Applicant accounts awaiting review</p>
+            </div>
+
+            <div 
+              onClick={() => setTab('approved')}
+              className={`p-4 rounded-2xl border cursor-pointer transition-all ${
+                tab === 'approved'
+                  ? 'bg-emerald-500/[0.08] border-emerald-500/40 shadow-[0_0_20px_rgba(16,185,129,0.1)]'
+                  : 'bg-[#0E1524]/60 border-white/[0.06] hover:border-white/[0.12]'
+              }`}
+            >
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[10px] font-mono uppercase tracking-widest text-slate-400">Approved Users</span>
+                <span className="text-emerald-400 text-xs">● Active</span>
+              </div>
+              <div className="text-3xl font-bold font-mono text-emerald-400">{approvedUsers.length}</div>
+              <p className="text-[10px] text-slate-500 mt-1">Active terminal access licenses</p>
+            </div>
+
+            <div 
+              onClick={() => setTab('rejected')}
+              className={`p-4 rounded-2xl border cursor-pointer transition-all ${
+                tab === 'rejected'
+                  ? 'bg-rose-500/[0.08] border-rose-500/40 shadow-[0_0_20px_rgba(244,63,94,0.1)]'
+                  : 'bg-[#0E1524]/60 border-white/[0.06] hover:border-white/[0.12]'
+              }`}
+            >
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[10px] font-mono uppercase tracking-widest text-slate-400">Suspended / Rejected</span>
+                <span className="text-rose-400 text-xs">Blocked</span>
+              </div>
+              <div className="text-3xl font-bold font-mono text-rose-400">{suspendedOrRejectedUsers.length}</div>
+              <p className="text-[10px] text-slate-500 mt-1">Denied or access revoked</p>
+            </div>
+
+            <div 
+              onClick={() => setTab('audit')}
+              className={`p-4 rounded-2xl border cursor-pointer transition-all ${
+                tab === 'audit'
+                  ? 'bg-sky-500/[0.08] border-sky-500/40 shadow-[0_0_20px_rgba(14,165,233,0.1)]'
+                  : 'bg-[#0E1524]/60 border-white/[0.06] hover:border-white/[0.12]'
+              }`}
+            >
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[10px] font-mono uppercase tracking-widest text-slate-400">Security Audit Logs</span>
+                <span className="text-sky-400 text-xs">Records</span>
+              </div>
+              <div className="text-3xl font-bold font-mono text-sky-400">{auditLogs.length}</div>
+              <p className="text-[10px] text-slate-500 mt-1">Immutable administrative audit trail</p>
+            </div>
+          </div>
+
+          {/* Navigation Category Segmented Bar */}
+          <div className="flex items-center space-x-2 border-b border-white/[0.06] pb-3 text-xs font-medium">
+            <button
+              onClick={() => setTab('pending')}
+              className={`px-4 py-2 rounded-xl transition-all flex items-center space-x-2 ${
+                tab === 'pending'
+                  ? 'bg-amber-500/20 text-amber-300 font-semibold shadow-sm'
+                  : 'text-slate-400 hover:text-white hover:bg-white/[0.04]'
+              }`}
+            >
+              <span>Pending Requests</span>
+              {summary.pending_count > 0 && (
+                <span className="px-1.5 py-0.2 rounded-full text-[10px] font-mono bg-amber-500 text-slate-900 font-bold">
+                  {summary.pending_count}
+                </span>
+              )}
+            </button>
+
+            <button
+              onClick={() => setTab('approved')}
+              className={`px-4 py-2 rounded-xl transition-all ${
+                tab === 'approved'
+                  ? 'bg-emerald-500/20 text-emerald-300 font-semibold shadow-sm'
+                  : 'text-slate-400 hover:text-white hover:bg-white/[0.04]'
+              }`}
+            >
+              <span>Approved Accounts ({approvedUsers.length})</span>
+            </button>
+
+            <button
+              onClick={() => setTab('rejected')}
+              className={`px-4 py-2 rounded-xl transition-all ${
+                tab === 'rejected'
+                  ? 'bg-rose-500/20 text-rose-300 font-semibold shadow-sm'
+                  : 'text-slate-400 hover:text-white hover:bg-white/[0.04]'
+              }`}
+            >
+              <span>Suspended & Rejected ({suspendedOrRejectedUsers.length})</span>
+            </button>
+
+            <button
+              onClick={() => setTab('audit')}
+              className={`px-4 py-2 rounded-xl transition-all ${
+                tab === 'audit'
+                  ? 'bg-sky-500/20 text-sky-300 font-semibold shadow-sm'
+                  : 'text-slate-400 hover:text-white hover:bg-white/[0.04]'
+              }`}
+            >
+              <span>Audit Trail</span>
+            </button>
+          </div>
+
+          {/* TAB 1: PENDING REQUESTS */}
+          {tab === 'pending' && (
+            <div className="bg-[#0B101D]/70 border border-white/[0.08] rounded-2xl overflow-hidden shadow-2xl backdrop-blur-md">
+              <div className="px-6 py-4 border-b border-white/[0.06] flex items-center justify-between">
+                <div>
+                  <h2 className="text-sm font-semibold text-white">Pending Access Applications</h2>
+                  <p className="text-[11px] text-slate-400">Review prospective quantitative traders requesting terminal credentials.</p>
+                </div>
+                <span className="text-xs font-mono text-amber-400">{pendingRequests.length} pending decisions</span>
+              </div>
+
+              {pendingRequests.length === 0 ? (
+                <div className="p-12 text-center text-slate-500 font-mono text-xs">
+                  <div className="w-12 h-12 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto mb-3 text-lg">
+                    ✓
+                  </div>
+                  <span>All registration requests have been processed. Queue is clean.</span>
+                </div>
+              ) : (
+                <div className="divide-y divide-white/[0.06]">
+                  {pendingRequests.map((req) => (
+                    <div key={req.id} className="p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:bg-white/[0.02] transition-colors">
+                      <div className="space-y-1">
+                        <div className="flex items-center space-x-3">
+                          <span className="text-sm font-semibold text-white">{req.full_name}</span>
+                          <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-amber-500/20 text-amber-300 font-semibold">
+                            PENDING APPROVAL
+                          </span>
+                          {req.organization && (
+                            <span className="text-[11px] text-slate-400 bg-white/[0.04] px-2 py-0.5 rounded border border-white/[0.06]">
+                              {req.organization}
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs font-mono text-slate-400">
+                          <span>Email: <span className="text-slate-200">{req.email}</span></span>
+                          <span>Phone: <span className="text-slate-200">{req.phone_number}</span></span>
+                          <span>Registered: <span className="text-slate-300">{new Date(req.created_at).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}</span></span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center space-x-2 shrink-0">
+                        <button
+                          disabled={actionLoading === req.id}
+                          onClick={() => handleApprove(req.id)}
+                          className="px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-semibold text-xs rounded-xl transition-all shadow-md shadow-emerald-500/20 disabled:opacity-50 flex items-center space-x-1.5"
+                        >
+                          <span>✓</span>
+                          <span>{actionLoading === req.id ? 'Approving...' : 'Approve Access'}</span>
+                        </button>
+                        <button
+                          disabled={actionLoading === req.id}
+                          onClick={() => handleReject(req.id)}
+                          className="px-3.5 py-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/30 text-xs rounded-xl transition-all disabled:opacity-50"
+                        >
+                          ✕ Reject
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* TAB 2: APPROVED USERS */}
+          {tab === 'approved' && (
+            <div className="bg-[#0B101D]/70 border border-white/[0.08] rounded-2xl overflow-hidden shadow-2xl backdrop-blur-md">
+              <div className="px-6 py-4 border-b border-white/[0.06] flex items-center justify-between">
+                <div>
+                  <h2 className="text-sm font-semibold text-white">Approved Terminal Accounts</h2>
+                  <p className="text-[11px] text-slate-400">Users authorized to access market breadth, screeners, and watchlists.</p>
+                </div>
+                <span className="text-xs font-mono text-emerald-400">{approvedUsers.length} active licenses</span>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead>
+                    <tr className="border-b border-white/[0.06] bg-white/[0.02] text-slate-400 font-mono text-[10px] uppercase tracking-wider">
+                      <th className="py-3 px-5">User</th>
+                      <th className="py-3 px-4">Contact</th>
+                      <th className="py-3 px-4">Role</th>
+                      <th className="py-3 px-4">Status</th>
+                      <th className="py-3 px-4">Member Since</th>
+                      <th className="py-3 px-5 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/[0.04]">
+                    {approvedUsers.map((u) => (
+                      <tr key={u.id} className="hover:bg-white/[0.02] transition-colors">
+                        <td className="py-3.5 px-5">
+                          <div className="font-semibold text-white">{u.full_name || u.username}</div>
+                          <div className="text-[11px] font-mono text-slate-400">@{u.username}</div>
+                        </td>
+                        <td className="py-3.5 px-4 font-mono text-slate-300">
+                          <div>{u.email || '—'}</div>
+                          {u.phone_number && <div className="text-[10px] text-slate-500">{u.phone_number}</div>}
+                        </td>
+                        <td className="py-3.5 px-4">
+                          <span className={`px-2 py-0.5 rounded text-[10px] font-mono font-semibold ${
+                            u.role === 'admin' ? 'bg-sky-500/20 text-sky-300' : 'bg-slate-800 text-slate-300'
+                          }`}>
+                            {u.role.toUpperCase()}
+                          </span>
+                        </td>
+                        <td className="py-3.5 px-4">
+                          <span className="inline-flex items-center space-x-1.5 px-2 py-0.5 rounded text-[10px] font-mono bg-emerald-500/20 text-emerald-300">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                            <span>APPROVED</span>
+                          </span>
+                        </td>
+                        <td className="py-3.5 px-4 font-mono text-slate-400 text-[11px]">
+                          {u.created_at ? new Date(u.created_at).toLocaleDateString('en-IN', { dateStyle: 'medium' }) : '—'}
+                        </td>
+                        <td className="py-3.5 px-5 text-right">
+                          {u.role !== 'admin' && (
+                            <button
+                              disabled={actionLoading === `suspend-${u.id}`}
+                              onClick={() => handleSuspendUser(u.id, u.username)}
+                              className="px-3 py-1 bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/30 rounded-lg text-xs font-mono transition-colors"
+                            >
+                              Suspend Access
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 3: SUSPENDED & REJECTED */}
+          {tab === 'rejected' && (
+            <div className="bg-[#0B101D]/70 border border-white/[0.08] rounded-2xl overflow-hidden shadow-2xl backdrop-blur-md">
+              <div className="px-6 py-4 border-b border-white/[0.06] flex items-center justify-between">
+                <div>
+                  <h2 className="text-sm font-semibold text-white">Suspended & Denied Accounts</h2>
+                  <p className="text-[11px] text-slate-400">Accounts with blocked or revoked access to AlphaQuant terminal.</p>
+                </div>
+                <span className="text-xs font-mono text-rose-400">{suspendedOrRejectedUsers.length} blocked</span>
+              </div>
+
+              {suspendedOrRejectedUsers.length === 0 ? (
+                <div className="p-8 text-center text-slate-500 font-mono text-xs">
+                  No suspended or rejected accounts.
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs">
+                    <thead>
+                      <tr className="border-b border-white/[0.06] bg-white/[0.02] text-slate-400 font-mono text-[10px] uppercase tracking-wider">
+                        <th className="py-3 px-5">User</th>
+                        <th className="py-3 px-4">Contact</th>
+                        <th className="py-3 px-4">Account Status</th>
+                        <th className="py-3 px-5 text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/[0.04]">
+                      {suspendedOrRejectedUsers.map((u) => (
+                        <tr key={u.id} className="hover:bg-white/[0.02] transition-colors">
+                          <td className="py-3.5 px-5">
+                            <div className="font-semibold text-white">{u.full_name || u.username}</div>
+                            <div className="text-[11px] font-mono text-slate-400">@{u.username}</div>
+                          </td>
+                          <td className="py-3.5 px-4 font-mono text-slate-300">
+                            <div>{u.email || '—'}</div>
+                            {u.phone_number && <div className="text-[10px] text-slate-500">{u.phone_number}</div>}
+                          </td>
+                          <td className="py-3.5 px-4">
+                            <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-rose-500/20 text-rose-300 font-semibold">
+                              {u.status || 'DEACTIVATED'}
+                            </span>
+                          </td>
+                          <td className="py-3.5 px-5 text-right">
+                            <button
+                              disabled={actionLoading === `reinstate-${u.id}`}
+                              onClick={() => handleReinstateUser(u.id, u.username)}
+                              className="px-3.5 py-1 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/30 rounded-lg text-xs font-mono transition-colors"
+                            >
+                              Reinstate Access
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* TAB 4: AUDIT LOGS */}
+          {tab === 'audit' && (
+            <div className="bg-[#0B101D]/70 border border-white/[0.08] rounded-2xl overflow-hidden shadow-2xl backdrop-blur-md">
+              <div className="px-6 py-4 border-b border-white/[0.06] flex items-center justify-between">
+                <div>
+                  <h2 className="text-sm font-semibold text-white">Administrative Security Audit Trail</h2>
+                  <p className="text-[11px] text-slate-400">Timestamped record of all authorization, suspension, and account decisions.</p>
+                </div>
+                <span className="text-xs font-mono text-sky-400">Immutable ledger</span>
+              </div>
+
+              {auditLogs.length === 0 ? (
+                <div className="p-8 text-center text-slate-500 font-mono text-xs">
+                  No administrative actions logged yet.
+                </div>
+              ) : (
+                <div className="divide-y divide-white/[0.04] max-h-[500px] overflow-y-auto">
+                  {auditLogs.map((log) => (
+                    <div key={log.id} className="p-4 flex items-center justify-between text-xs font-mono hover:bg-white/[0.02]">
+                      <div className="space-y-0.5">
+                        <div className="flex items-center space-x-2">
+                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                            log.action === 'APPROVE_USER' ? 'bg-emerald-500/20 text-emerald-300' :
+                            log.action === 'REJECT_USER' ? 'bg-rose-500/20 text-rose-300' :
+                            log.action === 'SUSPEND_USER' ? 'bg-amber-500/20 text-amber-300' : 'bg-sky-500/20 text-sky-300'
+                          }`}>
+                            {log.action}
+                          </span>
+                          <span className="text-white font-medium">{log.details}</span>
+                        </div>
+                        <div className="text-[11px] text-slate-500">
+                          Executed by Admin: <span className="text-slate-400">@{log.admin_username}</span>
+                        </div>
+                      </div>
+                      <div className="text-[11px] text-slate-400 shrink-0">
+                        {log.timestamp}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </section>
+      );
+    }
+
+    // =========================================================================
+    // PUBLIC ALPHAQUANT LANDING PAGE (APPLE MINIMALIST DESIGN)
+    // =========================================================================
+
+    function PublicLandingPage({ onOpenLogin, onOpenRegister, onOpenLegal }) {
+      const [activeDemoModule, setActiveDemoModule] = useState('breadth');
+
+      const featureShowcase = [
+        {
+          id: 'breadth',
+          title: 'Market Breadth Analytics',
+          subtitle: 'Institutional Participation & Trend Distribution',
+          description: 'Evaluate real-time equity advances versus declines across NIFTY 50 and broader multi-sector constituents. Gauge underlying liquidity dynamics, distribution velocity, and participation thresholds before committing risk.',
+          metrics: [
+            { label: 'Advancing Ratio', val: '64.2%', highlight: true },
+            { label: 'Broad Market Breadth', val: '+1.82σ' },
+            { label: 'Participation Volume', val: '₹48,210 Cr' }
+          ],
+          bullets: [
+            'Real-time Advance/Decline ratio monitoring across Indian market segments.',
+            'Sector-wide relative participation heatmaps and dispersion metrics.',
+            'Liquidity breadth thresholds calibrated to institutional benchmarks.'
+          ]
+        },
+        {
+          id: 'screener',
+          title: 'Quantitative Screener Engine',
+          subtitle: 'Multi-Condition Structural Filters',
+          description: 'Deploy rule-based algorithms parsing dynamic price envelopes, relative volume surges, momentum divergence, and moving average cross-structures in millisecond compute cycles.',
+          metrics: [
+            { label: 'Latency', val: '< 18ms', highlight: true },
+            { label: 'Scanned Equities', val: '500+ NSE' },
+            { label: 'Condition Matrix', val: '12 Filters' }
+          ],
+          bullets: [
+            'High-volume breakout detection with institutional volume expansion multipliers.',
+            'Relative Strength Index (RSI) momentum continuation filters.',
+            'Exponential Moving Average alignment (EMA 20 / EMA 50) validation.'
+          ]
+        },
+        {
+          id: 'hps',
+          title: 'HPS Stocks Multi-Timeframe Engine',
+          subtitle: 'Structural Breakouts & Breakdown Signals',
+          description: 'Track systematic multi-timeframe price setups across 4-Hour, Daily, Weekly, and Monthly charts. Isolates high-probability structural expansions across both NIFTY 500 and NIFTY F&O universes.',
+          metrics: [
+            { label: 'Horizons', val: '4H · 1D · 1W · 1M' },
+            { label: 'Universe Scope', val: 'NIFTY 500 & F&O', highlight: true },
+            { label: 'Scanning Logic', val: 'Dual Trend Expansion' }
+          ],
+          bullets: [
+            '4-Hour, Daily, Weekly, and Monthly breakout and breakdown classification.',
+            'Integrated NIFTY 500 and NIFTY F&O universe segment switching.',
+            'Real-time LTP streaming with automated Telegram scanner alerts.'
+          ]
+        },
+        {
+          id: 'hps_selected',
+          title: 'HPS Selected Trend Ranking',
+          subtitle: 'ADX-Driven Quantitative Trend Hierarchy',
+          description: 'Ranks the strongest emerging momentum candidates by institutional Average Directional Index (ADX) values. Identifies the Top 10 strongest setups across multiple time horizons.',
+          metrics: [
+            { label: 'Ranking Criterion', val: 'ADX Trend Power', highlight: true },
+            { label: 'Selection Slots', val: 'Top 10 Focus' },
+            { label: 'Execution Horizon', val: 'Intraday & Positional' }
+          ],
+          bullets: [
+            'ADX-weighted relative momentum scoring ensuring high directional follow-through.',
+            'Dedicated Top 10 stock leaderboards updated dynamically.',
+            'Breakout distance validation preventing chasing extended price action.'
+          ]
+        },
+        {
+          id: 'hps_mean_reversion',
+          title: 'HPS Mean Reversion Screener',
+          subtitle: 'Dynamic Support Spectrum & Equilibrium Bands',
+          description: 'Systematic statistical research engine identifying equities stretched away from institutional baseline equilibrium. Evaluates Level-1, Level-2, and Level-3 support bands across daily, weekly, and monthly intervals.',
+          metrics: [
+            { label: 'Support Spectrum', val: 'Level 1, 2, 3', highlight: true },
+            { label: 'Deviation Metric', val: 'Band Spread %' },
+            { label: 'Horizon Filter', val: 'Daily / Weekly / Monthly' }
+          ],
+          bullets: [
+            'Level-1 primary dynamic moving support, Level-2 intermediate pivot, and Level-3 value base.',
+            'Precise distance-to-band percentage spread analytics.',
+            'Institutional value detection with automated CSV portfolio export.'
+          ]
+        },
+        {
+          id: 'weekly_position',
+          title: 'Weekly Position Strategy',
+          subtitle: 'Systematic Tuesday-Anchor Positional Framework',
+          description: 'Rules-based swing and positional model tracking Tuesday breakout triggers, confirmation levels, and structured trade management alerts across high-conviction market leaders.',
+          metrics: [
+            { label: 'Trigger Anchor', val: 'Tuesday Close', highlight: true },
+            { label: 'Trade State', val: 'Triggered / Active / Exit' },
+            { label: 'Data History', val: 'Full Weekly Archive' }
+          ],
+          bullets: [
+            'Strict non-discretionary trigger rules with defined invalidation boundaries.',
+            'Interactive weekly candlestick charts with target and stop-loss projections.',
+            'Historical cycle performance archive for quantitative review.'
+          ]
+        },
+        {
+          id: 'watchlist',
+          title: 'Personalized Stock Watchlists',
+          subtitle: 'Private Multi-List Tracking & Relative Strength',
+          description: 'Every approved trader manages an independent, private tracking dashboard. Group equities into dedicated watchlists, monitor stock vs. sector performance, and benchmark relative strength against NIFTY 50 and NIFTY 500.',
+          metrics: [
+            { label: 'Privacy', val: '100% Isolated Data', highlight: true },
+            { label: 'Custom Lists', val: 'Unlimited' },
+            { label: 'Benchmarking', val: 'Stock vs Sector & Indices' }
+          ],
+          bullets: [
+            'Complete multi-watchlist management: create, rename, duplicate, and order.',
+            'Dynamic column customization and institutional dark/light mode.',
+            'One-click stock drawer with interactive TradingView technical charts.'
+          ]
+        }
+      ];
+
+      const activeModule = featureShowcase.find(f => f.id === activeDemoModule) || featureShowcase[0];
+
+      return (
+        <div className="min-h-screen bg-[#070A10] text-slate-100 font-sans selection:bg-blue-600/30 selection:text-white apple-app-shell">
+          
+          {/* Top Public Minimalist Glass Header */}
+          <header className="sticky top-0 z-50 bg-[#070A10]/80 backdrop-blur-xl border-b border-white/[0.06] transition-all">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+              {/* Brand Logo Lockup */}
+              <div className="flex items-center space-x-3 cursor-pointer" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
+                <AlphaQuantSymbol size={28} animated={false} variant="dark" />
+                <div className="font-semibold text-base tracking-tight text-white flex items-center space-x-1">
+                  <span>Alpha</span>
+                  <span className="font-normal text-slate-400">Quant</span>
+                </div>
+              </div>
+
+              {/* Public Navigation Links */}
+              <nav className="hidden md:flex items-center space-x-8 text-xs font-medium text-slate-400">
+                <a href="#platform" className="hover:text-white transition-colors">Platform</a>
+                <a href="#features" className="hover:text-white transition-colors">Research Engine</a>
+                <a href="#philosophy" className="hover:text-white transition-colors">Why AlphaQuant</a>
+                <a href="#security" className="hover:text-white transition-colors">Institutional Access</a>
+              </nav>
+
+              {/* Action Buttons */}
+              <div className="flex items-center space-x-3">
+                <button
+                  type="button"
+                  onClick={onOpenLogin}
+                  className="px-4 py-2 text-xs font-medium text-slate-300 hover:text-white hover:bg-white/[0.04] rounded-xl transition-all border border-transparent hover:border-white/[0.08]"
+                >
+                  Sign In
+                </button>
+                <button
+                  type="button"
+                  onClick={onOpenRegister}
+                  className="px-4 py-2 text-xs font-semibold text-slate-950 bg-white hover:bg-slate-200 rounded-xl transition-all shadow-md shadow-white/10"
+                >
+                  Request Access
+                </button>
+              </div>
+            </div>
+          </header>
+
+          {/* 1. CINEMATIC HERO SECTION */}
+          <section className="relative pt-24 pb-20 sm:pt-32 sm:pb-32 overflow-hidden apple-hero-glow apple-grid-mesh">
+            <div className="max-w-5xl mx-auto px-4 sm:px-6 text-center space-y-8 relative z-10">
+              
+              {/* Subtle Animated Brand Beacon */}
+              <div className="inline-flex items-center space-x-2.5 px-3.5 py-1.5 rounded-full bg-white/[0.04] border border-white/[0.08] backdrop-blur-md">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)] animate-pulse"></span>
+                <span className="text-[11px] font-mono uppercase tracking-widest text-slate-300 font-semibold">
+                  Precision in Research. Discipline in Execution.
+                </span>
+              </div>
+
+              {/* Hero Headings */}
+              <div className="space-y-4">
+                <h1 className="text-4xl sm:text-6xl md:text-7xl font-semibold tracking-tight text-white leading-[1.08]">
+                  Think Quantitatively.<br />
+                  <span className="bg-gradient-to-r from-blue-400 via-sky-300 to-emerald-400 bg-clip-text text-transparent">
+                    Trade Systematically.
+                  </span>
+                </h1>
+                <p className="max-w-2xl mx-auto text-base sm:text-lg text-slate-400 font-normal leading-relaxed">
+                  An integrated quantitative research platform bringing together market intelligence, systematic strategies, and advanced stock analytics across Indian equities.
+                </p>
+              </div>
+
+              {/* Primary Call to Action Controls */}
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-2">
+                <a
+                  href="#features"
+                  className="w-full sm:w-auto px-7 py-3.5 bg-white text-slate-950 font-semibold text-sm rounded-2xl hover:bg-slate-200 transition-all shadow-xl shadow-white/10 flex items-center justify-center space-x-2 group"
+                >
+                  <span>Explore AlphaQuant</span>
+                  <span className="transition-transform group-hover:translate-y-0.5">↓</span>
+                </a>
+                <button
+                  type="button"
+                  onClick={onOpenRegister}
+                  className="w-full sm:w-auto px-7 py-3.5 bg-white/[0.06] hover:bg-white/[0.1] text-white font-medium text-sm rounded-2xl border border-white/[0.1] transition-all backdrop-blur-md flex items-center justify-center space-x-2"
+                >
+                  <span>Request Platform Access</span>
+                  <span>→</span>
+                </button>
+              </div>
+
+              {/* Hero Bullish Pennant Interactive Visual Anchor */}
+              <div className="pt-10 flex flex-col items-center">
+                <div className="p-5 rounded-3xl bg-[#0B101D]/80 border border-white/[0.08] shadow-[0_20px_60px_rgba(0,0,0,0.8)] backdrop-blur-xl">
+                  <AlphaQuantSymbol size={96} animated={true} variant="dark" />
+                </div>
+                <div className="mt-4 text-[11px] font-mono text-slate-500 uppercase tracking-widest">
+                  Proprietary Bullish Pennant Alpha Trajectory
+                </div>
+              </div>
+            </div>
+
+            {/* Ambient Running Constituents Strip */}
+            <div className="mt-20 border-y border-white/[0.06] bg-[#070A10]/60 backdrop-blur-md py-3 overflow-hidden select-none">
+              <div className="hero-ticker-track text-xs font-mono text-slate-400 space-x-8">
+                <span>RELIANCE ₹2,980.50 (+0.48%)</span>
+                <span>TCS ₹4,150.00 (+0.61%)</span>
+                <span>HDFCBANK ₹1,640.20 (-0.51%)</span>
+                <span>INFY ₹1,820.75 (-0.68%)</span>
+                <span>ICICIBANK ₹1,210.40 (+1.52%)</span>
+                <span>BHARTIARTL ₹1,425.80 (+0.73%)</span>
+                <span>SBIN ₹815.10 (+0.79%)</span>
+                <span>ITC ₹492.30 (-0.24%)</span>
+                <span>HINDUNILVR ₹2,540.20 (+0.12%)</span>
+                <span>LT ₹3,680.00 (+1.10%)</span>
+                {/* Repeat for continuous seamless loop */}
+                <span>RELIANCE ₹2,980.50 (+0.48%)</span>
+                <span>TCS ₹4,150.00 (+0.61%)</span>
+                <span>HDFCBANK ₹1,640.20 (-0.51%)</span>
+                <span>INFY ₹1,820.75 (-0.68%)</span>
+                <span>ICICIBANK ₹1,210.40 (+1.52%)</span>
+                <span>BHARTIARTL ₹1,425.80 (+0.73%)</span>
+                <span>SBIN ₹815.10 (+0.79%)</span>
+                <span>ITC ₹492.30 (-0.24%)</span>
+                <span>HINDUNILVR ₹2,540.20 (+0.12%)</span>
+                <span>LT ₹3,680.00 (+1.10%)</span>
+              </div>
+            </div>
+          </section>
+
+          {/* 2. PRODUCT SHOWCASE SECTION (THE 7 CORE RESEARCH MODULES) */}
+          <section id="features" className="py-24 max-w-7xl mx-auto px-4 sm:px-6 space-y-16">
+            
+            <div className="text-center max-w-3xl mx-auto space-y-3">
+              <div className="text-xs font-mono uppercase tracking-widest text-sky-400 font-semibold">
+                Modular Financial Architecture
+              </div>
+              <h2 className="text-3xl sm:text-5xl font-semibold tracking-tight text-white">
+                Engineered for Serious Research.
+              </h2>
+              <p className="text-sm sm:text-base text-slate-400 leading-relaxed font-normal">
+                Seven distinct quantitative modules working harmoniously to transform raw Indian stock market data into disciplined execution.
+              </p>
+            </div>
+
+            {/* Segmented Module Picker */}
+            <div className="flex items-center justify-start sm:justify-center overflow-x-auto pb-4 gap-2 no-scrollbar">
+              {featureShowcase.map((feat) => (
+                <button
+                  key={feat.id}
+                  onClick={() => setActiveDemoModule(feat.id)}
+                  className={`px-4 py-2.5 rounded-xl text-xs font-medium shrink-0 transition-all ${
+                    activeDemoModule === feat.id
+                      ? 'bg-white text-slate-950 shadow-lg shadow-white/10 font-semibold'
+                      : 'bg-white/[0.04] text-slate-400 hover:text-white hover:bg-white/[0.08] border border-white/[0.06]'
+                  }`}
+                >
+                  {feat.title.split(' ')[0]} {feat.title.split(' ')[1] || ''}
+                </button>
+              ))}
+            </div>
+
+            {/* Active Feature Interactive Showcase Canvas */}
+            <div className="apple-glass-card rounded-3xl p-6 sm:p-10 border border-white/[0.08] grid grid-cols-1 lg:grid-cols-12 gap-8 items-center shadow-2xl">
+              
+              {/* Left Column: Technical Narrative & Key Metrics */}
+              <div className="lg:col-span-5 space-y-6">
+                <div className="space-y-2">
+                  <span className="text-[11px] font-mono uppercase tracking-widest text-sky-400 font-semibold">
+                    {activeModule.subtitle}
+                  </span>
+                  <h3 className="text-2xl sm:text-3xl font-semibold tracking-tight text-white">
+                    {activeModule.title}
+                  </h3>
+                  <p className="text-xs sm:text-sm text-slate-300 leading-relaxed font-normal pt-1">
+                    {activeModule.description}
+                  </p>
+                </div>
+
+                {/* Key Metric Highlights */}
+                <div className="grid grid-cols-3 gap-3 pt-2">
+                  {activeModule.metrics.map((m, idx) => (
+                    <div key={idx} className="p-3 rounded-2xl bg-white/[0.03] border border-white/[0.06]">
+                      <div className="text-[10px] font-mono text-slate-400 uppercase tracking-wider">{m.label}</div>
+                      <div className={`text-base font-bold font-mono mt-1 ${m.highlight ? 'text-emerald-400' : 'text-white'}`}>
+                        {m.val}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Bullet Points */}
+                <div className="space-y-2.5 pt-2 border-t border-white/[0.06]">
+                  {activeModule.bullets.map((b, i) => (
+                    <div key={i} className="flex items-start space-x-2.5 text-xs text-slate-300">
+                      <span className="text-sky-400 font-bold shrink-0 mt-0.5">✦</span>
+                      <span>{b}</span>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="pt-2">
+                  <button
+                    type="button"
+                    onClick={onOpenRegister}
+                    className="inline-flex items-center space-x-2 text-xs font-semibold text-sky-400 hover:text-sky-300 transition-colors"
+                  >
+                    <span>Request terminal access to explore this module</span>
+                    <span>→</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Right Column: High-Fidelity Module UI Preview */}
+              <div className="lg:col-span-7 bg-[#080C15] rounded-2xl border border-white/[0.08] p-5 sm:p-6 shadow-inner relative overflow-hidden">
+                <div className="flex items-center justify-between pb-4 border-b border-white/[0.06] mb-4">
+                  <div className="flex items-center space-x-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-rose-500/80"></span>
+                    <span className="w-2.5 h-2.5 rounded-full bg-amber-500/80"></span>
+                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500/80"></span>
+                    <span className="text-[11px] font-mono text-slate-400 ml-2">Terminal // {activeModule.id}</span>
+                  </div>
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                    LIVE SYSTEM
+                  </span>
+                </div>
+
+                {/* Realistic Dynamic UI Elements Preview */}
+                <div className="space-y-3 font-mono text-xs">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    <div className="bg-[#0D1424] p-3 rounded-xl border border-white/[0.04]">
+                      <div className="text-[10px] text-slate-500 uppercase">Universe</div>
+                      <div className="text-sm font-semibold text-white mt-0.5">NIFTY 500</div>
+                    </div>
+                    <div className="bg-[#0D1424] p-3 rounded-xl border border-white/[0.04]">
+                      <div className="text-[10px] text-slate-500 uppercase">Horizon</div>
+                      <div className="text-sm font-semibold text-sky-400 mt-0.5">Daily (1D)</div>
+                    </div>
+                    <div className="bg-[#0D1424] p-3 rounded-xl border border-white/[0.04]">
+                      <div className="text-[10px] text-slate-500 uppercase">Status</div>
+                      <div className="text-sm font-semibold text-emerald-400 mt-0.5">Active Setup</div>
+                    </div>
+                    <div className="bg-[#0D1424] p-3 rounded-xl border border-white/[0.04]">
+                      <div className="text-[10px] text-slate-500 uppercase">Feed Latency</div>
+                      <div className="text-sm font-semibold text-slate-300 mt-0.5">14ms</div>
+                    </div>
+                  </div>
+
+                  {/* Sample Mock Terminal Rows */}
+                  <div className="rounded-xl border border-white/[0.06] overflow-hidden mt-3 bg-[#0A0F1A]">
+                    <div className="grid grid-cols-5 text-[10px] text-slate-400 p-2.5 bg-white/[0.02] border-b border-white/[0.06]">
+                      <span>SYMBOL</span>
+                      <span>LTP (INR)</span>
+                      <span>CHANGE</span>
+                      <span>SETUP CONDITION</span>
+                      <span className="text-right">CONFIRMATION</span>
+                    </div>
+                    <div className="divide-y divide-white/[0.04] text-[11px]">
+                      <div className="grid grid-cols-5 p-2.5 items-center hover:bg-white/[0.02]">
+                        <span className="font-bold text-white">RELIANCE</span>
+                        <span className="text-slate-200">₹2,980.50</span>
+                        <span className="text-emerald-400">+1.48%</span>
+                        <span className="text-sky-300 text-[10px]">HPS Breakout 1D</span>
+                        <span className="text-right text-emerald-400 font-semibold">Confirmed</span>
+                      </div>
+                      <div className="grid grid-cols-5 p-2.5 items-center hover:bg-white/[0.02]">
+                        <span className="font-bold text-white">TCS</span>
+                        <span className="text-slate-200">₹4,150.00</span>
+                        <span className="text-emerald-400">+0.85%</span>
+                        <span className="text-cyan-300 text-[10px]">ADX Strength Rank #1</span>
+                        <span className="text-right text-emerald-400 font-semibold">Active Trend</span>
+                      </div>
+                      <div className="grid grid-cols-5 p-2.5 items-center hover:bg-white/[0.02]">
+                        <span className="font-bold text-white">HDFCBANK</span>
+                        <span className="text-slate-200">₹1,640.20</span>
+                        <span className="text-slate-300">+0.12%</span>
+                        <span className="text-violet-300 text-[10px]">Level-1 Support Band</span>
+                        <span className="text-right text-amber-400 font-semibold">Testing Pivot</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          </section>
+
+          {/* 3. WHY ALPHAQUANT PHILOSOPHY SECTION */}
+          <section id="philosophy" className="py-20 border-t border-white/[0.06] bg-[#0A0E1A]">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 space-y-16">
+              
+              <div className="text-center max-w-2xl mx-auto space-y-3">
+                <span className="text-xs font-mono uppercase tracking-widest text-emerald-400 font-semibold">
+                  Foundational Principles
+                </span>
+                <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight text-white">
+                  Why Quantitative Discipline Matters.
+                </h2>
+                <p className="text-xs sm:text-sm text-slate-400">
+                  Four core architectural pillars engineered to reduce noise, eliminate emotional bias, and uphold institutional standards.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                
+                {/* Pillar 1 */}
+                <div className="apple-glass-card apple-glass-card-hover p-6 rounded-3xl space-y-3">
+                  <div className="w-10 h-10 rounded-2xl bg-blue-500/10 border border-blue-500/20 text-blue-400 flex items-center justify-center font-mono font-bold text-sm">
+                    01
+                  </div>
+                  <h3 className="text-base font-semibold text-white tracking-tight">Research First</h3>
+                  <p className="text-xs text-slate-400 leading-relaxed font-normal">
+                    Every strategy begins with rigorous quantitative formulation, structural analysis, and systematic verification across multiple market cycles.
+                  </p>
+                </div>
+
+                {/* Pillar 2 */}
+                <div className="apple-glass-card apple-glass-card-hover p-6 rounded-3xl space-y-3">
+                  <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center font-mono font-bold text-sm">
+                    02
+                  </div>
+                  <h3 className="text-base font-semibold text-white tracking-tight">Data Driven</h3>
+                  <p className="text-xs text-slate-400 leading-relaxed font-normal">
+                    Make informed equity decisions through structured market data feeds, breadth analysis, statistical deviation bands, and institutional relative strength.
+                  </p>
+                </div>
+
+                {/* Pillar 3 */}
+                <div className="apple-glass-card apple-glass-card-hover p-6 rounded-3xl space-y-3">
+                  <div className="w-10 h-10 rounded-2xl bg-sky-500/10 border border-sky-500/20 text-sky-400 flex items-center justify-center font-mono font-bold text-sm">
+                    03
+                  </div>
+                  <h3 className="text-base font-semibold text-white tracking-tight">Systematic Approach</h3>
+                  <p className="text-xs text-slate-400 leading-relaxed font-normal">
+                    Minimize discretionary impulse trading through strictly codified technical conditions, entry triggers, stop-loss invalidations, and profit objectives.
+                  </p>
+                </div>
+
+                {/* Pillar 4 */}
+                <div className="apple-glass-card apple-glass-card-hover p-6 rounded-3xl space-y-3">
+                  <div className="w-10 h-10 rounded-2xl bg-violet-500/10 border border-violet-500/20 text-violet-400 flex items-center justify-center font-mono font-bold text-sm">
+                    04
+                  </div>
+                  <h3 className="text-base font-semibold text-white tracking-tight">Market Intelligence</h3>
+                  <p className="text-xs text-slate-400 leading-relaxed font-normal">
+                    Unite multi-timeframe breakout scanners, trend strength rankings, mean reversion support spectrums, and personal watchlists into one unified terminal.
+                  </p>
+                </div>
+
+              </div>
+            </div>
+          </section>
+
+          {/* 4. INSTITUTIONAL ACCESS CONTROL & REGISTRATION BANNER */}
+          <section id="security" className="py-20 border-t border-white/[0.06] relative overflow-hidden">
+            <div className="max-w-4xl mx-auto px-4 sm:px-6 text-center space-y-6 relative z-10">
+              <span className="text-xs font-mono uppercase tracking-widest text-sky-400 font-semibold">
+                Private Terminal Gatekeeper
+              </span>
+              <h2 className="text-3xl sm:text-5xl font-semibold tracking-tight text-white">
+                Institutional Quality. Regulated Access.
+              </h2>
+              <p className="text-sm text-slate-400 max-w-2xl mx-auto leading-relaxed">
+                Terminal access is private and granted exclusively via administrator review. Register your applicant profile to request access to the AlphaQuant terminal.
+              </p>
+              
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
+                <button
+                  type="button"
+                  onClick={onOpenRegister}
+                  className="px-8 py-3.5 bg-white text-slate-950 font-semibold text-sm rounded-2xl hover:bg-slate-200 transition-all shadow-xl shadow-white/10"
+                >
+                  Apply for Terminal Access
+                </button>
+                <button
+                  type="button"
+                  onClick={onOpenLogin}
+                  className="px-8 py-3.5 bg-white/[0.04] hover:bg-white/[0.08] text-white font-medium text-sm rounded-2xl border border-white/[0.08] transition-all"
+                >
+                  Authorized Member Sign In
+                </button>
+              </div>
+            </div>
+          </section>
+
+          {/* 5. FOOTER */}
+          <footer className="border-t border-white/[0.08] bg-[#05070D] py-16 text-slate-400 text-xs font-sans">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 grid grid-cols-1 md:grid-cols-5 gap-10">
+              
+              <div className="md:col-span-2 space-y-4">
+                <div className="flex items-center space-x-2.5">
+                  <AlphaQuantSymbol size={24} variant="dark" />
+                  <span className="font-semibold text-sm text-white tracking-tight">Alpha<span className="font-normal text-slate-400">Quant</span></span>
+                </div>
+                <p className="text-xs text-slate-500 max-w-sm font-normal leading-relaxed">
+                  Precision in Research. Discipline in Execution. An institutional quantitative equity intelligence platform for Indian market participants.
+                </p>
+                <div className="text-[11px] font-mono text-slate-600">
+                  © {new Date().getFullYear()} AlphaQuant Terminal. All rights reserved.
+                </div>
+              </div>
+
+              <div>
+                <h4 className="text-white font-semibold text-xs mb-3 tracking-wide">Platform</h4>
+                <ul className="space-y-2">
+                  <li><a href="#features" className="hover:text-white transition-colors">Market Breadth</a></li>
+                  <li><a href="#features" className="hover:text-white transition-colors">Screener Tools</a></li>
+                  <li><a href="#features" className="hover:text-white transition-colors">HPS Stocks Scanner</a></li>
+                  <li><a href="#features" className="hover:text-white transition-colors">HPS Selected ADX</a></li>
+                  <li><a href="#features" className="hover:text-white transition-colors">Mean Reversion</a></li>
+                  <li><a href="#features" className="hover:text-white transition-colors">Weekly Position</a></li>
+                  <li><a href="#features" className="hover:text-white transition-colors">Watchlist</a></li>
+                </ul>
+              </div>
+
+              <div>
+                <h4 className="text-white font-semibold text-xs mb-3 tracking-wide">Access</h4>
+                <ul className="space-y-2">
+                  <li><button onClick={onOpenLogin} className="hover:text-white transition-colors text-left">Member Sign In</button></li>
+                  <li><button onClick={onOpenRegister} className="hover:text-white transition-colors text-left">Request Access</button></li>
+                  <li><a href="#security" className="hover:text-white transition-colors">Security Architecture</a></li>
+                </ul>
+              </div>
+
+              <div>
+                <h4 className="text-white font-semibold text-xs mb-3 tracking-wide">Compliance</h4>
+                <ul className="space-y-2">
+                  <li><button onClick={() => onOpenLegal('terms')} className="hover:text-white transition-colors text-left">Terms of Use</button></li>
+                  <li><button onClick={() => onOpenLegal('privacy')} className="hover:text-white transition-colors text-left">Privacy Policy</button></li>
+                  <li><button onClick={() => onOpenLegal('terms')} className="hover:text-white transition-colors text-left">SEBI Disclaimer</button></li>
+                </ul>
+              </div>
+            </div>
+
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-10 mt-10 border-t border-white/[0.04] text-[11px] text-slate-600 leading-relaxed">
+              <span className="font-semibold text-slate-500">Regulatory Disclosure:</span> AlphaQuant Terminal is a quantitative market research and technical screening utility provided strictly for educational and informational analysis. AlphaQuant is not a SEBI-registered Investment Adviser (IA) or Research Analyst (RA). Nothing on this platform constitutes financial, investment, or legal advice.
+            </div>
+          </footer>
+        </div>
+      );
+    }
+
+    // =========================================================================
+    // MODAL-BASED AUTHENTICATION: LOGIN & CREATE ACCOUNT WORKFLOWS
+    // =========================================================================
+
+    function AuthModalView({ initialMode = 'login', isOpen, onClose, onLoginSuccess, onOpenLegal }) {
+      const [mode, setMode] = useState(initialMode); // 'login', 'register', 'pending_confirmation'
+      const [loginIdent, setLoginIdent] = useState('');
+      const [loginPwd, setLoginPwd] = useState('');
+      const [loginLoading, setLoginLoading] = useState(false);
+      const [loginError, setLoginError] = useState('');
+      const [loginStatusAlert, setLoginStatusAlert] = useState(null); // { type: 'pending'|'rejected'|'suspended', message: '' }
+
+      // Registration form states
+      const [fullName, setFullName] = useState('');
+      const [regEmail, setRegEmail] = useState('');
+      const [phone, setPhone] = useState('');
+      const [organization, setOrganization] = useState('');
+      const [regPassword, setRegPassword] = useState('');
+      const [confirmPassword, setConfirmPassword] = useState('');
+      const [agreeTerms, setAgreeTerms] = useState(false);
+      const [regLoading, setRegLoading] = useState(false);
+      const [regError, setRegError] = useState('');
+      const [registeredUserSummary, setRegisteredUserSummary] = useState(null);
+
+      useEffect(() => {
+        setMode(initialMode);
+        setLoginError('');
+        setLoginStatusAlert(null);
+        setRegError('');
+      }, [initialMode, isOpen]);
+
+      if (!isOpen) return null;
+
+      // Password strength calculation
+      const getPasswordStrength = (pwd) => {
+        if (!pwd) return { score: 0, text: 'Empty', color: 'bg-slate-700' };
+        let score = 0;
+        if (pwd.length >= 8) score += 1;
+        if (/[A-Z]/.test(pwd)) score += 1;
+        if (/[0-9]/.test(pwd)) score += 1;
+        if (/[^a-zA-Z0-9]/.test(pwd)) score += 1;
+        if (score <= 1) return { score: 1, text: 'Weak', color: 'bg-rose-500' };
+        if (score === 2) return { score: 2, text: 'Fair', color: 'bg-amber-500' };
+        if (score === 3) return { score: 3, text: 'Good', color: 'bg-sky-400' };
+        return { score: 4, text: 'Strong', color: 'bg-emerald-400' };
+      };
+
+      const strength = getPasswordStrength(regPassword);
+
+      const handleLoginSubmit = async (e) => {
+        e.preventDefault();
+        setLoginError('');
+        setLoginStatusAlert(null);
+        setLoginLoading(true);
+
+        try {
+          const res = await api.post('/auth/login', {
+            username: loginIdent.trim(),
+            password: loginPwd
+          });
+          if (res.data && res.data.access_token) {
+            onLoginSuccess(
+              { username: res.data.username, role: res.data.role },
+              res.data.access_token
+            );
+            onClose();
+          }
+        } catch (err) {
+          const status = err.response?.status;
+          const detail = err.response?.data?.detail || 'Authentication failed';
+          
+          if (status === 403) {
+            // Check for specific account status keyword
+            if (detail.includes('under review')) {
+              setLoginStatusAlert({
+                type: 'pending',
+                title: 'Access Request Under Review',
+                message: detail
+              });
+            } else if (detail.includes('declined') || detail.includes('rejected')) {
+              setLoginStatusAlert({
+                type: 'rejected',
+                title: 'Application Not Approved',
+                message: detail
+              });
+            } else {
+              setLoginStatusAlert({
+                type: 'suspended',
+                title: 'Account Suspended',
+                message: detail
+              });
+            }
+          } else {
+            setLoginError(detail);
+          }
+        } finally {
+          setLoginLoading(false);
+        }
+      };
+
+      const handleRegisterSubmit = async (e) => {
+        e.preventDefault();
+        setRegError('');
+
+        if (regPassword !== confirmPassword) {
+          setRegError('Passwords do not match');
+          return;
+        }
+
+        if (regPassword.length < 8) {
+          setRegError('Password must be at least 8 characters long');
+          return;
+        }
+
+        if (!agreeTerms) {
+          setRegError('You must agree to the Terms of Service and Privacy Policy');
+          return;
+        }
+
+        setRegLoading(true);
+        try {
+          const res = await api.post('/auth/register', {
+            full_name: fullName.trim(),
+            email: regEmail.trim(),
+            phone_number: phone.trim(),
+            organization: organization.trim() || null,
+            password: regPassword
+          });
+
+          if (res.data && res.data.status === 'success') {
+            setRegisteredUserSummary({
+              fullName: fullName.trim(),
+              email: regEmail.trim(),
+              username: res.data.username
+            });
+            setMode('pending_confirmation');
+          }
+        } catch (err) {
+          setRegError(err.response?.data?.detail || 'Registration failed. Please verify your details.');
+        } finally {
+          setRegLoading(false);
+        }
+      };
+
+      return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 font-sans select-none animate-fade-in">
+          <div className="bg-[#0C121E] border border-white/[0.08] rounded-3xl max-w-md w-full shadow-2xl overflow-hidden relative text-slate-200">
+            
+            {/* Close Button */}
+            <button
+              onClick={onClose}
+              className="absolute top-5 right-5 text-slate-400 hover:text-white text-sm w-7 h-7 flex items-center justify-center rounded-full bg-white/[0.04] hover:bg-white/[0.08] transition-colors"
+            >
+              ✕
+            </button>
+
+            {/* Modal Header Branding */}
+            <div className="p-6 sm:p-8 pb-4 text-center border-b border-white/[0.06]">
+              <div className="inline-flex items-center justify-center p-3 rounded-2xl bg-[#090D17] border border-white/[0.08] mb-3 shadow-lg">
+                <AlphaQuantSymbol size={40} animated={false} variant="dark" />
+              </div>
+              <h2 className="text-xl font-semibold text-white tracking-tight flex items-center justify-center space-x-1">
+                <span>Alpha</span>
+                <span className="font-normal text-slate-400">Quant</span>
+              </h2>
+              <p className="text-[11px] font-mono tracking-widest text-sky-400 uppercase font-semibold mt-1">
+                {mode === 'login' && 'Authorized Member Sign In'}
+                {mode === 'register' && 'Request Terminal Access'}
+                {mode === 'pending_confirmation' && 'Access Request Submitted'}
+              </p>
+            </div>
+
+            {/* 1. LOGIN MODE */}
+            {mode === 'login' && (
+              <div className="p-6 sm:p-8 space-y-5">
+                
+                {/* Account Status Alert (Pending, Rejected, Suspended) */}
+                {loginStatusAlert && (
+                  <div className={`p-4 rounded-2xl border text-xs leading-relaxed space-y-1.5 ${
+                    loginStatusAlert.type === 'pending'
+                      ? 'bg-amber-500/[0.08] border-amber-500/30 text-amber-300'
+                      : 'bg-rose-500/[0.08] border-rose-500/30 text-rose-300'
+                  }`}>
+                    <div className="font-semibold flex items-center space-x-1.5">
+                      <span>{loginStatusAlert.type === 'pending' ? '⏳' : '⚠️'}</span>
+                      <span>{loginStatusAlert.title}</span>
+                    </div>
+                    <p className="text-[11px] opacity-90">{loginStatusAlert.message}</p>
+                  </div>
+                )}
+
+                {/* Standard Invalid Credentials Error */}
+                {loginError && !loginStatusAlert && (
+                  <div className="p-3.5 bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs rounded-xl">
+                    {loginError}
+                  </div>
+                )}
+
+                <form onSubmit={handleLoginSubmit} className="space-y-4 text-xs">
+                  <div>
+                    <label className="block text-slate-300 font-medium text-xs mb-1.5">
+                      Username or Email
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. admin or trader@alphaquant.in"
+                      value={loginIdent}
+                      onChange={(e) => setLoginIdent(e.target.value)}
+                      className="w-full px-3.5 py-2.5 bg-[#070A10] border border-[#1A2538] rounded-xl text-white placeholder-slate-500 font-mono text-xs focus:outline-none focus:border-sky-500 transition-colors"
+                    />
+                  </div>
+
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="block text-slate-300 font-medium text-xs">Password</label>
+                    </div>
+                    <input
+                      type="password"
+                      required
+                      placeholder="••••••••••••"
+                      value={loginPwd}
+                      onChange={(e) => setLoginPwd(e.target.value)}
+                      className="w-full px-3.5 py-2.5 bg-[#070A10] border border-[#1A2538] rounded-xl text-white placeholder-slate-500 font-mono text-xs focus:outline-none focus:border-sky-500 transition-colors"
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={loginLoading}
+                    className="w-full mt-2 py-3 bg-white hover:bg-slate-200 disabled:opacity-50 text-slate-950 font-semibold text-xs rounded-xl transition-all shadow-md shadow-white/10 flex items-center justify-center space-x-2"
+                  >
+                    <span>{loginLoading ? 'Authenticating...' : 'Sign In to Terminal'}</span>
+                    <span>→</span>
+                  </button>
+                </form>
+
+                <div className="pt-4 border-t border-white/[0.06] text-center text-xs text-slate-400 space-y-2">
+                  <div>
+                    Don't have terminal access?{' '}
+                    <button
+                      type="button"
+                      onClick={() => { setMode('register'); setLoginError(''); setLoginStatusAlert(null); }}
+                      className="text-sky-400 hover:text-sky-300 font-semibold"
+                    >
+                      Request Access
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* 2. REGISTRATION MODE */}
+            {mode === 'register' && (
+              <div className="p-6 sm:p-8 space-y-4 max-h-[75vh] overflow-y-auto">
+                {regError && (
+                  <div className="p-3.5 bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs rounded-xl">
+                    {regError}
+                  </div>
+                )}
+
+                <form onSubmit={handleRegisterSubmit} className="space-y-3.5 text-xs">
+                  <div>
+                    <label className="block text-slate-300 font-medium text-[11px] mb-1">Full Name</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. Rahul Sharma"
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                      className="w-full px-3.5 py-2 bg-[#070A10] border border-[#1A2538] rounded-xl text-white placeholder-slate-500 text-xs focus:outline-none focus:border-sky-500 transition-colors"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-300 font-medium text-[11px] mb-1">Email Address</label>
+                    <input
+                      type="email"
+                      required
+                      placeholder="name@company.com"
+                      value={regEmail}
+                      onChange={(e) => setRegEmail(e.target.value)}
+                      className="w-full px-3.5 py-2 bg-[#070A10] border border-[#1A2538] rounded-xl text-white placeholder-slate-500 text-xs focus:outline-none focus:border-sky-500 transition-colors"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2.5">
+                    <div>
+                      <label className="block text-slate-300 font-medium text-[11px] mb-1">Mobile Number</label>
+                      <input
+                        type="tel"
+                        required
+                        placeholder="+91 98765 43210"
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value)}
+                        className="w-full px-3.5 py-2 bg-[#070A10] border border-[#1A2538] rounded-xl text-white placeholder-slate-500 font-mono text-xs focus:outline-none focus:border-sky-500 transition-colors"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-slate-300 font-medium text-[11px] mb-1">Organization / Firm</label>
+                      <input
+                        type="text"
+                        placeholder="Optional"
+                        value={organization}
+                        onChange={(e) => setOrganization(e.target.value)}
+                        className="w-full px-3.5 py-2 bg-[#070A10] border border-[#1A2538] rounded-xl text-white placeholder-slate-500 text-xs focus:outline-none focus:border-sky-500 transition-colors"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-300 font-medium text-[11px] mb-1">Password</label>
+                    <input
+                      type="password"
+                      required
+                      placeholder="Minimum 8 characters"
+                      value={regPassword}
+                      onChange={(e) => setRegPassword(e.target.value)}
+                      className="w-full px-3.5 py-2 bg-[#070A10] border border-[#1A2538] rounded-xl text-white placeholder-slate-500 font-mono text-xs focus:outline-none focus:border-sky-500 transition-colors"
+                    />
+                    {/* Password Strength Indicator */}
+                    {regPassword && (
+                      <div className="mt-1.5 flex items-center space-x-2">
+                        <div className="flex-1 h-1 bg-slate-800 rounded-full overflow-hidden flex space-x-0.5">
+                          {[1, 2, 3, 4].map(idx => (
+                            <div 
+                              key={idx} 
+                              className={`flex-1 h-full transition-all ${idx <= strength.score ? strength.color : 'bg-transparent'}`} 
+                            />
+                          ))}
+                        </div>
+                        <span className="text-[10px] font-mono text-slate-400">{strength.text}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-300 font-medium text-[11px] mb-1">Confirm Password</label>
+                    <input
+                      type="password"
+                      required
+                      placeholder="Re-enter password"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      className="w-full px-3.5 py-2 bg-[#070A10] border border-[#1A2538] rounded-xl text-white placeholder-slate-500 font-mono text-xs focus:outline-none focus:border-sky-500 transition-colors"
+                    />
+                  </div>
+
+                  <div className="flex items-start space-x-2 pt-1">
+                    <input
+                      type="checkbox"
+                      id="terms"
+                      checked={agreeTerms}
+                      onChange={(e) => setAgreeTerms(e.target.checked)}
+                      className="mt-0.5 rounded border-[#1A2538] text-sky-500 focus:ring-0"
+                    />
+                    <label htmlFor="terms" className="text-[11px] text-slate-400 leading-tight">
+                      I accept the{' '}
+                      <button type="button" onClick={() => onOpenLegal('terms')} className="text-sky-400 hover:underline">
+                        Terms of Service
+                      </button>{' '}
+                      and acknowledge the{' '}
+                      <button type="button" onClick={() => onOpenLegal('privacy')} className="text-sky-400 hover:underline">
+                        Privacy Policy
+                      </button>.
+                    </label>
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={regLoading}
+                    className="w-full mt-2 py-3 bg-white hover:bg-slate-200 disabled:opacity-50 text-slate-950 font-semibold text-xs rounded-xl transition-all shadow-md shadow-white/10"
+                  >
+                    {regLoading ? 'Submitting Application...' : 'Submit Access Application'}
+                  </button>
+                </form>
+
+                <div className="pt-3 border-t border-white/[0.06] text-center text-xs text-slate-400">
+                  Already have an account?{' '}
+                  <button
+                    type="button"
+                    onClick={() => { setMode('login'); setRegError(''); }}
+                    className="text-sky-400 hover:text-sky-300 font-semibold"
+                  >
+                    Sign In
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* 3. PENDING CONFIRMATION SCREEN */}
+            {mode === 'pending_confirmation' && (
+              <div className="p-8 text-center space-y-5">
+                <div className="w-16 h-16 rounded-3xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center text-2xl mx-auto shadow-lg shadow-amber-500/10">
+                  ⏳
+                </div>
+
+                <div className="space-y-2">
+                  <h3 className="text-lg font-semibold text-white tracking-tight">
+                    Application Under Review
+                  </h3>
+                  <p className="text-xs text-slate-300 leading-relaxed max-w-sm mx-auto">
+                    Your AlphaQuant account has been created successfully.
+                  </p>
+                  <div className="p-4 rounded-2xl bg-[#080C14] border border-white/[0.06] text-left text-xs font-mono space-y-1 my-3">
+                    <div className="text-slate-400">Applicant: <span className="text-white font-medium">{registeredUserSummary?.fullName}</span></div>
+                    <div className="text-slate-400">Email: <span className="text-sky-300">{registeredUserSummary?.email}</span></div>
+                    <div className="text-slate-400">Status: <span className="text-amber-400 font-bold">PENDING APPROVAL</span></div>
+                  </div>
+                  <p className="text-[11px] text-slate-400 leading-relaxed">
+                    Your access request is currently under review by our administrative team. Once approved, you will be able to sign in and access the full research terminal.
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="w-full py-3 bg-white text-slate-950 font-semibold text-xs rounded-xl hover:bg-slate-200 transition-colors"
+                >
+                  Return to Homepage
+                </button>
+              </div>
+            )}
+
+          </div>
+        </div>
+      );
+    }
+
+
     function App() {
+      const [authModal, setAuthModal] = useState({ isOpen: false, mode: 'login' });
+      const [pendingRequestsCount, setPendingRequestsCount] = useState(0);
       const [showIntroSplash, setShowIntroSplash] = useState(() => {
         try {
           return !sessionStorage.getItem('alphaquant_intro_shown');
@@ -991,6 +2552,22 @@
         }
       };
 
+            // Poll pending access requests for Admin notification badge
+      useEffect(() => {
+        if (!user || user.role !== 'admin') return;
+        const fetchPendingSummary = async () => {
+          try {
+            const res = await api.get('/users/access-requests/summary');
+            if (res.data && typeof res.data.pending_count === 'number') {
+              setPendingRequestsCount(res.data.pending_count);
+            }
+          } catch (e) {}
+        };
+        fetchPendingSummary();
+        const interval = setInterval(fetchPendingSummary, 10000);
+        return () => clearInterval(interval);
+      }, [user]);
+
       const handleLogout = () => {
         localStorage.removeItem('alphaquant_token');
         localStorage.removeItem('alphaquant_user');
@@ -998,7 +2575,25 @@
       };
 
       if (!user) {
-        return <LoginScreen onLoginSuccess={handleLoginSuccess} onOpenLegal={setLegalModal} legalModal={legalModal} />;
+        return (
+          <>
+            <PublicLandingPage 
+              onOpenLogin={() => setAuthModal({ isOpen: true, mode: 'login' })}
+              onOpenRegister={() => setAuthModal({ isOpen: true, mode: 'register' })}
+              onOpenLegal={(type) => setLegalModal(type)}
+            />
+            <AuthModalView
+              isOpen={authModal.isOpen}
+              initialMode={authModal.mode}
+              onClose={() => setAuthModal({ isOpen: false, mode: 'login' })}
+              onLoginSuccess={handleLoginSuccess}
+              onOpenLegal={(type) => setLegalModal(type)}
+            />
+            {legalModal && (
+              <LegalComplianceModal type={legalModal} onClose={() => setLegalModal(null)} />
+            )}
+          </>
+        );
       }
 
       const handleSelectNav = (navKey) => {
@@ -1211,6 +2806,24 @@
                       </button>
 
                       <button
+                        onClick={() => handleSelectNav('access_management')}
+                        className={`apple-nav-pill w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg font-medium ${
+                          activeNav === 'access_management'
+                            ? 'bg-white/[0.08] text-white'
+                            : 'text-slate-400 hover:text-slate-200 hover:bg-white/[0.03]'
+                        }`}
+                      >
+                        <div className="flex items-center space-x-2">
+                          <span>User Access Control</span>
+                        </div>
+                        {pendingRequestsCount > 0 && (
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-mono bg-amber-500 text-slate-950 font-bold aq-notify-badge">
+                            {pendingRequestsCount}
+                          </span>
+                        )}
+                      </button>
+
+                      <button
                         onClick={() => handleSelectNav('users')}
                         className={`apple-nav-pill w-full flex items-center px-3.5 py-2.5 rounded-lg font-medium ${
                           activeNav === 'users'
@@ -1302,6 +2915,7 @@
                     <WatchlistSection user={user} />
                   )}
                   {activeNav === 'rules' && <RulesManager onBack={() => setActiveNav('breadth')} />}
+                  {activeNav === 'access_management' && <UserAccessManagement onBack={() => setActiveNav('breadth')} />}
                   {activeNav === 'users' && <UsersManager onBack={() => setActiveNav('breadth')} />}
                   {activeNav === 'broker_auth' && <BrokerAuthView brokerSession={brokerSession} onConnected={checkBrokerStatus} onBack={() => setActiveNav('breadth')} />}
                   {activeNav === 'telegram_alerts' && <TelegramAlertsView onStatusChange={checkBrokerStatus} onBack={() => setActiveNav('breadth')} />}

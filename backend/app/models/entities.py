@@ -8,13 +8,44 @@ class User(Base):
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String(50), unique=True, index=True, nullable=False)
     email = Column(String(100), unique=True, index=True, nullable=True)
+    full_name = Column(String(120), nullable=True)
+    phone_number = Column(String(30), nullable=True)
+    organization = Column(String(150), nullable=True)
     hashed_password = Column(String(255), nullable=False)
     role = Column(String(20), default="viewer", nullable=False) # 'admin' or 'viewer'
+    status = Column(String(20), default="APPROVED", nullable=False) # 'APPROVED', 'PENDING', 'REJECTED', 'SUSPENDED'
     is_active = Column(Boolean, default=True)
+    email_verified = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     last_login = Column(DateTime, nullable=True)
     telegram_chat_id = Column(String(100), nullable=True)
     telegram_alerts_enabled = Column(Boolean, default=True)
+
+class AccessRequest(Base):
+    __tablename__ = "access_requests"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    full_name = Column(String(120), nullable=False)
+    email = Column(String(100), nullable=False)
+    phone_number = Column(String(30), nullable=False)
+    organization = Column(String(150), nullable=True)
+    status = Column(String(20), default="PENDING", nullable=False) # 'PENDING', 'APPROVED', 'REJECTED', 'SUSPENDED'
+    decision_by = Column(String(50), nullable=True) # Admin username
+    decision_at = Column(DateTime, nullable=True)
+    decision_notes = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+class AuditLog(Base):
+    __tablename__ = "audit_logs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    admin_username = Column(String(50), nullable=False, index=True)
+    action = Column(String(50), nullable=False) # 'APPROVE_USER', 'REJECT_USER', 'SUSPEND_USER', 'REINSTATE_USER'
+    target_user_id = Column(Integer, nullable=True)
+    target_username = Column(String(50), nullable=True)
+    details = Column(Text, nullable=True)
+    timestamp = Column(DateTime, default=datetime.utcnow)
 
 class Watchlist(Base):
     __tablename__ = "watchlists"
@@ -50,9 +81,6 @@ class ScreenerRule(Base):
     description = Column(String(255), nullable=True)
     universe = Column(String(50), default="NIFTY50") # NIFTY50, NIFTY500, FO, BANKNIFTY
     is_active = Column(Boolean, default=True)
-    
-    # Filter conditions stored in JSON
-    # e.g., {"min_price": 50, "max_price": 5000, "min_change_pct": 1.5, "rsi_min": 50, "rsi_max": 75, "min_volume_ratio": 1.2, "ma_cross": "EMA20_ABOVE_EMA50"}
     criteria = Column(JSON, nullable=False, default={})
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -72,7 +100,7 @@ class TelegramSettings(Base):
     is_enabled = Column(Boolean, default=False)
     bot_token = Column(String(255), nullable=True)
     bot_username = Column(String(100), nullable=True)
-    default_channel_id = Column(String(100), nullable=True) # Broadcast channel or group chat ID (e.g. -100xxxxxxx)
+    default_channel_id = Column(String(100), nullable=True)
     alert_on_hps_breakout = Column(Boolean, default=True)
     alert_on_mean_reversion = Column(Boolean, default=True)
     updated_at = Column(DateTime, default=datetime.utcnow)

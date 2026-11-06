@@ -20,8 +20,16 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
     if username is None:
         raise credentials_exception
     user = db.query(User).filter(User.username == username).first()
-    if user is None or not user.is_active:
+    if user is None:
         raise credentials_exception
+    
+    # Verify account is active and approved
+    user_status = getattr(user, "status", "APPROVED") or "APPROVED"
+    if not user.is_active or user_status != "APPROVED":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Terminal access unauthorized. Account status is {user_status}."
+        )
     return user
 
 def require_admin(current_user: User = Depends(get_current_user)) -> User:

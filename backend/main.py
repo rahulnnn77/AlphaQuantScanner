@@ -6,7 +6,7 @@ from fastapi.responses import FileResponse
 from app.core.config import settings
 from app.core.database import Base, engine, SessionLocal
 from app.core.security import get_password_hash
-from app.models.entities import User, ScreenerRule, TelegramSettings, Watchlist, WatchlistStock
+from app.models.entities import User, ScreenerRule, TelegramSettings, Watchlist, WatchlistStock, AccessRequest, AuditLog
 from app.api import auth, users, screener, profile, telegram, watchlist
 
 # Initialize Database tables
@@ -15,6 +15,12 @@ Base.metadata.create_all(bind=engine)
 def seed_initial_data():
     db = SessionLocal()
     try:
+        # Grandfather existing users to APPROVED status
+        try:
+            db.query(User).filter(User.status == None).update({"status": "APPROVED"})
+            db.commit()
+        except Exception:
+            pass
         # Seed Default Admin if not exists
         admin = db.query(User).filter(User.username == settings.DEFAULT_ADMIN_USERNAME).first()
         if not admin:
