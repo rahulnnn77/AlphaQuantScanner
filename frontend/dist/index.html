@@ -10094,7 +10094,7 @@
 
               {/* Default Channel / Group Chat ID */}
               <div className="space-y-1.5">
-                <label classNam
+                <label className="text-xs font-mono font-bold text-slate-300">
                   Shared Broadcast Group / Channel ID
                 </label>
                 <input
@@ -10263,14 +10263,8 @@
         }
       };
 
-      const [showLoginSplash, setShowLoginSplash] = useState(true);
-
       return (
-        <>
-          {showLoginSplash && (
-            <BrandEntrySplash onComplete={() => setShowLoginSplash(false)} />
-          )}
-          <div className="min-h-screen bg-[#070A10] flex flex-col justify-center items-center px-4 py-8 font-sans select-none apple-app-shell">
+        <div className="min-h-screen bg-[#070A10] flex flex-col justify-center items-center px-4 py-8 font-sans select-none apple-app-shell">
           <div className="text-center mb-8 apple-stagger-1">
             <div className="inline-flex items-center justify-center p-3.5 rounded-2xl bg-[#0B101A]/90 border border-white/[0.08] mb-4 shadow-[0_8px_32px_rgba(0,0,0,0.6)] backdrop-blur-md">
               <AlphaQuantSymbol size={52} animated={true} variant="dark" />
@@ -10343,7 +10337,6 @@
             <LegalComplianceModal type={legalModal} onClose={() => onOpenLegal(null)} />
           )}
         </div>
-        </>
       );
     }
 
