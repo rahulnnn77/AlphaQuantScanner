@@ -2851,7 +2851,13 @@
     function App() {
       const [authModal, setAuthModal] = useState({ isOpen: false, mode: 'login' });
       const [pendingRequestsCount, setPendingRequestsCount] = useState(0);
-      const [showIntroSplash, setShowIntroSplash] = useState(false);
+      const [showIntroSplash, setShowIntroSplash] = useState(() => {
+        try {
+          return !sessionStorage.getItem('alphaquant_reveal_seen');
+        } catch (e) {
+          return true;
+        }
+      });
       const [user, setUser] = useState(() => {
         const saved = localStorage.getItem('alphaquant_user');
         return saved ? JSON.parse(saved) : null;
@@ -3012,6 +3018,15 @@
       if (!user) {
         return (
           <>
+            {showIntroSplash && (
+              <BrandEntrySplash 
+                user={null}
+                onComplete={() => {
+                  sessionStorage.setItem('alphaquant_reveal_seen', 'true');
+                  setShowIntroSplash(false);
+                }} 
+              />
+            )}
             <PublicLandingPage 
               onOpenLogin={() => setAuthModal({ isOpen: true, mode: 'login' })}
               onOpenRegister={() => setAuthModal({ isOpen: true, mode: 'register' })}
