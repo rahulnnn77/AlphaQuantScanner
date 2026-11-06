@@ -856,52 +856,48 @@
      */
     /**
      * Professional Cinematic Login Animation Component
-     * Demonstrates the complete approved login sequence:
-     * 1. AlphaQuant logo appears at the centre
-     * 2. Bullish peanut mascot with an upward-pointing green breakout arrow emerges from inside the logo
-     * 3. Mascot and arrow surge upwards with a smooth breakout effect (one unified connected piece)
-     * 4. Displays "Welcome, [User Name]"
-     * 5. Displays "You're in. Let's get to work."
-     * 6. Smooth Apple-grade crossfade transition into the live AlphaQuant terminal
+     * Demonstrates pure Bullish Pennant Pattern with explosive upward breakout surge:
+     * 1. AlphaQuant Bullish Pennant Pattern appears at the centre
+     * 2. Momentum builds through the consolidation pennant triangle
+     * 3. Explosive green breakout arrow surges upward with dynamic emerald glow
+     * 4. Displays "Welcome, [User Name]" and "You're in. Let's get to work."
+     * 5. Smooth Apple-grade crossfade transition into the live AlphaQuant terminal
      */
     function BrandEntrySplash({ user, onComplete }) {
-      const [stage, setStage] = useState(1); // 1: Logo Centre, 2: Mascot & Upward Arrow Emerge, 3: Upward Breakout Surge, 4: Welcome Greeting, 5: Fade to terminal
+      const [stage, setStage] = useState(1); // 1: Pennant Consolidation, 2: Breakout Surge, 3: Welcome Greeting, 4: Fade to terminal
       const displayName = user?.full_name || user?.username || 'Trader';
 
       useEffect(() => {
-        // Stage 1 -> 2: Mascot & upward arrow emerge from logo at 900ms
-        const t1 = setTimeout(() => setStage(2), 900);
-        // Stage 2 -> 3: Upward breakout surge together at 1500ms
-        const t2 = setTimeout(() => setStage(3), 1500);
-        // Stage 3 -> 4: Welcome greeting appears at 2100ms
-        const t3 = setTimeout(() => setStage(4), 2100);
-        // Stage 4 -> 5: Fade out overlay cleanly into dashboard at 3500ms
-        const t4 = setTimeout(() => setStage(5), 3500);
-        // Stage 5: Unmount callback at 4000ms
-        const t5 = setTimeout(() => {
+        // Stage 1 -> 2: Breakout surge triggers at 1100ms
+        const t1 = setTimeout(() => setStage(2), 1100);
+        // Stage 2 -> 3: Welcome greeting appears at 1800ms
+        const t2 = setTimeout(() => setStage(3), 1800);
+        // Stage 3 -> 4: Fade out overlay cleanly into dashboard at 3200ms
+        const t3 = setTimeout(() => setStage(4), 3200);
+        // Stage 4: Unmount callback at 3700ms
+        const t4 = setTimeout(() => {
           if (onComplete) onComplete();
-        }, 4000);
+        }, 3700);
 
         return () => {
           clearTimeout(t1);
           clearTimeout(t2);
           clearTimeout(t3);
           clearTimeout(t4);
-          clearTimeout(t5);
         };
       }, [onComplete]);
 
       return (
         <div 
           className={`fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-[#070A10] pointer-events-none select-none transition-all duration-700 ease-out ${
-            stage === 5 ? 'opacity-0 scale-105' : 'opacity-100 scale-100'
+            stage === 4 ? 'opacity-0 scale-105' : 'opacity-100 scale-100'
           }`}
           style={{ willChange: 'opacity, transform' }}
         >
           {/* Subtle Ambient Radial Glow that shifts from calm blue to energetic breakout green */}
           <div 
             className={`absolute rounded-full blur-[130px] pointer-events-none transition-all duration-1000 ${
-              stage >= 3 
+              stage >= 2 
                 ? 'w-[520px] h-[520px] bg-emerald-500/25' 
                 : 'w-[440px] h-[440px] bg-blue-600/15'
             }`}
@@ -909,110 +905,24 @@
 
           <div className="relative z-10 flex flex-col items-center text-center">
             
-            {/* Unified Emblem Card */}
+            {/* Unified Bullish Pennant Pattern Card Lockup */}
             <div 
-              className={`relative w-48 h-48 rounded-3xl bg-[#0B101D]/90 border shadow-[0_20px_60px_rgba(0,0,0,0.8)] backdrop-blur-xl mb-6 transition-all duration-700 flex items-center justify-center overflow-visible ${
-                stage >= 3 
-                  ? 'border-emerald-500/40 shadow-[0_20px_60px_rgba(16,185,129,0.35)]' 
-                  : 'border-white/[0.08]'
+              className={`relative p-8 rounded-3xl bg-[#0B101D]/90 border shadow-[0_20px_60px_rgba(0,0,0,0.8)] backdrop-blur-xl mb-6 transition-all duration-700 flex items-center justify-center overflow-visible ${
+                stage >= 2 
+                  ? 'border-emerald-500/40 shadow-[0_20px_60px_rgba(16,185,129,0.35)] scale-105' 
+                  : 'border-white/[0.08] scale-100'
               }`}
             >
-              {/* AlphaQuant Pennant Logo Emblem */}
-              <div 
-                className={`transition-all duration-700 absolute ${
-                  stage >= 2 ? 'opacity-15 scale-85' : 'opacity-100 scale-100'
-                }`}
-              >
-                <AlphaQuantSymbol size={100} animated={true} variant="dark" />
-              </div>
-
-              {/* Emerging Bullish Peanut Mascot With UPWARD-POINTING Breakout Arrow (One Integrated Piece) */}
-              <div 
-                className={`absolute inset-0 flex items-center justify-center transition-all duration-700 ease-out ${
-                  stage >= 3
-                    ? 'opacity-100 scale-110 -translate-y-6'
-                    : stage >= 2
-                    ? 'opacity-100 scale-90 translate-y-1'
-                    : 'opacity-0 scale-40 translate-y-5 pointer-events-none'
-                }`}
-              >
-                <svg viewBox="0 0 100 120" fill="none" className="w-36 h-44 overflow-visible">
-                  <defs>
-                    {/*  Breakout Arrow Gradient  */}
-                    <linearGradient id="upwardArrowGradApp" x1="50" y1="65" x2="50" y2="2" gradientUnits="userSpaceOnUse">
-                      <stop offset="0%" stopColor="#059669" stopOpacity="0.3" />
-                      <stop offset="35%" stopColor="#10B981" />
-                      <stop offset="100%" stopColor="#34D399" />
-                    </linearGradient>
-
-                    {/*  Mascot Peanut Gradient  */}
-                    <linearGradient id="mascotPeanutGradApp" x1="50" y1="36" x2="50" y2="108" gradientUnits="userSpaceOnUse">
-                      <stop offset="0%" stopColor="#10B981" />
-                      <stop offset="50%" stopColor="#059669" />
-                      <stop offset="100%" stopColor="#047857" />
-                    </linearGradient>
-
-                    {/*  Glow Filter  */}
-                    <filter id="upwardGlowApp" x="-30%" y="-30%" width="160%" height="160%">
-                      <feDropShadow dx="0" dy="2" stdDeviation="6" floodColor="#34D399" floodOpacity="0.85" />
-                    </filter>
-                  </defs>
-
-                  {/*  Upward-Pointing Green Breakout Arrow  */}
-                  <g filter="url(#upwardGlowApp)">
-                    <line x1="50" y1="78" x2="50" y2="16" stroke="url(#upwardArrowGradApp)" strokeWidth="7" strokeLinecap="round" />
-                    <path d="M 50 2 L 66 22 L 56 22 L 56 32 L 44 32 L 44 22 L 34 22 Z" 
-                          fill="url(#upwardArrowGradApp)" stroke="#34D399" strokeWidth="1.5" strokeLinejoin="round" />
-                    <path d="M 50 36 L 72 48 L 58 48 Z" fill="#10B981" opacity="0.8" />
-                    <path d="M 50 36 L 28 48 L 42 48 Z" fill="#10B981" opacity="0.8" />
-                  </g>
-
-                  {/*  The Bullish Peanut Mascot  */}
-                  <g>
-                    {/*  Breakout Horns  */}
-                    <path d="M 37 45 Q 26 34, 20 40 Q 28 48, 36 50 Z" fill="#34D399" stroke="#6EE7B7" strokeWidth="1.2" />
-                    <path d="M 63 45 Q 74 34, 80 40 Q 72 48, 64 50 Z" fill="#34D399" stroke="#6EE7B7" strokeWidth="1.2" />
-
-                    {/*  Double-lobed Peanut Body  */}
-                    <path d="M 36 54 C 36 42, 64 42, 64 54 C 64 62, 57 66, 57 71 C 57 76, 66 81, 66 92 C 66 106, 34 106, 34 92 C 34 81, 43 76, 43 71 C 43 66, 36 62, 36 54 Z" 
-                          fill="url(#mascotPeanutGradApp)" stroke="#6EE7B7" strokeWidth="2.5" />
-
-                    {/*  Indentations  */}
-                    <path d="M 46 60 Q 50 63, 54 60" stroke="#047857" strokeWidth="1.5" strokeLinecap="round" fill="none" opacity="0.6" />
-                    <path d="M 44 86 Q 50 90, 56 86" stroke="#047857" strokeWidth="1.5" strokeLinecap="round" fill="none" opacity="0.6" />
-
-                    {/*  Confident Eyes Looking Upward Toward Arrowhead  */}
-                    <ellipse cx="44" cy="54" rx="2.8" ry="3.8" fill="#FFFFFF" />
-                    <ellipse cx="56" cy="54" rx="2.8" ry="3.8" fill="#FFFFFF" />
-                    <circle cx="44" cy="52.5" r="1.7" fill="#064E3B" />
-                    <circle cx="56" cy="52.5" r="1.7" fill="#064E3B" />
-                    <circle cx="45" cy="51.5" r="0.6" fill="#FFFFFF" />
-                    <circle cx="57" cy="51.5" r="0.6" fill="#FFFFFF" />
-
-                    {/*  Confident Determined Smile  */}
-                    <path d="M 44 62 Q 50 67, 56 62" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" fill="none" />
-
-                    {/*  Cheering Hands along the Arrow Shaft  */}
-                    <path d="M 34 76 Q 26 66, 28 62 Q 32 66, 36 71 Z" fill="#34D399" />
-                    <path d="M 66 76 Q 74 66, 72 62 Q 68 66, 64 71 Z" fill="#34D399" />
-                  </g>
-
-                  {/*  Sparkles & Trail  */}
-                  <g className={`transition-opacity duration-500 ${stage >= 3 ? 'opacity-100' : 'opacity-0'}`}>
-                    <circle cx="50" cy="108" r="2" fill="#34D399" opacity="0.8" />
-                    <circle cx="46" cy="114" r="1.5" fill="#10B981" opacity="0.6" />
-                    <circle cx="54" cy="115" r="1.5" fill="#10B981" opacity="0.6" />
-                    <path d="M 22 24 L 25 24 M 23.5 22.5 L 23.5 25.5" stroke="#34D399" strokeWidth="1.5" strokeLinecap="round" />
-                    <path d="M 76 20 L 79 20 M 77.5 18.5 L 77.5 21.5" stroke="#34D399" strokeWidth="1.5" strokeLinecap="round" />
-                  </g>
-                </svg>
+              {/* Pure AlphaQuant Bullish Pennant Pattern Symbol */}
+              <div className="transition-transform duration-700">
+                <AlphaQuantSymbol size={110} animated={true} variant="dark" />
               </div>
             </div>
 
-            {/*  Stage 4: Welcome Greeting and Action Tagline  */}
+            {/* Stage 3: Welcome Greeting and Action Tagline */}
             <div 
               className={`transition-all duration-600 ease-out space-y-1.5 ${
-                stage >= 4 
+                stage >= 3 
                   ? 'opacity-100 translate-y-0' 
                   : 'opacity-0 translate-y-3'
               }`}
