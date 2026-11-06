@@ -854,53 +854,151 @@
      * Professional Cinematic Intro Animation Component
      * Runs once per browser session with smooth sequential line drawing and progressive content reveal.
      */
-    function BrandEntrySplash({ onComplete }) {
-      const [stage, setStage] = useState(1); // 1: Background & Start, 2: Wordmark/Tagline, 3: Fade out
+    /**
+     * Professional Cinematic Login Animation Component
+     * Demonstrates the complete 5-stage approved login sequence:
+     * 1. AlphaQuant logo appears with technical drawing lines
+     * 2. Bullish peanut mascot emerges from inside the logo
+     * 3. Mascot turns vibrant green, symbolising a bullish breakout with energy flare
+     * 4. Displays "Welcome, [User Name]" and "You're in. Let's get to work."
+     * 5. Smooth Apple-grade crossfade transition into the live AlphaQuant terminal
+     */
+    function BrandEntrySplash({ user, onComplete }) {
+      const [stage, setStage] = useState(1); // 1: Logo, 2: Mascot Emerges, 3: Vibrant Green Breakout, 4: Welcome Greeting, 5: Fade to terminal
+      const displayName = user?.full_name || user?.username || 'Trader';
 
       useEffect(() => {
-        // Stage 1: Pennant animation runs for 2.2s
-        const t1 = setTimeout(() => setStage(2), 1600);
-        // Stage 2: Fade out overlay cleanly into dashboard at 2700ms
-        const t2 = setTimeout(() => setStage(3), 2700);
-        // Unmount callback at 3200ms
-        const t3 = setTimeout(() => {
+        // Stage 1 -> 2: Mascot emerges from logo at 1000ms
+        const t1 = setTimeout(() => setStage(2), 1000);
+        // Stage 2 -> 3: Mascot turns vibrant green with breakout glow at 1600ms
+        const t2 = setTimeout(() => setStage(3), 1600);
+        // Stage 3 -> 4: Welcome greeting appears at 2100ms
+        const t3 = setTimeout(() => setStage(4), 2100);
+        // Stage 4 -> 5: Fade out overlay cleanly into dashboard at 3300ms
+        const t4 = setTimeout(() => setStage(5), 3300);
+        // Stage 5: Unmount callback at 3800ms
+        const t5 = setTimeout(() => {
           if (onComplete) onComplete();
-        }, 3200);
+        }, 3800);
 
         return () => {
           clearTimeout(t1);
           clearTimeout(t2);
           clearTimeout(t3);
+          clearTimeout(t4);
+          clearTimeout(t5);
         };
       }, [onComplete]);
 
       return (
         <div 
-          className={`fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-[#070A10] pointer-events-none select-none transition-opacity duration-700 ease-out ${
-            stage === 3 ? 'opacity-0' : 'opacity-100'
+          className={`fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-[#070A10] pointer-events-none select-none transition-all duration-700 ease-out ${
+            stage === 5 ? 'opacity-0 scale-105' : 'opacity-100 scale-100'
           }`}
-          style={{ willChange: 'opacity' }}
+          style={{ willChange: 'opacity, transform' }}
         >
-          {/* Subtle Ambient Radial Glow */}
-          <div className="absolute w-[560px] h-[560px] rounded-full bg-blue-600/[0.10] blur-[120px] pointer-events-none animate-pulse"></div>
+          {/* Subtle Ambient Radial Glow that shifts from calm blue to energetic breakout green */}
+          <div 
+            className={`absolute rounded-full blur-[130px] pointer-events-none transition-all duration-1000 ${
+              stage >= 3 
+                ? 'w-[520px] h-[520px] bg-emerald-500/25' 
+                : 'w-[440px] h-[440px] bg-blue-600/15'
+            }`}
+          ></div>
 
-          <div className="relative z-10 flex flex-col items-center">
-            {/* Bullish Pennant Pattern with full 5-stage line-drawing animation */}
-            <div className="p-5 rounded-2xl bg-[#0B101A]/90 border border-white/[0.08] shadow-[0_12px_40px_rgba(0,0,0,0.7)] backdrop-blur-md mb-5">
-              <AlphaQuantSymbol size={80} animated={true} variant="dark" />
-            </div>
-
-            {/* Wordmark and Tagline */}
+          <div className="relative z-10 flex flex-col items-center text-center">
+            
+            {/* Logo and Mascot Card Lockup */}
             <div 
-              className={`flex flex-col items-center transition-all duration-700 ease-out ${
-                stage >= 2 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+              className={`relative p-6 rounded-3xl bg-[#0B101D]/90 border shadow-[0_20px_60px_rgba(0,0,0,0.8)] backdrop-blur-xl mb-6 transition-all duration-700 flex items-center justify-center ${
+                stage >= 3 
+                  ? 'border-emerald-500/40 shadow-[0_20px_60px_rgba(16,185,129,0.3)]' 
+                  : 'border-white/[0.08]'
               }`}
             >
-              <h1 className="text-2xl font-semibold tracking-tight text-white flex items-center space-x-1.5">
-                <span>Alpha</span>
-                <span className="font-normal text-slate-400">Quant</span>
-              </h1>
+              {/* AlphaQuant Pennant Logo Emblem */}
+              <div 
+                className={`transition-all duration-700 ${
+                  stage >= 2 ? 'opacity-20 scale-90' : 'opacity-100 scale-100'
+                }`}
+              >
+                <AlphaQuantSymbol size={84} animated={true} variant="dark" />
+              </div>
+
+              {/* Emerging Bullish Mascot Vector */}
+              <div 
+                className={`absolute inset-0 flex items-center justify-center transition-all duration-700 ease-out ${
+                  stage >= 2 
+                    ? 'opacity-100 scale-110' 
+                    : 'opacity-0 scale-50 pointer-events-none'
+                }`}
+              >
+                <svg viewBox="0 0 80 80" fill="none" className="w-20 h-20 overflow-visible transition-all duration-500">
+                  <defs>
+                    <filter id="aqMascotGlowFilter" x="-25%" y="-25%" width="150%" height="150%">
+                      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#10B981" flood-opacity="0.8" />
+                    </filter>
+                  </defs>
+                  
+                  {/* Mascot Peanut Body Silhouette */}
+                  <path 
+                    d="M 28 24 C 28 14, 52 14, 52 24 C 52 32, 46 36, 46 40 C 46 44, 54 48, 54 58 C 54 70, 26 70, 26 58 C 26 48, 34 44, 34 40 C 34 36, 28 32, 28 24 Z" 
+                    fill={stage >= 3 ? "#10B981" : "#1E3A8A"} 
+                    stroke={stage >= 3 ? "#34D399" : "#38BDF8"} 
+                    strokeWidth="2.5" 
+                    style={stage >= 3 ? { filter: 'url(#aqMascotGlowFilter)' } : {}}
+                    className="transition-all duration-700"
+                  />
+                  
+                  {/* Bullish Breakout Horns */}
+                  <path 
+                    d="M 30 18 Q 22 10, 18 14 Q 22 20, 28 22 Z" 
+                    fill={stage >= 3 ? "#34D399" : "#38BDF8"} 
+                    className="transition-all duration-700"
+                  />
+                  <path 
+                    d="M 50 18 Q 58 10, 62 14 Q 58 20, 52 22 Z" 
+                    fill={stage >= 3 ? "#34D399" : "#38BDF8"} 
+                    className="transition-all duration-700"
+                  />
+                  
+                  {/* Focused Friendly Eyes */}
+                  <ellipse cx="36" cy="27" rx="2.5" ry="3.5" fill="#FFFFFF" />
+                  <ellipse cx="44" cy="27" rx="2.5" ry="3.5" fill="#FFFFFF" />
+                  <circle cx="37" cy="27" r="1.5" fill="#0A0E17" />
+                  <circle cx="45" cy="27" r="1.5" fill="#0A0E17" />
+                  
+                  {/* Confident Bullish Smile */}
+                  <path d="M 36 33 Q 40 37, 44 33" stroke="#FFFFFF" strokeWidth="1.8" strokeLinecap="round" fill="none" />
+                  
+                  {/* Breakout Momentum Energy Rays */}
+                  <path 
+                    d="M 40 6 L 40 2 M 16 38 L 10 38 M 64 38 L 70 38 M 20 54 L 14 58 M 60 54 L 66 58" 
+                    stroke="#10B981" 
+                    strokeWidth="2.5" 
+                    strokeLinecap="round" 
+                    className={`transition-opacity duration-500 ${stage >= 3 ? 'opacity-100' : 'opacity-0'}`}
+                  />
+                </svg>
+              </div>
             </div>
+
+            {/* Stage 4: Welcome Greeting and Action Tagline */}
+            <div 
+              className={`transition-all duration-600 ease-out space-y-1.5 ${
+                stage >= 4 
+                  ? 'opacity-100 translate-y-0' 
+                  : 'opacity-0 translate-y-3'
+              }`}
+            >
+              <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">
+                Welcome, {displayName}
+              </h2>
+              <p className="text-sm font-mono text-emerald-400 tracking-wide font-medium">
+                You're in. Let's get to work.
+              </p>
+            </div>
+
           </div>
         </div>
       );
@@ -2678,13 +2776,7 @@
     function App() {
       const [authModal, setAuthModal] = useState({ isOpen: false, mode: 'login' });
       const [pendingRequestsCount, setPendingRequestsCount] = useState(0);
-      const [showIntroSplash, setShowIntroSplash] = useState(() => {
-        try {
-          return !sessionStorage.getItem('alphaquant_intro_shown');
-        } catch (e) {
-          return false;
-        }
-      });
+      const [showIntroSplash, setShowIntroSplash] = useState(false);
       const [user, setUser] = useState(() => {
         const saved = localStorage.getItem('alphaquant_user');
         return saved ? JSON.parse(saved) : null;
@@ -2873,6 +2965,7 @@
         <>
           {showIntroSplash && (
             <BrandEntrySplash 
+              user={user}
               onComplete={() => {
                 setShowIntroSplash(false);
               }} 
