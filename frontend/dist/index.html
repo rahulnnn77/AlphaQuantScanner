@@ -2851,13 +2851,7 @@
     function App() {
       const [authModal, setAuthModal] = useState({ isOpen: false, mode: 'login' });
       const [pendingRequestsCount, setPendingRequestsCount] = useState(0);
-      const [showIntroSplash, setShowIntroSplash] = useState(() => {
-        try {
-          return !sessionStorage.getItem('alphaquant_reveal_seen');
-        } catch (e) {
-          return true;
-        }
-      });
+      const [showIntroSplash, setShowIntroSplash] = useState(true);
       const [user, setUser] = useState(() => {
         const saved = localStorage.getItem('alphaquant_user');
         return saved ? JSON.parse(saved) : null;
@@ -3022,7 +3016,6 @@
               <BrandEntrySplash 
                 user={null}
                 onComplete={() => {
-                  sessionStorage.setItem('alphaquant_reveal_seen', 'true');
                   setShowIntroSplash(false);
                 }} 
               />
