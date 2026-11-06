@@ -2978,8 +2978,7 @@
       const handleLoginSuccess = (userData, token) => {
         localStorage.setItem('alphaquant_token', token);
         localStorage.setItem('alphaquant_user', JSON.stringify(userData));
-        // Always trigger the Bullish Pennant entry animation when entering workspace after login
-        setShowIntroSplash(true);
+        setShowIntroSplash(false);
         setUser(userData);
         checkBrokerStatus();
         if (!localStorage.getItem("alphaquant_tour_seen_" + userData.username)) {
