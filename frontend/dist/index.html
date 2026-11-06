@@ -1424,26 +1424,41 @@
     // Precision in Research. Discipline in Execution.
     // =========================================================================
 
+        // =========================================================================
+    // PREMIUM PUBLIC LANDING PAGE (APPLE PRODUCT LAUNCH EXPERIENCE)
+    // Think Quantitatively. Trade Systematically.
+    // =========================================================================
+
     function PublicLandingPage({ onOpenLogin, onOpenRegister, onOpenLegal }) {
       return (
         <div className="min-h-screen bg-[#070A10] text-slate-100 font-sans selection:bg-blue-600/30 selection:text-white apple-app-shell">
           
-          {/* 1. SIMPLE APPLE NAVIGATION */}
+          {/* 1. MINIMAL RESPONSIVE HEADER */}
           <header className="sticky top-0 z-50 bg-[#070A10]/80 backdrop-blur-xl border-b border-white/[0.06]">
-            <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-              {/* Left: AlphaQuant Logo */}
+            <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+              {/* Brand Logo & Positioning */}
               <div 
-                className="flex items-center space-x-3 cursor-pointer" 
+                className="flex items-center space-x-3 cursor-pointer group"
                 onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
               >
-                <AlphaQuantSymbol size={26} animated={false} variant="dark" />
-                <span className="font-semibold text-base tracking-tight text-white">AlphaQuant</span>
+                <div className="transition-transform duration-300 group-hover:scale-105">
+                  <AlphaQuantSymbol size={28} animated={false} variant="dark" />
+                </div>
+                <div className="flex flex-col leading-none">
+                  <span className="font-semibold text-base tracking-tight text-white">AlphaQuant</span>
+                  <span className="hidden sm:inline-block text-[9px] font-mono tracking-widest text-slate-500 uppercase mt-0.5">
+                    Quantitative Research · Market Intelligence · Systematic Strategies
+                  </span>
+                </div>
               </div>
 
-              {/* Right: Platform | Login | Create Account */}
-              <div className="flex items-center space-x-6 text-xs font-medium">
-                <a href="#platform" className="text-slate-400 hover:text-white transition-colors">
+              {/* Navigation Options */}
+              <nav className="flex items-center space-x-6 text-xs font-medium">
+                <a href="#platform" className="hidden sm:inline-block text-slate-400 hover:text-white transition-colors">
                   Platform
+                </a>
+                <a href="#philosophy" className="hidden sm:inline-block text-slate-400 hover:text-white transition-colors">
+                  Philosophy
                 </a>
                 <button
                   type="button"
@@ -1455,73 +1470,133 @@
                 <button
                   type="button"
                   onClick={onOpenRegister}
-                  className="px-4 py-2 text-xs font-semibold text-slate-950 bg-white hover:bg-slate-200 rounded-xl transition-all shadow-sm"
+                  className="px-4 py-2 text-xs font-semibold text-slate-950 bg-white hover:bg-slate-200 rounded-xl transition-all shadow-md shadow-white/10"
                 >
                   Create Account
                 </button>
-              </div>
+              </nav>
             </div>
           </header>
 
-          {/* 2. HERO SECTION */}
-          <section className="relative pt-32 pb-24 sm:pt-40 sm:pb-36 overflow-hidden flex flex-col items-center text-center px-6">
-            {/* Subtle Financial Wave Mesh Glow */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[680px] h-[400px] rounded-full bg-blue-600/[0.08] blur-[140px] pointer-events-none"></div>
+          {/* 2. HERO SECTION — CINEMATIC FIRST IMPRESSION */}
+          <section className="relative pt-32 pb-24 sm:pt-44 sm:pb-36 overflow-hidden flex flex-col items-center text-center px-6 apple-hero-glow apple-grid-mesh">
+            
+            {/* Subtle Financial Market Data Point Particle Visuals */}
+            <div className="absolute inset-0 pointer-events-none opacity-40 overflow-hidden">
+              <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                  <linearGradient id="heroChartWave" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stopColor="#1E3A8A" stopOpacity="0.1" />
+                    <stop offset="50%" stopColor="#0284C7" stopOpacity="0.3" />
+                    <stop offset="100%" stopColor="#10B981" stopOpacity="0.2" />
+                  </linearGradient>
+                </defs>
+                <path d="M 0 340 Q 280 260, 560 300 T 1120 220 T 1680 180" fill="none" stroke="url(#heroChartWave)" strokeWidth="1.5" strokeDasharray="3 4" />
+                <path d="M 0 420 Q 340 380, 680 340 T 1360 290 T 1920 240" fill="none" stroke="url(#heroChartWave)" strokeWidth="1.2" strokeOpacity="0.5" />
+              </svg>
+            </div>
 
             <div className="relative z-10 max-w-4xl mx-auto space-y-7">
-              {/* Animated Bullish Pennant Focal Point */}
-              <div className="inline-flex items-center justify-center p-4 rounded-3xl bg-[#0B101D]/80 border border-white/[0.08] shadow-[0_16px_48px_rgba(0,0,0,0.6)] backdrop-blur-xl mb-2">
-                <AlphaQuantSymbol size={68} animated={true} variant="dark" />
+              {/* Subtle Animated AlphaQuant Symbol */}
+              <div className="inline-flex items-center justify-center p-4 rounded-3xl bg-[#0B101D]/80 border border-white/[0.08] shadow-[0_20px_60px_rgba(0,0,0,0.7)] backdrop-blur-xl mb-1">
+                <AlphaQuantSymbol size={76} animated={true} variant="dark" />
               </div>
 
-              {/* Strict Brand Heading */}
-              <h1 className="text-5xl sm:text-7xl font-semibold tracking-tight text-white">
-                AlphaQuant
+              {/* Exact Tagline Pill */}
+              <div className="inline-flex items-center space-x-2 px-3.5 py-1 rounded-full bg-white/[0.04] border border-white/[0.08] backdrop-blur-md">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span className="text-[11px] font-mono tracking-widest text-slate-300 uppercase">
+                  Precision in Research. Discipline in Execution.
+                </span>
+              </div>
+
+              {/* Main Heading */}
+              <h1 className="text-4xl sm:text-6xl md:text-7xl font-semibold tracking-tight text-white leading-[1.08]">
+                Think Quantitatively.<br />
+                <span className="bg-gradient-to-r from-blue-400 via-sky-300 to-emerald-400 bg-clip-text text-transparent">
+                  Trade Systematically.
+                </span>
               </h1>
 
-              {/* Strict Tagline */}
-              <p className="text-lg sm:text-2xl text-slate-400 font-light tracking-tight max-w-xl mx-auto leading-relaxed">
-                Precision in Research. Discipline in Execution.
+              {/* Supporting Text */}
+              <p className="max-w-2xl mx-auto text-base sm:text-lg text-slate-400 font-normal leading-relaxed">
+                An integrated quantitative research platform bringing together market intelligence, systematic strategies and advanced stock analytics.
               </p>
 
-              {/* Two Direct CTAs */}
+              {/* Primary & Secondary Call to Actions */}
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
                 <a
                   href="#platform"
-                  className="w-full sm:w-auto px-7 py-3.5 bg-white text-slate-950 font-semibold text-xs rounded-xl hover:bg-slate-200 transition-all shadow-lg shadow-white/10"
+                  className="w-full sm:w-auto px-8 py-3.5 bg-white text-slate-950 font-semibold text-xs rounded-xl hover:bg-slate-200 transition-all shadow-xl shadow-white/10 flex items-center justify-center space-x-2"
                 >
-                  Explore Platform
+                  <span>Explore AlphaQuant</span>
+                  <span>↓</span>
                 </a>
                 <button
                   type="button"
                   onClick={onOpenRegister}
-                  className="w-full sm:w-auto px-7 py-3.5 bg-white/[0.06] hover:bg-white/[0.1] text-white font-medium text-xs rounded-xl border border-white/[0.08] transition-all backdrop-blur-md"
+                  className="w-full sm:w-auto px-8 py-3.5 bg-white/[0.06] hover:bg-white/[0.1] text-white font-medium text-xs rounded-xl border border-white/[0.08] transition-all backdrop-blur-md flex items-center justify-center space-x-2"
                 >
-                  Request Access
+                  <span>Request Access</span>
+                  <span>→</span>
                 </button>
+              </div>
+            </div>
+
+            {/* Ambient Running Market Constituents Bar */}
+            <div className="mt-20 w-full border-y border-white/[0.06] bg-[#070A10]/60 backdrop-blur-md py-3 overflow-hidden select-none">
+              <div className="hero-ticker-track text-xs font-mono text-slate-400 space-x-8">
+                <span>RELIANCE ₹2,980.50 (+0.48%)</span>
+                <span>TCS ₹4,150.00 (+0.61%)</span>
+                <span>HDFCBANK ₹1,640.20 (-0.51%)</span>
+                <span>INFY ₹1,820.75 (-0.68%)</span>
+                <span>ICICIBANK ₹1,210.40 (+1.52%)</span>
+                <span>BHARTIARTL ₹1,425.80 (+0.73%)</span>
+                <span>SBIN ₹815.10 (+0.79%)</span>
+                <span>ITC ₹492.30 (-0.24%)</span>
+                <span>HINDUNILVR ₹2,540.20 (+0.12%)</span>
+                <span>LT ₹3,680.00 (+1.10%)</span>
+                {/* Loop repetition */}
+                <span>RELIANCE ₹2,980.50 (+0.48%)</span>
+                <span>TCS ₹4,150.00 (+0.61%)</span>
+                <span>HDFCBANK ₹1,640.20 (-0.51%)</span>
+                <span>INFY ₹1,820.75 (-0.68%)</span>
+                <span>ICICIBANK ₹1,210.40 (+1.52%)</span>
+                <span>BHARTIARTL ₹1,425.80 (+0.73%)</span>
+                <span>SBIN ₹815.10 (+0.79%)</span>
+                <span>ITC ₹492.30 (-0.24%)</span>
+                <span>HINDUNILVR ₹2,540.20 (+0.12%)</span>
+                <span>LT ₹3,680.00 (+1.10%)</span>
               </div>
             </div>
           </section>
 
-          {/* 3. PLATFORM SHOWCASE (7 CORE MODULES — LARGE PRODUCT PREVIEWS) */}
-          <section id="platform" className="max-w-6xl mx-auto px-6 py-20 space-y-28">
+          {/* 3. SHOWCASE ALL 7 ALPHAQUANT FEATURES (APPLE HARDWARE-GRADE VISUALS) */}
+          <section id="platform" className="max-w-6xl mx-auto px-6 py-24 space-y-32">
 
-            {/* MODULE 1: MARKET BREADTH (Split-screen) */}
+            {/* A. MARKET BREADTH (Split-screen) */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
-              <div className="lg:col-span-4 space-y-2">
-                <h2 className="text-2xl sm:text-3xl font-semibold text-white tracking-tight">Market Breadth</h2>
+              <div className="lg:col-span-5 space-y-3">
+                <span className="text-xs font-mono uppercase tracking-widest text-sky-400 font-semibold">Institutional Participation</span>
+                <h2 className="text-3xl sm:text-4xl font-semibold text-white tracking-tight">Market Breadth</h2>
                 <p className="text-sm text-slate-400 font-normal leading-relaxed">
-                  Market participation and breadth analysis.
+                  Understand overall market participation, market strength and breadth conditions across the entire Indian stock universe. Track advance/decline ratios, sector momentum dispersion, and volume distribution in real time.
                 </p>
+                <div className="pt-2">
+                  <span className="inline-flex items-center space-x-1.5 text-xs text-slate-300 font-mono">
+                    <span className="text-emerald-400">✓</span>
+                    <span>Real-time NSE & BSE breadth tracking</span>
+                  </span>
+                </div>
               </div>
 
-              <div className="lg:col-span-8 bg-[#0C121E] border border-white/[0.08] rounded-3xl p-6 sm:p-8 shadow-2xl backdrop-blur-xl">
-                <div className="flex items-center justify-between pb-4 border-b border-white/[0.06] text-xs font-mono">
-                  <span className="text-slate-400 uppercase tracking-widest text-[10px]">NIFTY 50 PARTICIPATION</span>
+              <div className="lg:col-span-7 bg-[#0C121E] border border-white/[0.08] rounded-3xl p-6 sm:p-8 shadow-2xl backdrop-blur-xl space-y-5">
+                <div className="flex items-center justify-between pb-3 border-b border-white/[0.06] text-xs font-mono">
+                  <span className="text-slate-400 uppercase tracking-widest text-[10px]">NIFTY 50 ADVANCE / DECLINE</span>
                   <span className="text-emerald-400 font-semibold">68% ADVANCING</span>
                 </div>
-                {/* Visual Advance/Decline Spectrum */}
-                <div className="my-6 space-y-2">
+                {/* Visual Ratio Bar */}
+                <div className="space-y-2">
                   <div className="h-3 w-full rounded-full bg-slate-800 overflow-hidden flex">
                     <div className="w-[68%] bg-emerald-500 rounded-l-full"></div>
                     <div className="w-[32%] bg-rose-500 rounded-r-full"></div>
@@ -1531,8 +1606,8 @@
                     <span className="text-rose-400 font-semibold">16 Declining</span>
                   </div>
                 </div>
-                {/* Sector Grid Preview */}
-                <div className="grid grid-cols-3 gap-2.5 font-mono text-xs">
+                {/* Sector Performance Grid */}
+                <div className="grid grid-cols-3 gap-2.5 font-mono text-xs pt-1">
                   <div className="bg-[#070A10] p-3 rounded-xl border border-white/[0.04]">
                     <div className="text-[10px] text-slate-500">NIFTY AUTO</div>
                     <div className="text-emerald-400 font-semibold mt-0.5">+1.84%</div>
@@ -1549,23 +1624,24 @@
               </div>
             </div>
 
-            {/* MODULE 2: SCREENER TOOLS (Full-width) */}
+            {/* B. SCREENER TOOLS (Full-width showcase) */}
             <div className="space-y-6">
-              <div className="space-y-1 max-w-xl">
-                <h2 className="text-2xl sm:text-3xl font-semibold text-white tracking-tight">Screener Tools</h2>
+              <div className="space-y-2 max-w-2xl">
+                <span className="text-xs font-mono uppercase tracking-widest text-sky-400 font-semibold">Quantitative Filters</span>
+                <h2 className="text-3xl sm:text-4xl font-semibold text-white tracking-tight">Screener Tools</h2>
                 <p className="text-sm text-slate-400 font-normal leading-relaxed">
-                  Technical stock screening.
+                  Identify market opportunities using rigorous technical and quantitative conditions. Filter equities by volume surge multipliers, RSI momentum thresholds, price range parameters, and moving average cross-alignments.
                 </p>
               </div>
 
               <div className="bg-[#0C121E] border border-white/[0.08] rounded-3xl p-6 sm:p-8 shadow-2xl backdrop-blur-xl overflow-hidden">
-                <div className="flex items-center justify-between pb-4 border-b border-white/[0.06] text-xs font-mono">
+                <div className="flex flex-wrap items-center justify-between pb-4 border-b border-white/[0.06] text-xs font-mono gap-3">
                   <div className="flex items-center space-x-2">
-                    <span className="px-2.5 py-1 rounded-lg bg-sky-500/20 text-sky-300 font-semibold text-[11px]">High Volume Breakout</span>
-                    <span className="px-2.5 py-1 rounded-lg bg-white/[0.04] text-slate-400 text-[11px]">RSI Momentum</span>
-                    <span className="px-2.5 py-1 rounded-lg bg-white/[0.04] text-slate-400 text-[11px]">MA Alignment</span>
+                    <span className="px-3 py-1 rounded-xl bg-sky-500/20 text-sky-300 font-semibold">High Volume Breakout</span>
+                    <span className="px-3 py-1 rounded-xl bg-white/[0.04] text-slate-400">RSI Momentum</span>
+                    <span className="px-3 py-1 rounded-xl bg-white/[0.04] text-slate-400">EMA Alignment</span>
                   </div>
-                  <span className="text-slate-500 text-[11px]">Filtered: 8 Matches</span>
+                  <span className="text-slate-500 text-[11px]">Universe: NIFTY 500 · 8 Qualified</span>
                 </div>
 
                 <div className="overflow-x-auto mt-4 font-mono text-xs">
@@ -1575,24 +1651,24 @@
                         <th className="py-2.5">Symbol</th>
                         <th className="py-2.5">LTP</th>
                         <th className="py-2.5">Change</th>
-                        <th className="py-2.5">Volume Ratio</th>
-                        <th className="py-2.5 text-right">Condition Match</th>
+                        <th className="py-2.5">Volume Surge</th>
+                        <th className="py-2.5 text-right">Condition Verification</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-white/[0.03]">
                       <tr>
                         <td className="py-3 font-semibold text-white">TRENT</td>
                         <td className="py-3 text-slate-300">₹7,140.00</td>
-                        <td className="py-3 text-emerald-400">+2.85%</td>
-                        <td className="py-3 text-sky-400">2.4x Surge</td>
-                        <td className="py-3 text-right text-emerald-400">Above SMA20 + Vol</td>
+                        <td className="py-3 text-emerald-400 font-semibold">+2.85%</td>
+                        <td className="py-3 text-sky-400 font-semibold">2.4x Volume</td>
+                        <td className="py-3 text-right text-emerald-400 font-semibold">Above SMA20 + Vol Surge</td>
                       </tr>
                       <tr>
                         <td className="py-3 font-semibold text-white">DIXON</td>
                         <td className="py-3 text-slate-300">₹14,890.50</td>
-                        <td className="py-3 text-emerald-400">+3.12%</td>
-                        <td className="py-3 text-sky-400">1.9x Surge</td>
-                        <td className="py-3 text-right text-emerald-400">Above SMA20 + Vol</td>
+                        <td className="py-3 text-emerald-400 font-semibold">+3.12%</td>
+                        <td className="py-3 text-sky-400 font-semibold">1.9x Volume</td>
+                        <td className="py-3 text-right text-emerald-400 font-semibold">RSI Momentum + Volume</td>
                       </tr>
                     </tbody>
                   </table>
@@ -1600,51 +1676,63 @@
               </div>
             </div>
 
-            {/* MODULE 3: HPS STOCKS (Split-screen) */}
+            {/* C. HPS STOCKS (Split-screen) */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
-              <div className="lg:col-span-8 order-2 lg:order-1 bg-[#0C121E] border border-white/[0.08] rounded-3xl p-6 sm:p-8 shadow-2xl backdrop-blur-xl">
-                <div className="flex items-center space-x-2 pb-4 border-b border-white/[0.06] text-xs font-mono">
-                  <span className="px-3 py-1 rounded-lg bg-white/[0.08] text-white font-semibold">4-Hour</span>
-                  <span className="px-3 py-1 rounded-lg bg-sky-500/20 text-sky-300 font-semibold">Daily</span>
-                  <span className="px-3 py-1 rounded-lg bg-white/[0.04] text-slate-400">Weekly</span>
-                  <span className="px-3 py-1 rounded-lg bg-white/[0.04] text-slate-400">Monthly</span>
+              <div className="lg:col-span-7 order-2 lg:order-1 bg-[#0C121E] border border-white/[0.08] rounded-3xl p-6 sm:p-8 shadow-2xl backdrop-blur-xl space-y-4">
+                <div className="flex flex-wrap items-center justify-between pb-3 border-b border-white/[0.06] text-xs font-mono gap-2">
+                  <div className="flex items-center space-x-1.5">
+                    <span className="px-2.5 py-1 rounded-lg bg-white/[0.08] text-white font-semibold">4-Hour</span>
+                    <span className="px-2.5 py-1 rounded-lg bg-sky-500/20 text-sky-300 font-semibold">Daily</span>
+                    <span className="px-2.5 py-1 rounded-lg bg-white/[0.04] text-slate-400">Weekly</span>
+                    <span className="px-2.5 py-1 rounded-lg bg-white/[0.04] text-slate-400">Monthly</span>
+                  </div>
+                  <span className="text-[10px] text-slate-400">NIFTY 500 & F&O</span>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3 mt-5 font-mono text-xs">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 font-mono text-xs">
                   <div className="p-4 rounded-2xl bg-[#080C14] border border-emerald-500/20 space-y-1">
-                    <div className="text-[10px] text-emerald-400 font-bold uppercase">Bullish Breakout · Daily</div>
+                    <div className="text-[10px] text-emerald-400 font-bold uppercase tracking-wider">Bullish Breakout · Daily</div>
                     <div className="text-base font-semibold text-white">RELIANCE</div>
                     <div className="text-xs text-slate-400">LTP ₹2,980.50 (+1.48%)</div>
+                    <div className="text-[10px] text-emerald-400/80 pt-1">Target Projected: ₹3,080.00</div>
                   </div>
                   <div className="p-4 rounded-2xl bg-[#080C14] border border-rose-500/20 space-y-1">
-                    <div className="text-[10px] text-rose-400 font-bold uppercase">Bearish Breakdown · Daily</div>
+                    <div className="text-[10px] text-rose-400 font-bold uppercase tracking-wider">Bearish Breakdown · Daily</div>
                     <div className="text-base font-semibold text-white">INDUSINDBK</div>
                     <div className="text-xs text-slate-400">LTP ₹1,085.00 (-1.95%)</div>
+                    <div className="text-[10px] text-rose-400/80 pt-1">Invalidation: ₹1,120.00</div>
                   </div>
                 </div>
               </div>
 
-              <div className="lg:col-span-4 order-1 lg:order-2 space-y-2">
-                <h2 className="text-2xl sm:text-3xl font-semibold text-white tracking-tight">HPS Stocks</h2>
+              <div className="lg:col-span-5 order-1 lg:order-2 space-y-3">
+                <span className="text-xs font-mono uppercase tracking-widest text-sky-400 font-semibold">Multi-Timeframe Scanning</span>
+                <h2 className="text-3xl sm:text-4xl font-semibold text-white tracking-tight">HPS Stocks</h2>
                 <p className="text-sm text-slate-400 font-normal leading-relaxed">
-                  Multi-timeframe breakout analysis.
+                  Multi-timeframe breakout and breakdown tracking across 4-Hour, Daily, Weekly, and Monthly time horizons. Automatically filters setups across the NIFTY 500 and NIFTY F&O universes with real-time price updates.
                 </p>
+                <div className="space-y-1.5 text-xs text-slate-300 font-mono pt-1">
+                  <div>✦ 4-Hour, Daily, Weekly, Monthly time horizons</div>
+                  <div>✦ Dual universe scanning: NIFTY 500 and NIFTY F&O</div>
+                  <div>✦ Real-time bullish breakout and bearish breakdown signals</div>
+                </div>
               </div>
             </div>
 
-            {/* MODULE 4: HPS SELECTED (Full-width) */}
+            {/* D. HPS SELECTED (Full-width) */}
             <div className="space-y-6">
-              <div className="space-y-1 max-w-xl">
-                <h2 className="text-2xl sm:text-3xl font-semibold text-white tracking-tight">HPS Selected</h2>
+              <div className="space-y-2 max-w-2xl">
+                <span className="text-xs font-mono uppercase tracking-widest text-sky-400 font-semibold">Trend Power Ranking</span>
+                <h2 className="text-3xl sm:text-4xl font-semibold text-white tracking-tight">HPS Selected</h2>
                 <p className="text-sm text-slate-400 font-normal leading-relaxed">
-                  Trend strength and stock rankings.
+                  Identifies and ranks stocks based on ADX trend strength. Evaluates directional momentum to present the curated Top 10 stock selection across daily and weekly intervals.
                 </p>
               </div>
 
               <div className="bg-[#0C121E] border border-white/[0.08] rounded-3xl p-6 sm:p-8 shadow-2xl backdrop-blur-xl">
-                <div className="flex items-center justify-between pb-4 border-b border-white/[0.06] text-xs font-mono">
-                  <span className="text-slate-400 uppercase tracking-widest text-[10px]">TOP 10 ADX HIERARCHY</span>
-                  <span className="text-sky-400">Quantitative Ranking</span>
+                <div className="flex items-center justify-between pb-3 border-b border-white/[0.06] text-xs font-mono">
+                  <span className="text-slate-400 uppercase tracking-widest text-[10px]">TOP 10 STRENGTH HIERARCHY</span>
+                  <span className="text-sky-400 font-semibold">ADX Dynamic Ordering</span>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-5 font-mono text-xs">
@@ -1654,7 +1742,7 @@
                       <span className="text-emerald-400 font-semibold">ADX 48.2</span>
                     </div>
                     <div className="text-base font-semibold text-white">BHARTIARTL</div>
-                    <div className="text-xs text-slate-400">₹1,425.80 · Strong Trend</div>
+                    <div className="text-xs text-slate-400">₹1,425.80 · Robust Expansion</div>
                   </div>
                   <div className="p-4 rounded-2xl bg-[#080C14] border border-white/[0.06] space-y-2">
                     <div className="flex justify-between items-center text-[11px]">
@@ -1662,7 +1750,7 @@
                       <span className="text-emerald-400 font-semibold">ADX 44.6</span>
                     </div>
                     <div className="text-base font-semibold text-white">TCS</div>
-                    <div className="text-xs text-slate-400">₹4,150.00 · Strong Trend</div>
+                    <div className="text-xs text-slate-400">₹4,150.00 · Trend Acceleration</div>
                   </div>
                   <div className="p-4 rounded-2xl bg-[#080C14] border border-white/[0.06] space-y-2">
                     <div className="flex justify-between items-center text-[11px]">
@@ -1670,29 +1758,35 @@
                       <span className="text-emerald-400 font-semibold">ADX 41.8</span>
                     </div>
                     <div className="text-base font-semibold text-white">ICICIBANK</div>
-                    <div className="text-xs text-slate-400">₹1,210.40 · Trend Expansion</div>
+                    <div className="text-xs text-slate-400">₹1,210.40 · Trend Continuation</div>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* MODULE 5: HPS MEAN REVERSION (Split-screen) */}
+            {/* E. HPS MEAN REVERSION (Split-screen) */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
-              <div className="lg:col-span-4 space-y-2">
-                <h2 className="text-2xl sm:text-3xl font-semibold text-white tracking-tight">HPS Mean Reversion</h2>
+              <div className="lg:col-span-5 space-y-3">
+                <span className="text-xs font-mono uppercase tracking-widest text-sky-400 font-semibold">Statistical Equilibrium</span>
+                <h2 className="text-3xl sm:text-4xl font-semibold text-white tracking-tight">HPS Mean Reversion</h2>
                 <p className="text-sm text-slate-400 font-normal leading-relaxed">
-                  Quantitative mean reversion analysis.
+                  Quantitative mean reversion research identifying price deviations from moving structural baselines. Monitors Level-1, Level-2, and Level-3 support bands across daily, weekly, and monthly time horizons.
                 </p>
+                <div className="space-y-1.5 text-xs text-slate-300 font-mono pt-1">
+                  <div>✦ Level-1 primary dynamic moving support</div>
+                  <div>✦ Level-2 intermediate pivot zone</div>
+                  <div>✦ Level-3 deep institutional value base</div>
+                </div>
               </div>
 
-              <div className="lg:col-span-8 bg-[#0C121E] border border-white/[0.08] rounded-3xl p-6 sm:p-8 shadow-2xl backdrop-blur-xl">
-                <div className="flex items-center space-x-2 pb-4 border-b border-white/[0.06] text-xs font-mono">
+              <div className="lg:col-span-7 bg-[#0C121E] border border-white/[0.08] rounded-3xl p-6 sm:p-8 shadow-2xl backdrop-blur-xl space-y-4">
+                <div className="flex items-center space-x-2 pb-3 border-b border-white/[0.06] text-xs font-mono">
                   <span className="px-3 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 font-semibold">Level-1</span>
                   <span className="px-3 py-1 rounded-lg bg-cyan-500/20 text-cyan-300 font-semibold">Level-2</span>
                   <span className="px-3 py-1 rounded-lg bg-amber-500/20 text-amber-300 font-semibold">Level-3</span>
                 </div>
 
-                <div className="mt-5 space-y-3 font-mono text-xs">
+                <div className="space-y-3 font-mono text-xs">
                   <div className="p-3.5 rounded-2xl bg-[#080C14] border border-white/[0.04] flex items-center justify-between">
                     <div>
                       <div className="font-semibold text-white">HDFCBANK</div>
@@ -1717,18 +1811,19 @@
               </div>
             </div>
 
-            {/* MODULE 6: WEEKLY POSITION (Full-width) */}
+            {/* F. WEEKLY POSITION (Full-width) */}
             <div className="space-y-6">
-              <div className="space-y-1 max-w-xl">
-                <h2 className="text-2xl sm:text-3xl font-semibold text-white tracking-tight">Weekly Position</h2>
+              <div className="space-y-2 max-w-2xl">
+                <span className="text-xs font-mono uppercase tracking-widest text-sky-400 font-semibold">Positional Framework</span>
+                <h2 className="text-3xl sm:text-4xl font-semibold text-white tracking-tight">Weekly Position</h2>
                 <p className="text-sm text-slate-400 font-normal leading-relaxed">
-                  Positional market research.
+                  Positional research module using a systematic Tuesday-anchor framework. Automatically determines non-discretionary trigger levels, target projections, and invalidation rules for swing opportunities.
                 </p>
               </div>
 
               <div className="bg-[#0C121E] border border-white/[0.08] rounded-3xl p-6 sm:p-8 shadow-2xl backdrop-blur-xl">
-                <div className="flex items-center justify-between pb-4 border-b border-white/[0.06] text-xs font-mono">
-                  <span className="text-slate-400 uppercase tracking-widest text-[10px]">TUESDAY CYCLE STRATEGY</span>
+                <div className="flex items-center justify-between pb-3 border-b border-white/[0.06] text-xs font-mono">
+                  <span className="text-slate-400 uppercase tracking-widest text-[10px]">TUESDAY CYCLE REVERSAL ANCHOR</span>
                   <span className="text-emerald-400 font-semibold">Cycle Active</span>
                 </div>
 
@@ -1753,29 +1848,36 @@
               </div>
             </div>
 
-            {/* MODULE 7: WATCHLIST (Split-screen) */}
+            {/* G. PERSONAL WATCHLIST (Split-screen) */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
-              <div className="lg:col-span-4 space-y-2">
-                <h2 className="text-2xl sm:text-3xl font-semibold text-white tracking-tight">Watchlist</h2>
+              <div className="lg:col-span-5 space-y-3">
+                <span className="text-xs font-mono uppercase tracking-widest text-sky-400 font-semibold">Isolated Private Tracking</span>
+                <h2 className="text-3xl sm:text-4xl font-semibold text-white tracking-tight">Personal Watchlist</h2>
                 <p className="text-sm text-slate-400 font-normal leading-relaxed">
-                  Personal stock and sector tracking.
+                  Every user manages their own private, independent stock watchlist dashboard. Create custom lists, monitor price movements, and benchmark stock versus sector and index relative strength against NIFTY 50 and NIFTY 500.
                 </p>
+                <div className="space-y-1.5 text-xs text-slate-300 font-mono pt-1">
+                  <div>✦ Individual stock tracking with live Dhan feeds</div>
+                  <div>✦ Stock versus sector performance comparison</div>
+                  <div>✦ Stock versus NIFTY 50 and NIFTY 500 relative strength</div>
+                  <div>✦ Fully private and isolated user watchlists</div>
+                </div>
               </div>
 
-              <div className="lg:col-span-8 bg-[#0C121E] border border-white/[0.08] rounded-3xl p-6 sm:p-8 shadow-2xl backdrop-blur-xl">
-                <div className="flex items-center justify-between pb-4 border-b border-white/[0.06] text-xs font-mono">
+              <div className="lg:col-span-7 bg-[#0C121E] border border-white/[0.08] rounded-3xl p-6 sm:p-8 shadow-2xl backdrop-blur-xl">
+                <div className="flex items-center justify-between pb-3 border-b border-white/[0.06] text-xs font-mono">
                   <div className="flex items-center space-x-2">
                     <span className="px-3 py-1 rounded-lg bg-white/[0.08] text-white font-semibold">Core Focus</span>
                     <span className="px-3 py-1 rounded-lg bg-white/[0.03] text-slate-400">High Momentum</span>
                   </div>
-                  <span className="text-slate-500 text-[11px]">Private Watchlist</span>
+                  <span className="text-emerald-400 text-[11px]">Private Watchlist</span>
                 </div>
 
                 <div className="mt-4 font-mono text-xs divide-y divide-white/[0.04]">
                   <div className="py-3 flex items-center justify-between">
                     <div>
                       <div className="font-semibold text-white">RELIANCE <span className="text-[10px] text-slate-500">NSE</span></div>
-                      <div className="text-[11px] text-slate-400">Energy</div>
+                      <div className="text-[11px] text-slate-400">Energy · Outperforming Sector (+1.2%)</div>
                     </div>
                     <div className="text-right">
                       <div className="text-white font-semibold">₹2,980.50</div>
@@ -1785,7 +1887,7 @@
                   <div className="py-3 flex items-center justify-between">
                     <div>
                       <div className="font-semibold text-white">TCS <span className="text-[10px] text-slate-500">NSE</span></div>
-                      <div className="text-[11px] text-slate-400">IT Services</div>
+                      <div className="text-[11px] text-slate-400">IT Services · vs NIFTY 50 (+0.4%)</div>
                     </div>
                     <div className="text-right">
                       <div className="text-white font-semibold">₹4,150.00</div>
@@ -1798,34 +1900,108 @@
 
           </section>
 
-          {/* 4. MINIMAL FOOTER */}
-          <footer className="border-t border-white/[0.06] bg-[#05070D] py-14 text-slate-400 text-xs font-sans">
-            <div className="max-w-6xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-6">
+          {/* 4. WHY ALPHAQUANT SECTION (THE FOUR PILLARS) */}
+          <section id="philosophy" className="py-24 border-t border-white/[0.06] bg-[#0A0E1A]">
+            <div className="max-w-6xl mx-auto px-6 space-y-16">
               
-              {/* Left: AlphaQuant Logo */}
-              <div className="flex items-center space-x-2.5">
-                <AlphaQuantSymbol size={22} variant="dark" />
-                <span className="font-semibold text-sm text-white tracking-tight">AlphaQuant</span>
+              <div className="text-center max-w-2xl mx-auto space-y-3">
+                <span className="text-xs font-mono uppercase tracking-widest text-emerald-400 font-semibold">
+                  Platform Philosophy
+                </span>
+                <h2 className="text-3xl sm:text-5xl font-semibold tracking-tight text-white">
+                  Why AlphaQuant
+                </h2>
+                <p className="text-sm text-slate-400">
+                  Four structural pillars engineered to eliminate emotion and instill quantitative discipline.
+                </p>
               </div>
 
-              {/* Center: Platform | Login | Contact */}
-              <div className="flex items-center space-x-6 text-slate-300">
-                <a href="#platform" className="hover:text-white transition-colors">Platform</a>
-                <span>·</span>
-                <button onClick={onOpenLogin} className="hover:text-white transition-colors">Login</button>
-                <span>·</span>
-                <button onClick={() => onOpenLegal('terms')} className="hover:text-white transition-colors">Contact</button>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                
+                {/* Pillar 1 */}
+                <div className="apple-glass-card apple-glass-card-hover p-6 rounded-3xl space-y-3">
+                  <div className="text-xs font-mono font-bold text-sky-400">01 / PILLAR</div>
+                  <h3 className="text-lg font-semibold text-white tracking-tight">RESEARCH FIRST</h3>
+                  <p className="text-xs text-slate-400 leading-relaxed font-normal">
+                    Every strategy begins with research, analysis and systematic evaluation.
+                  </p>
+                </div>
+
+                {/* Pillar 2 */}
+                <div className="apple-glass-card apple-glass-card-hover p-6 rounded-3xl space-y-3">
+                  <div className="text-xs font-mono font-bold text-emerald-400">02 / PILLAR</div>
+                  <h3 className="text-lg font-semibold text-white tracking-tight">DATA DRIVEN</h3>
+                  <p className="text-xs text-slate-400 leading-relaxed font-normal">
+                    Make informed decisions through structured market data and quantitative analysis.
+                  </p>
+                </div>
+
+                {/* Pillar 3 */}
+                <div className="apple-glass-card apple-glass-card-hover p-6 rounded-3xl space-y-3">
+                  <div className="text-xs font-mono font-bold text-cyan-400">03 / PILLAR</div>
+                  <h3 className="text-lg font-semibold text-white tracking-tight">SYSTEMATIC APPROACH</h3>
+                  <p className="text-xs text-slate-400 leading-relaxed font-normal">
+                    Reduce unnecessary discretion through predefined rules and structured processes.
+                  </p>
+                </div>
+
+                {/* Pillar 4 */}
+                <div className="apple-glass-card apple-glass-card-hover p-6 rounded-3xl space-y-3">
+                  <div className="text-xs font-mono font-bold text-violet-400">04 / PILLAR</div>
+                  <h3 className="text-lg font-semibold text-white tracking-tight">MARKET INTELLIGENCE</h3>
+                  <p className="text-xs text-slate-400 leading-relaxed font-normal">
+                    Bring multiple research tools and market perspectives together in one platform.
+                  </p>
+                </div>
+
+              </div>
+            </div>
+          </section>
+
+          {/* 5. MINIMAL SOPHISTICATED FOOTER */}
+          <footer className="border-t border-white/[0.06] bg-[#05070D] py-14 text-slate-400 text-xs font-sans">
+            <div className="max-w-6xl mx-auto px-6 space-y-8">
+              <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+                
+                {/* Logo & Tagline */}
+                <div className="flex flex-col items-center md:items-start space-y-1">
+                  <div className="flex items-center space-x-2.5">
+                    <AlphaQuantSymbol size={24} variant="dark" />
+                    <span className="font-semibold text-sm text-white tracking-tight">AlphaQuant</span>
+                  </div>
+                  <span className="text-[11px] font-mono text-slate-500">
+                    Precision in Research. Discipline in Execution.
+                  </span>
+                </div>
+
+                {/* Navigation: Home | Platform | Features | Login | Request Access | Contact */}
+                <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-slate-300">
+                  <button onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className="hover:text-white transition-colors">Home</button>
+                  <span>·</span>
+                  <a href="#platform" className="hover:text-white transition-colors">Platform</a>
+                  <span>·</span>
+                  <a href="#platform" className="hover:text-white transition-colors">Features</a>
+                  <span>·</span>
+                  <button onClick={onOpenLogin} className="hover:text-white transition-colors">Login</button>
+                  <span>·</span>
+                  <button onClick={onOpenRegister} className="hover:text-white transition-colors">Request Access</button>
+                  <span>·</span>
+                  <button onClick={() => onOpenLegal('terms')} className="hover:text-white transition-colors">Contact</button>
+                </div>
+
+                {/* Legal: Privacy Policy | Terms of Service | Risk Disclaimer */}
+                <div className="flex items-center space-x-4 text-slate-400 text-[11px]">
+                  <button onClick={() => onOpenLegal('privacy')} className="hover:text-white transition-colors">Privacy Policy</button>
+                  <span>·</span>
+                  <button onClick={() => onOpenLegal('terms')} className="hover:text-white transition-colors">Terms of Service</button>
+                  <span>·</span>
+                  <button onClick={() => onOpenLegal('terms')} className="hover:text-white transition-colors">Risk Disclaimer</button>
+                </div>
               </div>
 
-              {/* Right: Privacy Policy | Terms | Disclaimer */}
-              <div className="flex items-center space-x-6 text-slate-400 text-[11px]">
-                <button onClick={() => onOpenLegal('privacy')} className="hover:text-white transition-colors">Privacy Policy</button>
-                <span>·</span>
-                <button onClick={() => onOpenLegal('terms')} className="hover:text-white transition-colors">Terms</button>
-                <span>·</span>
-                <button onClick={() => onOpenLegal('terms')} className="hover:text-white transition-colors">Disclaimer</button>
+              <div className="border-t border-white/[0.04] pt-6 text-center text-[10px] text-slate-600 font-mono">
+                © {new Date().getFullYear()} AlphaQuant Terminal · Quantitative Indian Equity Intelligence
               </div>
-
             </div>
           </footer>
 
@@ -2116,16 +2292,28 @@
                     />
                   </div>
 
-                  <div>
-                    <label className="block text-slate-300 font-medium text-[11px] mb-1">Mobile Number</label>
-                    <input
-                      type="tel"
-                      required
-                      placeholder="+91 98765 43210"
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                      className="w-full px-3.5 py-2 bg-[#070A10] border border-[#1A2538] rounded-xl text-white placeholder-slate-500 font-mono text-xs focus:outline-none focus:border-sky-500 transition-colors"
-                    />
+                  <div className="grid grid-cols-2 gap-2.5">
+                    <div>
+                      <label className="block text-slate-300 font-medium text-[11px] mb-1">Mobile Number</label>
+                      <input
+                        type="tel"
+                        required
+                        placeholder="+91 98765 43210"
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value)}
+                        className="w-full px-3.5 py-2 bg-[#070A10] border border-[#1A2538] rounded-xl text-white placeholder-slate-500 font-mono text-xs focus:outline-none focus:border-sky-500 transition-colors"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-slate-300 font-medium text-[11px] mb-1">Organization / Title</label>
+                      <input
+                        type="text"
+                        placeholder="Optional"
+                        value={organization}
+                        onChange={(e) => setOrganization(e.target.value)}
+                        className="w-full px-3.5 py-2 bg-[#070A10] border border-[#1A2538] rounded-xl text-white placeholder-slate-500 text-xs focus:outline-none focus:border-sky-500 transition-colors"
+                      />
+                    </div>
                   </div>
 
                   <div>
