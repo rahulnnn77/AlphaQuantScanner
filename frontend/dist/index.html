@@ -938,27 +938,27 @@
               >
                 <svg viewBox="0 0 100 120" fill="none" className="w-36 h-44 overflow-visible">
                   <defs>
-                    <!-- Breakout Arrow Gradient -->
+                    {/*  Breakout Arrow Gradient  */}
                     <linearGradient id="upwardArrowGradApp" x1="50" y1="65" x2="50" y2="2" gradientUnits="userSpaceOnUse">
                       <stop offset="0%" stopColor="#059669" stopOpacity="0.3" />
                       <stop offset="35%" stopColor="#10B981" />
                       <stop offset="100%" stopColor="#34D399" />
                     </linearGradient>
 
-                    <!-- Mascot Peanut Gradient -->
+                    {/*  Mascot Peanut Gradient  */}
                     <linearGradient id="mascotPeanutGradApp" x1="50" y1="36" x2="50" y2="108" gradientUnits="userSpaceOnUse">
                       <stop offset="0%" stopColor="#10B981" />
                       <stop offset="50%" stopColor="#059669" />
                       <stop offset="100%" stopColor="#047857" />
                     </linearGradient>
 
-                    <!-- Glow Filter -->
+                    {/*  Glow Filter  */}
                     <filter id="upwardGlowApp" x="-30%" y="-30%" width="160%" height="160%">
                       <feDropShadow dx="0" dy="2" stdDeviation="6" floodColor="#34D399" floodOpacity="0.85" />
                     </filter>
                   </defs>
 
-                  <!-- Upward-Pointing Green Breakout Arrow -->
+                  {/*  Upward-Pointing Green Breakout Arrow  */}
                   <g filter="url(#upwardGlowApp)">
                     <line x1="50" y1="78" x2="50" y2="16" stroke="url(#upwardArrowGradApp)" strokeWidth="7" strokeLinecap="round" />
                     <path d="M 50 2 L 66 22 L 56 22 L 56 32 L 44 32 L 44 22 L 34 22 Z" 
@@ -967,21 +967,21 @@
                     <path d="M 50 36 L 28 48 L 42 48 Z" fill="#10B981" opacity="0.8" />
                   </g>
 
-                  <!-- The Bullish Peanut Mascot -->
+                  {/*  The Bullish Peanut Mascot  */}
                   <g>
-                    <!-- Breakout Horns -->
+                    {/*  Breakout Horns  */}
                     <path d="M 37 45 Q 26 34, 20 40 Q 28 48, 36 50 Z" fill="#34D399" stroke="#6EE7B7" strokeWidth="1.2" />
                     <path d="M 63 45 Q 74 34, 80 40 Q 72 48, 64 50 Z" fill="#34D399" stroke="#6EE7B7" strokeWidth="1.2" />
 
-                    <!-- Double-lobed Peanut Body -->
+                    {/*  Double-lobed Peanut Body  */}
                     <path d="M 36 54 C 36 42, 64 42, 64 54 C 64 62, 57 66, 57 71 C 57 76, 66 81, 66 92 C 66 106, 34 106, 34 92 C 34 81, 43 76, 43 71 C 43 66, 36 62, 36 54 Z" 
                           fill="url(#mascotPeanutGradApp)" stroke="#6EE7B7" strokeWidth="2.5" />
 
-                    <!-- Indentations -->
+                    {/*  Indentations  */}
                     <path d="M 46 60 Q 50 63, 54 60" stroke="#047857" strokeWidth="1.5" strokeLinecap="round" fill="none" opacity="0.6" />
                     <path d="M 44 86 Q 50 90, 56 86" stroke="#047857" strokeWidth="1.5" strokeLinecap="round" fill="none" opacity="0.6" />
 
-                    <!-- Confident Eyes Looking Upward Toward Arrowhead -->
+                    {/*  Confident Eyes Looking Upward Toward Arrowhead  */}
                     <ellipse cx="44" cy="54" rx="2.8" ry="3.8" fill="#FFFFFF" />
                     <ellipse cx="56" cy="54" rx="2.8" ry="3.8" fill="#FFFFFF" />
                     <circle cx="44" cy="52.5" r="1.7" fill="#064E3B" />
@@ -989,15 +989,15 @@
                     <circle cx="45" cy="51.5" r="0.6" fill="#FFFFFF" />
                     <circle cx="57" cy="51.5" r="0.6" fill="#FFFFFF" />
 
-                    <!-- Confident Determined Smile -->
+                    {/*  Confident Determined Smile  */}
                     <path d="M 44 62 Q 50 67, 56 62" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" fill="none" />
 
-                    <!-- Cheering Hands along the Arrow Shaft -->
+                    {/*  Cheering Hands along the Arrow Shaft  */}
                     <path d="M 34 76 Q 26 66, 28 62 Q 32 66, 36 71 Z" fill="#34D399" />
                     <path d="M 66 76 Q 74 66, 72 62 Q 68 66, 64 71 Z" fill="#34D399" />
                   </g>
 
-                  <!-- Sparkles & Trail -->
+                  {/*  Sparkles & Trail  */}
                   <g className={`transition-opacity duration-500 ${stage >= 3 ? 'opacity-100' : 'opacity-0'}`}>
                     <circle cx="50" cy="108" r="2" fill="#34D399" opacity="0.8" />
                     <circle cx="46" cy="114" r="1.5" fill="#10B981" opacity="0.6" />
@@ -1009,7 +1009,7 @@
               </div>
             </div>
 
-            <!-- Stage 4: Welcome Greeting and Action Tagline -->
+            {/*  Stage 4: Welcome Greeting and Action Tagline  */}
             <div 
               className={`transition-all duration-600 ease-out space-y-1.5 ${
                 stage >= 4 
