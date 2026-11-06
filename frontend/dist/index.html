@@ -969,23 +969,22 @@
      * 7. Holds briefly, then transitions smoothly into the terminal
      */
     function BrandEntrySplash({ user, onComplete }) {
-      const [stage, setStage] = useState(1); // 1: Symbol Fade, 2: Technical Draw, 3: Wordmark Reveal, 4: Light Sweep, 5: Tagline, 6: Fade out
+      const [stage, setStage] = useState(1); // 1: Pennant Draw, 2: Breakout Surge, 3: Welcome Greeting, 4: Market Overview, 5: Fade to terminal
+      const displayName = user?.full_name || user?.username || 'Trader';
 
       useEffect(() => {
-        // Step 2: Technical vector lines draw at 200ms
-        const t1 = setTimeout(() => setStage(2), 200);
-        // Step 3: Typography wordmark reveals alongside symbol at 900ms
-        const t2 = setTimeout(() => setStage(3), 900);
-        // Step 4: Specular light sweep across logo lockup at 1500ms
-        const t3 = setTimeout(() => setStage(4), 1500);
-        // Step 5: Official Tagline reveals at 2000ms
-        const t4 = setTimeout(() => setStage(5), 2000);
-        // Step 6: Smooth crossfade to terminal at 3400ms
-        const t5 = setTimeout(() => setStage(6), 3400);
-        // Callback unmount at 3900ms
-        const t6 = setTimeout(() => {
+        // Step 2: Breakout surge triggers at 1200ms
+        const t1 = setTimeout(() => setStage(2), 1200);
+        // Step 3: Welcome greeting appears at 1800ms
+        const t2 = setTimeout(() => setStage(3), 1800);
+        // Step 4: Market overview (NIFTY & Advances/Declines) appears at 2500ms
+        const t3 = setTimeout(() => setStage(4), 2500);
+        // Step 5: Fade out overlay into terminal at 4500ms
+        const t4 = setTimeout(() => setStage(5), 4500);
+        // Step 6: Callback unmount at 5000ms
+        const t5 = setTimeout(() => {
           if (onComplete) onComplete();
-        }, 3900);
+        }, 5000);
 
         return () => {
           clearTimeout(t1);
@@ -993,84 +992,121 @@
           clearTimeout(t3);
           clearTimeout(t4);
           clearTimeout(t5);
-          clearTimeout(t6);
         };
       }, [onComplete]);
 
       return (
         <div 
           className={`fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-[#05070D] pointer-events-none select-none transition-all duration-700 ease-out ${
-            stage === 6 ? 'opacity-0 scale-105' : 'opacity-100 scale-100'
+            stage === 5 ? 'opacity-0 scale-105' : 'opacity-100 scale-100'
           }`}
           style={{ willChange: 'opacity, transform' }}
         >
           {/* Subtle Ambient Radial Glow Flare */}
           <div 
             className={`absolute rounded-full blur-[140px] pointer-events-none transition-all duration-1000 ${
-              stage >= 4 
-                ? 'w-[560px] h-[560px] bg-sky-500/[0.18]' 
-                : 'w-[480px] h-[480px] bg-blue-600/[0.12]'
+              stage >= 2 
+                ? 'w-[540px] h-[540px] bg-emerald-500/20' 
+                : 'w-[480px] h-[480px] bg-blue-600/10'
             }`}
           ></div>
 
-          <div className="relative z-10 flex flex-col items-center text-center px-6">
+          <div className="relative z-10 flex flex-col items-center text-center px-4 w-full max-w-lg">
             
-            {/* Logo Lockup Card with Specular Light Sweep */}
+            {/* Bullish Pennant Pattern Card */}
             <div 
-              className={`relative p-7 sm:p-9 rounded-3xl bg-[#090E1A]/85 border shadow-[0_25px_70px_rgba(0,0,0,0.85)] backdrop-blur-2xl flex items-center space-x-5 overflow-hidden transition-all duration-700 ${
-                stage >= 4 
-                  ? 'border-sky-400/30 shadow-[0_25px_80px_rgba(56,189,248,0.22)]' 
-                  : 'border-white/[0.08]'
+              className={`relative p-7 rounded-3xl bg-[#0B101D]/90 border shadow-[0_20px_60px_rgba(0,0,0,0.8)] backdrop-blur-xl mb-4 transition-all duration-700 flex items-center justify-center shrink-0 ${
+                stage >= 2 
+                  ? 'border-emerald-500/40 shadow-[0_20px_60px_rgba(16,185,129,0.35)] scale-105' 
+                  : 'border-white/[0.08] scale-100'
               }`}
             >
-              {/* Specular Light Sweep Bar */}
-              {stage >= 4 && (
-                <div className="aq-light-sweep-bar run-light-sweep"></div>
-              )}
-
-              {/* Actual AlphaQuant Symbol */}
-              <div 
-                className={`relative shrink-0 transition-all duration-700 ease-out ${
-                  stage >= 1 ? 'opacity-100 scale-100' : 'opacity-0 scale-90'
-                }`}
-              >
-                <AlphaQuantSymbol size={80} animated={stage >= 2} variant="dark" />
-              </div>
-
-              {/* AlphaQuant Wordmark */}
-              <div 
-                className={`text-left leading-none transition-all duration-700 ease-out select-none ${
-                  stage >= 3 
-                    ? 'opacity-100 translate-x-0' 
-                    : 'opacity-0 translate-x-4 pointer-events-none'
-                }`}
-              >
-                <div className="text-3xl sm:text-4xl font-semibold tracking-tight text-white flex items-baseline">
-                  <span>Alpha</span>
-                  <span className="font-normal text-slate-400">Quant</span>
-                </div>
-                <div className="text-[10px] sm:text-xs font-mono tracking-widest text-sky-400 uppercase font-semibold mt-1.5 flex items-center space-x-1.5">
-                  <span>Terminal</span>
-                  <span className="text-slate-600">·</span>
-                  <span className="text-slate-400">Quantitative Research</span>
-                </div>
-              </div>
-
+              <AlphaQuantSymbol size={90} animated={true} variant="dark" />
             </div>
 
-            {/* Official Tagline: Precision in Research. Discipline in Execution. */}
+            {/* Welcome Greeting */}
             <div 
-              className={`mt-6 transition-all duration-700 ease-out ${
-                stage >= 5 
+              className={`transition-all duration-600 ease-out space-y-1 ${
+                stage >= 3 
                   ? 'opacity-100 translate-y-0' 
                   : 'opacity-0 translate-y-3 pointer-events-none'
               }`}
             >
-              <div className="inline-flex items-center space-x-2.5 px-4 py-1.5 rounded-full bg-white/[0.04] border border-white/[0.08] backdrop-blur-md">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                <span className="text-xs sm:text-sm font-mono tracking-widest text-slate-200 uppercase font-medium">
-                  Precision in Research. Discipline in Execution.
+              <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-white flex items-center justify-center space-x-1.5">
+                <span>Welcome,</span>
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-300 to-sky-200 font-extrabold">
+                  {displayName}
                 </span>
+              </h2>
+              <p className="text-xs font-mono text-emerald-400 tracking-wide font-medium">
+                You're in. Let's get to work.
+              </p>
+            </div>
+
+            {/* NSE Market Overview Card: NIFTY 50 + Advances & Declines */}
+            <div 
+              className={`transition-all duration-700 ease-out mt-4 w-full ${
+                stage >= 4 
+                  ? 'opacity-100 translate-y-0' 
+                  : 'opacity-0 translate-y-4 pointer-events-none'
+              }`}
+            >
+              <div className="p-4 rounded-2xl bg-[#090F1B]/95 border border-white/[0.08] shadow-[0_12px_32px_rgba(0,0,0,0.6)] backdrop-blur-xl space-y-3">
+                
+                {/* Header: Market Title & NIFTY 50 Status */}
+                <div className="flex items-center justify-between text-xs border-b border-white/[0.06] pb-2">
+                  <div className="flex items-center space-x-2">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span className="font-mono text-xs uppercase tracking-wider text-slate-200 font-semibold">
+                      NSE Market Overview
+                    </span>
+                  </div>
+                  <span className="text-xs font-mono text-emerald-400 font-semibold bg-emerald-500/10 px-2.5 py-0.5 rounded border border-emerald-500/20">
+                    NIFTY: 24,850.30 (+0.82%)
+                  </span>
+                </div>
+
+                {/* Advances vs Declines Metrics */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="p-3 rounded-xl bg-emerald-500/[0.08] border border-emerald-500/25 flex flex-col items-center justify-center">
+                    <div className="flex items-center space-x-1.5 text-emerald-400 text-xs font-mono font-medium">
+                      <svg className="w-3.5 h-3.5 stroke-current" viewBox="0 0 24 24" fill="none" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M12 19V5M5 12l7-7 7 7"/>
+                      </svg>
+                      <span>Advances</span>
+                    </div>
+                    <div className="text-2xl font-mono font-bold text-white mt-0.5">
+                      1,428
+                    </div>
+                    <span className="text-[10px] font-mono text-emerald-400/80">68.2%</span>
+                  </div>
+
+                  <div className="p-3 rounded-xl bg-rose-500/[0.08] border border-rose-500/25 flex flex-col items-center justify-center">
+                    <div className="flex items-center space-x-1.5 text-rose-400 text-xs font-mono font-medium">
+                      <svg className="w-3.5 h-3.5 stroke-current" viewBox="0 0 24 24" fill="none" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M12 5v14M19 12l-7 7-7-7"/>
+                      </svg>
+                      <span>Declines</span>
+                    </div>
+                    <div className="text-2xl font-mono font-bold text-white mt-0.5">
+                      664
+                    </div>
+                    <span className="text-[10px] font-mono text-rose-400/80">31.8%</span>
+                  </div>
+                </div>
+
+                {/* Proportional Market Flow Progress Bar */}
+                <div className="space-y-1 pt-1">
+                  <div className="h-1.5 w-full bg-[#131B2A] rounded-full overflow-hidden flex">
+                    <div className="h-full bg-gradient-to-r from-emerald-500 to-emerald-400" style={{ width: '68%' }}></div>
+                    <div className="h-full bg-gradient-to-r from-rose-500 to-rose-400" style={{ width: '32%' }}></div>
+                  </div>
+                  <div className="flex justify-between text-[10px] font-mono text-slate-400">
+                    <span className="text-emerald-400 font-medium">68% Bullish Flow</span>
+                    <span className="text-rose-400 font-medium">32% Bearish Flow</span>
+                  </div>
+                </div>
+
               </div>
             </div>
 
@@ -2978,7 +3014,7 @@
       const handleLoginSuccess = (userData, token) => {
         localStorage.setItem('alphaquant_token', token);
         localStorage.setItem('alphaquant_user', JSON.stringify(userData));
-        setShowIntroSplash(false);
+        setShowIntroSplash(true);
         setUser(userData);
         checkBrokerStatus();
         if (!localStorage.getItem("alphaquant_tour_seen_" + userData.username)) {
@@ -3036,7 +3072,16 @@
       };
 
       return (
-        <div className="flex flex-col h-screen bg-[#0A0E17] text-slate-100 font-sans apple-app-shell">
+        <>
+          {showIntroSplash && (
+            <BrandEntrySplash 
+              user={user}
+              onComplete={() => {
+                setShowIntroSplash(false);
+              }} 
+            />
+          )}
+          <div className="flex flex-col h-screen bg-[#0A0E17] text-slate-100 font-sans apple-app-shell">
           
           {/* Top Running Market Ticker Bar (Nifty 50 Constituents) */}
           <div className="h-8 bg-[#070A10] border-b border-[#161F30] flex items-center px-3 overflow-hidden select-none text-[11px] font-mono shrink-0 ticker-bar z-30">
@@ -3384,6 +3429,7 @@
             />
           )}
         </div>
+        </>
       );
     }
 
