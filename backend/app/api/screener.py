@@ -503,3 +503,49 @@ def delete_rule(rule_id: int, admin: User = Depends(require_admin), db: Session 
     db.delete(rule)
     db.commit()
     return {"status": "deleted", "rule_id": rule_id}
+
+
+# ----------------- FUNDAMENTAL SCREENER ENDPOINT ----------------- #
+
+@router.get("/fundamentals")
+def get_fundamentals_data(
+    universe: str = Query("all", description="Universe filter: all, large, mid, small"),
+    current_user: Optional[User] = Depends(get_current_user)
+):
+    """
+    Returns cached institutional-grade fundamental metrics for Indian equities:
+    - Valuation: P/E, Forward P/E, P/B, PEG, EV/EBITDA
+    - Profitability: ROE %, ROA %, Operating Margin %, Profit Margin %
+    - Balance Sheet: Debt-to-Equity, Current Ratio
+    - Size: Market Cap (Cr), Cap Category (Large, Mid, Small)
+    """
+    import os, json
+    base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    cache_file = os.path.join(base_dir, "data", "fundamentals_cache.json")
+    
+    if not os.path.exists(cache_file):
+        return {
+            "status": "initialising",
+            "last_updated": "Just now",
+            "total_stocks": 0,
+            "stocks": []
+        }
+    
+    try:
+        with open(cache_file, "r") as f:
+            data = json.load(f)
+            
+        if universe and universe.lower() != "all":
+            category_map = {"large": "Large Cap", "mid": "Mid Cap", "small": "Small Cap"}
+            target_cat = category_map.get(universe.lower())
+            if target_cat:
+                filtered_stocks = [s for s in data.get("stocks", []) if s.get("cap_category") == target_cat]
+                return {
+                    "status": "success",
+                    "last_updated": data.get("last_updated"),
+                    "total_stocks": len(filtered_stocks),
+                    "stocks": filtered_stocks
+                }
+        return data
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to read fundamentals cache: {str(e)}")
