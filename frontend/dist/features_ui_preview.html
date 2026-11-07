@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AlphaQuant - Unified Screener, Charting &amp; Quarterly Fundamentals</title>
+  <title>AlphaQuant - Institutional Charting, Drawing &amp; Fundamental Terminal</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Pinned Lightweight Charts v4.2.0 for 100% consistent API compatibility -->
-  <script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
+  <!-- KLineCharts v9.8.9 Financial Charting & Native Vector Drawing Engine -->
+  <script src="https://cdn.jsdelivr.net/npm/klinecharts@9.8.9/dist/umd/klinecharts.min.js"></script>
   <style>
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Inter", "SF Pro Text", "Segoe UI", Roboto, sans-serif;
@@ -52,8 +52,8 @@
     .row-active { background-color: var(--bg-active) !important; font-weight: 600; border-left: 3px solid #2563EB; }
 
     .draw-btn {
-      width: 28px;
-      height: 28px;
+      width: 30px;
+      height: 30px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -96,9 +96,8 @@
       <div class="px-3 py-1.5 border-b border-std flex items-center justify-between text-[11px] text-secondary font-medium shrink-0">
         <span class="w-28">Symbol</span>
         <span class="w-16 text-right">Last</span>
-        <span class="w-16 text-right cursor-pointer flex items-center justify-end space-x-0.5" onclick="toggleSort()">
+        <span class="w-16 text-right cursor-pointer flex items-center justify-end space-x-0.5">
           <span id="sortLabel">ROE%</span>
-          <span>v</span>
         </span>
       </div>
 
@@ -159,12 +158,16 @@
           
           <span class="mx-1.5 text-tertiary">|</span>
 
-          <button id="styleBtn" onclick="toggleChartStyle()" class="px-2 py-0.5 rounded border border-std font-medium text-primary hover:bg-slate-200/40" title="Switch between Candlesticks and HLC Bars (Green/Red)">
+          <button id="styleBtn" onclick="toggleChartStyle()" class="px-2 py-0.5 rounded border border-std font-medium text-primary hover:bg-slate-200/40" title="Switch between Candlesticks and OHLC Bars (Green/Red)">
             Candles (Green/Red)
           </button>
 
           <button id="logBtn" onclick="toggleLogScale()" class="px-2 py-0.5 rounded bg-blue-600 text-white font-semibold">
             Log
+          </button>
+
+          <button id="magnetBtn" onclick="toggleMagnetMode()" class="px-2 py-0.5 rounded border border-std text-secondary hover:text-primary font-medium" title="Snap drawings to exact candle High/Low/Open/Close">
+            Magnet: OFF
           </button>
 
           <span class="mx-1.5 text-tertiary">|</span>
@@ -186,92 +189,80 @@
         </div>
       </div>
 
-      <!-- 3. MAIN INTERACTIVE CHART AREA (With Left Drawing Tools Strip & Interactive SVG Drawing Layer) -->
+      <!-- 3. MAIN INTERACTIVE CHART AREA (Native KLineCharts Engine + Native Draggable Vector Overlays) -->
       <div class="flex-1 flex relative overflow-hidden">
         
-        <!-- Left Vertical Drawing Toolbar (Feature 3: Trendline, Horizontal Line, Price Measurement, Path, Rectangle, Text, Price Label) -->
-        <div class="w-10 border-r border-std sidebar-surface flex flex-col items-center py-2 space-y-1.5 text-secondary shrink-0 z-30">
-          <!-- Cursor / Crosshair -->
-          <button id="tool_cursor" onclick="setDrawingTool('cursor')" title="Cursor / Crosshair (Esc)" class="draw-btn draw-btn-active">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M12 3v18M3 12h18"/></svg>
+        <!-- Left Vertical Drawing Toolbar (Native KLineCharts Overlays: Editable, Draggable, Resizable) -->
+        <div class="w-11 border-r border-std sidebar-surface flex flex-col items-center py-2 space-y-1.5 text-secondary shrink-0 z-30">
+          <!-- Cursor / Pan & Select Mode -->
+          <button id="tool_cursor" onclick="activateDrawingTool('cursor')" title="Cursor / Pan &amp; Edit Drawings" class="draw-btn draw-btn-active">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M4 4l7.07 17 2.51-7.39L21 11.07z"/></svg>
           </button>
 
-          <!-- Trendline -->
-          <button id="tool_trendline" onclick="setDrawingTool('trendline')" title="Trendline (Click or Drag from point 1 to point 2)" class="draw-btn">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><line x1="4" y1="20" x2="20" y2="4"/><circle cx="4" cy="20" r="2" fill="currentColor"/><circle cx="20" cy="4" r="2" fill="currentColor"/></svg>
+          <!-- Trendline (Segment) -->
+          <button id="tool_segment" onclick="activateDrawingTool('segment')" title="Trendline (Click Point 1, move, Click Point 2. Drag handles anytime to edit)" class="draw-btn">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><line x1="4" y1="20" x2="20" y2="4"/><circle cx="4" cy="20" r="2.2" fill="currentColor"/><circle cx="20" cy="4" r="2.2" fill="currentColor"/></svg>
           </button>
 
-          <!-- Horizontal Support/Resistance Line -->
-          <button id="tool_hline" onclick="setDrawingTool('hline')" title="Horizontal Price Line (Click anywhere on chart to place horizontal level)" class="draw-btn">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><line x1="3" y1="12" x2="21" y2="12"/><circle cx="12" cy="12" r="2" fill="currentColor"/></svg>
+          <!-- Horizontal Ray / Support-Resistance Line -->
+          <button id="tool_horizontalStraightLine" onclick="activateDrawingTool('horizontalStraightLine')" title="Horizontal Support / Resistance Line" class="draw-btn">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><line x1="3" y1="12" x2="21" y2="12"/><circle cx="12" cy="12" r="2.2" fill="currentColor"/></svg>
           </button>
 
-          <!-- Price Movement Measurement -->
-          <button id="tool_measure" onclick="setDrawingTool('measure')" title="Price &amp; Bar Range Measurement (Click or Drag start to end)" class="draw-btn">
+          <!-- Price Movement Measurement Tool -->
+          <button id="tool_priceMeasure" onclick="activateDrawingTool('priceMeasure')" title="Price &amp; Percentage Range Measurement (Click start bar, then end bar)" class="draw-btn">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M3 5h18v14H3z"/><path d="M7 5v4M12 5v6M17 5v4"/></svg>
           </button>
 
-          <!-- Multi-point Path -->
-          <button id="tool_path" onclick="setDrawingTool('path')" title="Path Tool (Click points to connect, Double-click or Esc to finish)" class="draw-btn">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><polyline points="3 17 9 11 13 15 21 7"/><circle cx="3" cy="17" r="1.5"/><circle cx="9" cy="11" r="1.5"/><circle cx="13" cy="15" r="1.5"/><circle cx="21" cy="7" r="1.5"/></svg>
+          <!-- Multi-point Path (4-Leg Wave / Swing Path) -->
+          <button id="tool_swingPath" onclick="activateDrawingTool('swingPath')" title="Swing Path (Click 4 swing points sequentially)" class="draw-btn">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><polyline points="3 17 9 11 14 15 21 7"/><circle cx="3" cy="17" r="1.6"/><circle cx="9" cy="11" r="1.6"/><circle cx="14" cy="15" r="1.6"/><circle cx="21" cy="7" r="1.6"/></svg>
           </button>
 
-          <!-- Rectangle Zone -->
-          <button id="tool_rect" onclick="setDrawingTool('rect')" title="Rectangle Zone (Click or Drag corner 1 to corner 2)" class="draw-btn">
+          <!-- Rectangle Consolidation Box -->
+          <button id="tool_rectBox" onclick="activateDrawingTool('rectBox')" title="Rectangle Zone (Click corner 1, then corner 2)" class="draw-btn">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="1"/></svg>
           </button>
 
-          <!-- Text Note -->
-          <button id="tool_text" onclick="setDrawingTool('text')" title="Text Annotation (Click on chart to type text)" class="draw-btn font-serif font-bold text-sm">
+          <!-- Text Callout Annotation -->
+          <button id="tool_textNote" onclick="activateDrawingTool('textNote')" title="Text Callout Flag (Click on chart to place annotation)" class="draw-btn font-serif font-bold text-sm">
             T
           </button>
 
-          <!-- Price Label -->
-          <button id="tool_pricelabel" onclick="setDrawingTool('pricelabel')" title="Price Label Callout (Click on chart to stamp exact price)" class="draw-btn">
+          <!-- Price Label Callout -->
+          <button id="tool_priceLine" onclick="activateDrawingTool('priceLine')" title="Price Label Line (Click on chart to stamp live price tag)" class="draw-btn">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
           </button>
 
           <div class="w-5 border-t border-std my-1"></div>
 
-          <!-- Undo Last Drawing -->
-          <button onclick="undoLastDrawing()" title="Undo Last Drawing" class="draw-btn text-secondary">
+          <!-- Delete Selected / Last Overlay -->
+          <button onclick="removeSelectedOrLastOverlay()" title="Delete Selected / Last Drawing (Backspace)" class="draw-btn text-secondary">
             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg>
           </button>
 
           <!-- Clear All Drawings -->
-          <button onclick="clearAllDrawings()" title="Clear All Drawings" class="draw-btn text-rose-500">
+          <button onclick="clearAllOverlays()" title="Clear All Drawings" class="draw-btn text-rose-500">
             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
           </button>
         </div>
 
-        <!-- Canvas Container + Floating OHLCV Legend + Interactive Drawing Overlay -->
+        <!-- Canvas Container + Floating OHLCV Legend -->
         <div id="chartWrapper" class="flex-1 relative h-full w-full overflow-hidden">
-          <!-- Active Drawing Mode Banner -->
-          <div id="drawingStatusBanner" class="hidden absolute top-2.5 right-20 z-30 px-3 py-1 rounded-full bg-blue-600 text-white text-[11px] font-semibold shadow-md items-center space-x-2">
-            <span id="drawingStatusText">Drawing Mode</span>
-            <button onclick="setDrawingTool('cursor')" class="underline ml-2 text-[10px] opacity-90 hover:opacity-100">Done (Esc)</button>
-          </div>
-
           <!-- Floating Top-Left Chart Legend -->
-          <div class="absolute top-2.5 left-3 z-20 pointer-events-none space-y-0.5">
-            <div class="flex items-center space-x-2 text-xs">
+          <div class="absolute top-2.5 left-3 z-20 pointer-events-none space-y-0.5 bg-white/80 dark:bg-slate-950/80 backdrop-blur-xs px-2.5 py-1 rounded border border-std">
+            <div class="flex flex-wrap items-center gap-x-2.5 text-xs">
               <span id="legendTitle" class="font-bold text-primary">Reliance Industries Limited</span>
-              <span id="legendTf" class="text-secondary">1W - NSE</span>
-              <span id="legendOhlc" class="font-mono text-[11px] text-primary tabular-nums">Loading chart bars...</span>
-              <span id="legendVol" class="font-mono text-[11px] text-emerald-600 tabular-nums"></span>
+              <span id="legendTf" class="text-secondary font-medium">1W - NSE</span>
+              <span id="legendOhlc" class="font-mono text-[11px] text-primary tabular-nums">Loading chart...</span>
+              <span id="legendVol" class="font-mono text-[11px] text-emerald-600 font-semibold tabular-nums"></span>
             </div>
             <div id="legendEmaContainer" class="text-[11px] font-mono text-secondary tabular-nums flex flex-wrap items-center gap-x-3">
             </div>
           </div>
 
-          <!-- Lightweight Charts Container -->
-          <div id="tvChartCanvas" class="w-full h-full"></div>
-
-          <!-- SVG Vector Drawing Overlay (Synced with Price & Time Coordinates) -->
-          <svg
-            id="drawingSvgOverlay"
-            class="absolute inset-0 w-full h-full z-20 pointer-events-none"
-          ></svg>
+          <!-- Native KLineCharts Container -->
+          <div id="klineChartCanvas" class="w-full h-full"></div>
         </div>
       </div>
 
@@ -284,7 +275,7 @@
                 <th class="py-1.5 px-3 w-28 font-semibold border-r border-std">
                   <div class="flex items-center justify-between">
                     <span>Stats</span>
-                    <button onclick="toggleBottomFundamentals()" title="Hide Quarterly Table" class="text-[10px] text-tertiary hover:text-primary px-1">Hide</button>
+                    <button onclick="toggleBottomFundamentals()" title="Hide Quarterly Table" class="text-[10px] text-blue-600 hover:underline px-1">Hide</button>
                   </div>
                 </th>
               </tr>
@@ -449,192 +440,524 @@
     let currentSymbol = 'RELIANCE';
     let currentTimeframe = '1wk';
     let isLogScale = true;
-    let useBarStyle = false; // Default to Green & Red Candlesticks per Feature 5
+    let useBarStyle = false; // Default to Green & Red Candlesticks
     let isDark = false;
+    let isMagnet = false;
     let showBottomFundamentals = true;
 
-    // Feature 5: Strictly Green (#16A34A) and Red (#DC2626) only
+    // Strictly Green (#16A34A) and Red (#DC2626) only
     const UP_COLOR = '#16A34A';
     const DOWN_COLOR = '#DC2626';
 
-    // Feature 4: User-customizable EMAs
+    // User-customizable EMAs
     let userEmas = [
-      { id: 'ema_20', period: 20, color: '#0284C7', enabled: true, series: null },
-      { id: 'ema_50', period: 50, color: '#4F46E5', enabled: true, series: null },
-      { id: 'ema_200', period: 200, color: '#F59E0B', enabled: false, series: null },
+      { id: 'ema_20', period: 20, color: '#0284C7', enabled: true },
+      { id: 'ema_50', period: 50, color: '#4F46E5', enabled: true },
+      { id: 'ema_200', period: 200, color: '#F59E0B', enabled: false },
     ];
 
-    let chart = null;
-    let mainSeries = null;
-    let volumeSeries = null;
+    let kChart = null;
     let cachedCandles = [];
-
-    // Feature 3: Interactive Drawing Tool Engine State
-    let activeTool = 'cursor'; // 'cursor' | 'trendline' | 'measure' | 'path' | 'rect' | 'text' | 'pricelabel'
-    let drawings = [];         // Completed vector shapes anchored by { time, price }
-    let draftDrawing = null;   // Currently in-progress shape
-    let mousePos = null;       // Current { time, price, x, y }
+    let createdOverlayIds = [];
+    let selectedOverlayId = null;
 
     // =========================================================================
-    // CHART INITIALIZATION
+    // REGISTER CUSTOM NATIVE OVERLAYS IN KLINECHARTS
+    // (Rectangle Box, Price & Bar Range Measure, Multi-Point Swing Path, Text Flag)
     // =========================================================================
-    function initChart() {
-      const container = document.getElementById('tvChartCanvas');
-      container.innerHTML = '';
-
-      const w = container.clientWidth || 800;
-      const h = container.clientHeight || 420;
-
-      chart = LightweightCharts.createChart(container, {
-        width: w,
-        height: h,
-        layout: {
-          background: { color: isDark ? '#070A10' : '#FFFFFF' },
-          textColor: isDark ? '#94A3B8' : '#475569',
-          fontSize: 11,
-        },
-        grid: {
-          vertLines: { color: isDark ? 'rgba(255,255,255,0.03)' : '#F8FAFC' },
-          horzLines: { color: isDark ? 'rgba(255,255,255,0.03)' : '#F1F5F9' },
-        },
-        crosshair: {
-          mode: LightweightCharts.CrosshairMode.Normal,
-        },
-        rightPriceScale: {
-          borderColor: isDark ? '#1E293B' : '#E2E8F0',
-          mode: isLogScale ? LightweightCharts.PriceScaleMode.Logarithmic : LightweightCharts.PriceScaleMode.Normal,
-        },
-        timeScale: {
-          borderColor: isDark ? '#1E293B' : '#E2E8F0',
-          timeVisible: true,
-        },
-      });
-
-      // Volume Series at bottom (Green & Red matching candles)
-      volumeSeries = chart.addHistogramSeries({
-        priceFormat: { type: 'volume' },
-        priceScaleId: '',
-      });
-      volumeSeries.priceScale().applyOptions({
-        scaleMargins: { top: 0.82, bottom: 0 },
-      });
-
-      // Create Main Candle/Bar Series (Green & Red)
-      createMainSeries();
-
-      // Create User EMA Line Series
-      rebuildUserEmaSeries();
-
-      // Crosshair move handler for live OHLCV legend
-      chart.subscribeCrosshairMove(param => {
-        if (!param || !param.time || !param.seriesData || !mainSeries) return;
-        const data = param.seriesData.get(mainSeries);
-        if (data && data.open !== undefined) {
-          const chg = (data.close - data.open).toFixed(2);
-          const chgPct = (((data.close - data.open) / data.open) * 100).toFixed(2);
-          const sign = chg >= 0 ? '+' : '';
-          document.getElementById('legendOhlc').innerText =
-            `O ${data.open.toFixed(2)}  H ${data.high.toFixed(2)}  L ${data.low.toFixed(2)}  C ${data.close.toFixed(2)}  ${sign}${chg} (${sign}${chgPct}%)`;
+    function registerCustomChartOverlays() {
+      // 1. Rectangle Consolidation Zone (Draggable corners & body)
+      klinecharts.registerOverlay({
+        name: 'rectBox',
+        totalStep: 3,
+        needDefaultPointFigure: true,
+        needDefaultXAxisFigure: true,
+        needDefaultYAxisFigure: true,
+        createPointFigures: ({ coordinates }) => {
+          if (coordinates.length < 2) return [];
+          const x = Math.min(coordinates[0].x, coordinates[1].x);
+          const y = Math.min(coordinates[0].y, coordinates[1].y);
+          const width = Math.abs(coordinates[1].x - coordinates[0].x);
+          const height = Math.abs(coordinates[1].y - coordinates[0].y);
+          return [
+            {
+              type: 'rect',
+              attrs: { x, y, width, height },
+              styles: {
+                style: 'stroke_fill',
+                color: 'rgba(37, 99, 235, 0.14)',
+                borderColor: '#2563EB',
+                borderSize: 1.5
+              }
+            }
+          ];
         }
       });
 
-      // Re-render vector drawings whenever user pans or zooms the chart
-      chart.timeScale().subscribeVisibleLogicalRangeChange(() => {
-        renderDrawingsOverlay();
+      // 2. Price & Bar Movement Measurement Tool (Shows exact +₹, +%, and Bar Count)
+      klinecharts.registerOverlay({
+        name: 'priceMeasure',
+        totalStep: 3,
+        needDefaultPointFigure: true,
+        needDefaultXAxisFigure: true,
+        needDefaultYAxisFigure: true,
+        createPointFigures: ({ coordinates, overlay }) => {
+          if (coordinates.length < 2) return [];
+          const p1 = overlay.points[0];
+          const p2 = overlay.points[1];
+          const x = Math.min(coordinates[0].x, coordinates[1].x);
+          const y = Math.min(coordinates[0].y, coordinates[1].y);
+          const width = Math.abs(coordinates[1].x - coordinates[0].x);
+          const height = Math.abs(coordinates[1].y - coordinates[0].y);
+
+          const v1 = p1 && p1.value ? p1.value : 0;
+          const v2 = p2 && p2.value ? p2.value : 0;
+          const diff = v2 - v1;
+          const pct = v1 !== 0 ? ((diff / v1) * 100).toFixed(2) : '0.00';
+          const bars = (p1 && p2 && p1.dataIndex !== undefined && p2.dataIndex !== undefined)
+            ? Math.abs(p2.dataIndex - p1.dataIndex)
+            : 0;
+
+          const isGain = diff >= 0;
+          const fillCol = isGain ? 'rgba(22, 163, 74, 0.16)' : 'rgba(220, 38, 38, 0.16)';
+          const strokeCol = isGain ? '#16A34A' : '#DC2626';
+          const sign = isGain ? '+' : '';
+          const label = `${sign}₹${diff.toFixed(2)} (${sign}${pct}%) | ${bars} Bars`;
+
+          return [
+            {
+              type: 'rect',
+              attrs: { x, y, width, height },
+              styles: {
+                style: 'stroke_fill',
+                color: fillCol,
+                borderColor: strokeCol,
+                borderSize: 1.5,
+                borderStyle: 'dashed',
+                borderDashedValue: [4, 3]
+              }
+            },
+            {
+              type: 'line',
+              attrs: { coordinates: [coordinates[0], coordinates[1]] },
+              styles: { color: strokeCol, size: 1.5 }
+            },
+            {
+              type: 'text',
+              ignoreEvent: true,
+              attrs: {
+                x: Math.max(10, x + width / 2 - 75),
+                y: y > 32 ? y - 26 : y + height + 6,
+                text: label
+              },
+              styles: {
+                style: 'fill',
+                color: '#FFFFFF',
+                backgroundColor: strokeCol,
+                size: 11,
+                weight: 'bold',
+                paddingLeft: 7,
+                paddingRight: 7,
+                paddingTop: 4,
+                paddingBottom: 4,
+                borderRadius: 4
+              }
+            }
+          ];
+        }
       });
 
-      window.addEventListener('resize', resizeChartToContainer);
+      // 3. Multi-Point Swing Path (4-Point Wave / Pattern Path)
+      klinecharts.registerOverlay({
+        name: 'swingPath',
+        totalStep: 5,
+        needDefaultPointFigure: true,
+        needDefaultXAxisFigure: true,
+        needDefaultYAxisFigure: true,
+        createPointFigures: ({ coordinates }) => {
+          if (coordinates.length < 2) return [];
+          return [
+            {
+              type: 'line',
+              attrs: { coordinates },
+              styles: {
+                color: '#7C3AED',
+                size: 2
+              }
+            }
+          ];
+        }
+      });
+
+      // 4. Text Annotation Callout Flag
+      klinecharts.registerOverlay({
+        name: 'textNote',
+        totalStep: 2,
+        needDefaultPointFigure: true,
+        needDefaultXAxisFigure: false,
+        needDefaultYAxisFigure: false,
+        createPointFigures: ({ coordinates, overlay }) => {
+          if (coordinates.length === 0) return [];
+          const labelText = typeof overlay.extendData === 'string' && overlay.extendData
+            ? overlay.extendData
+            : 'Breakout Pivot';
+          const pt = coordinates[0];
+          return [
+            {
+              type: 'line',
+              attrs: { coordinates: [pt, { x: pt.x, y: pt.y - 24 }] },
+              styles: { color: '#2563EB', size: 1.5 }
+            },
+            {
+              type: 'text',
+              attrs: {
+                x: pt.x - 10,
+                y: pt.y - 44,
+                text: labelText
+              },
+              styles: {
+                style: 'stroke_fill',
+                color: '#FFFFFF',
+                backgroundColor: '#1E293B',
+                borderColor: '#2563EB',
+                borderSize: 1,
+                size: 11,
+                weight: 'bold',
+                paddingLeft: 8,
+                paddingRight: 8,
+                paddingTop: 4,
+                paddingBottom: 4,
+                borderRadius: 4
+              }
+            }
+          ];
+        }
+      });
     }
 
-    function resizeChartToContainer() {
-      const container = document.getElementById('tvChartCanvas');
-      if (chart && container) {
-        chart.applyOptions({
-          width: container.clientWidth,
-          height: container.clientHeight
-        });
-        renderDrawingsOverlay();
+    // =========================================================================
+    // INITIALIZE NATIVE KLINECHARTS INSTANCE
+    // =========================================================================
+    function initChart() {
+      registerCustomChartOverlays();
+
+      const container = document.getElementById('klineChartCanvas');
+      container.innerHTML = '';
+
+      kChart = klinecharts.init('klineChartCanvas');
+
+      // Configure Volume sub-pane at the bottom
+      kChart.createIndicator(
+        {
+          name: 'VOL',
+          calcParams: [],
+        },
+        false,
+        { id: 'vol_pane', height: 95, minHeight: 60 }
+      );
+
+      applyChartThemeAndStyles();
+      rebuildUserEmaSeries();
+
+      // Subscribe to crosshair move to update our custom top-left floating legend
+      kChart.subscribeAction('onCrosshairChange', (payload) => {
+        if (!payload || !payload.kLineData) return;
+        updateTopLeftLegend(payload.kLineData, payload.dataIndex);
+      });
+
+      window.addEventListener('resize', () => {
+        if (kChart) kChart.resize();
+      });
+    }
+
+    function applyChartThemeAndStyles() {
+      if (!kChart) return;
+      const gridColor = isDark ? 'rgba(255, 255, 255, 0.04)' : '#F1F5F9';
+      const axisColor = isDark ? '#1E293B' : '#E2E8F0';
+      const textColor = isDark ? '#94A3B8' : '#64748B';
+
+      kChart.setStyles({
+        grid: {
+          show: true,
+          horizontal: { show: true, size: 1, color: gridColor, style: 'solid' },
+          vertical: { show: true, size: 1, color: gridColor, style: 'solid' }
+        },
+        candle: {
+          type: useBarStyle ? 'ohlc' : 'candle_solid',
+          bar: {
+            upColor: UP_COLOR,
+            downColor: DOWN_COLOR,
+            noChangeColor: UP_COLOR,
+            upBorderColor: UP_COLOR,
+            downBorderColor: DOWN_COLOR,
+            noChangeBorderColor: UP_COLOR,
+            upWickColor: UP_COLOR,
+            downWickColor: DOWN_COLOR,
+            noChangeWickColor: UP_COLOR
+          },
+          priceMark: {
+            show: true,
+            high: { show: true, color: textColor, textSize: 10 },
+            low: { show: true, color: textColor, textSize: 10 },
+            last: {
+              show: true,
+              upColor: UP_COLOR,
+              downColor: DOWN_COLOR,
+              noChangeColor: UP_COLOR,
+              line: { show: true, style: 'dashed', dashedValue: [4, 4], size: 1 }
+            }
+          },
+          tooltip: { showRule: 'none' }
+        },
+        indicator: {
+          bars: [{
+            style: 'fill',
+            upColor: 'rgba(22, 163, 74, 0.5)',
+            downColor: 'rgba(220, 38, 38, 0.5)',
+            noChangeColor: 'rgba(22, 163, 74, 0.5)'
+          }],
+          tooltip: { showRule: 'none' }
+        },
+        xAxis: {
+          axisLine: { show: true, color: axisColor },
+          tickLine: { show: true, color: axisColor },
+          tickText: { color: textColor, size: 11 }
+        },
+        yAxis: {
+          type: isLogScale ? 'log' : 'normal',
+          axisLine: { show: true, color: axisColor },
+          tickLine: { show: true, color: axisColor },
+          tickText: { color: textColor, size: 11 }
+        },
+        separator: {
+          size: 1,
+          color: axisColor,
+          fill: true,
+          activeBackgroundColor: 'rgba(37, 99, 235, 0.15)'
+        },
+        crosshair: {
+          show: true,
+          horizontal: {
+            show: true,
+            line: { show: true, style: 'dashed', dashedValue: [4, 2], size: 1, color: '#64748B' },
+            text: { show: true, color: '#FFFFFF', backgroundColor: '#1E293B', size: 11 }
+          },
+          vertical: {
+            show: true,
+            line: { show: true, style: 'dashed', dashedValue: [4, 2], size: 1, color: '#64748B' },
+            text: { show: true, color: '#FFFFFF', backgroundColor: '#1E293B', size: 11 }
+          }
+        },
+        overlay: {
+          point: {
+            color: '#FFFFFF',
+            borderColor: '#2563EB',
+            borderSize: 2,
+            radius: 5,
+            activeColor: '#2563EB',
+            activeBorderColor: '#FFFFFF',
+            activeBorderSize: 2,
+            activeRadius: 6
+          },
+          line: {
+            color: '#2563EB',
+            size: 2
+          }
+        }
+      });
+    }
+
+    function updateTopLeftLegend(bar, dataIndex) {
+      if (!bar) return;
+      const chg = (bar.close - bar.open).toFixed(2);
+      const chgPct = bar.open ? (((bar.close - bar.open) / bar.open) * 100).toFixed(2) : '0.00';
+      const sign = chg >= 0 ? '+' : '';
+      const colClass = chg >= 0 ? 'text-emerald-600 font-semibold' : 'text-rose-600 font-semibold';
+
+      document.getElementById('legendOhlc').innerHTML =
+        `O <b>${bar.open.toFixed(2)}</b> &nbsp;H <b>${bar.high.toFixed(2)}</b> &nbsp;L <b>${bar.low.toFixed(2)}</b> &nbsp;C <b>${bar.close.toFixed(2)}</b> &nbsp;<span class="${colClass}">${sign}${chg} (${sign}${chgPct}%)</span>`;
+      document.getElementById('legendVol').innerText = `Vol ${(bar.volume / 10000000).toFixed(2)}Cr`;
+
+      // Update EMA values at hovered bar index
+      const legendContainer = document.getElementById('legendEmaContainer');
+      const activeEmas = userEmas.filter(e => e.enabled);
+      if (activeEmas.length === 0 || cachedCandles.length === 0) {
+        legendContainer.innerHTML = '';
+        return;
+      }
+
+      const idx = (dataIndex !== undefined && dataIndex !== null) ? dataIndex : cachedCandles.length - 1;
+      legendContainer.innerHTML = activeEmas.map(ema => {
+        const val = ema.computedValues && ema.computedValues[idx] !== undefined
+          ? ema.computedValues[idx].toFixed(2)
+          : '-';
+        return `<span>EMA ${ema.period} <strong style="color:${ema.color}">${val}</strong></span>`;
+      }).join('');
+    }
+
+    // =========================================================================
+    // FEATURE 3: NATIVE INTERACTIVE DRAWING TOOLS (Zero Freeze, Smooth Pan/Zoom)
+    // =========================================================================
+    function setToolbarActiveButton(toolName) {
+      const buttons = [
+        'cursor',
+        'segment',
+        'horizontalStraightLine',
+        'priceMeasure',
+        'swingPath',
+        'rectBox',
+        'textNote',
+        'priceLine'
+      ];
+      buttons.forEach(b => {
+        const el = document.getElementById('tool_' + b);
+        if (el) {
+          if (b === toolName) el.classList.add('draw-btn-active');
+          else el.classList.remove('draw-btn-active');
+        }
+      });
+    }
+
+    function activateDrawingTool(toolName) {
+      if (!kChart) return;
+      setToolbarActiveButton(toolName);
+
+      if (toolName === 'cursor') {
+        return;
+      }
+
+      let extendData = undefined;
+      if (toolName === 'textNote') {
+        const input = prompt('Enter chart annotation text:', 'Breakout Pivot');
+        if (!input || !input.trim()) {
+          setToolbarActiveButton('cursor');
+          return;
+        }
+        extendData = input.trim();
+      }
+
+      const overlayId = kChart.createOverlay({
+        name: toolName,
+        paneId: 'candle_pane',
+        mode: isMagnet ? 'weak_magnet' : 'normal',
+        extendData: extendData,
+        onDrawEnd: () => {
+          // Automatically return toolbar highlight to Cursor once drawing completes
+          setToolbarActiveButton('cursor');
+        },
+        onSelected: (ev) => {
+          if (ev && ev.overlay) selectedOverlayId = ev.overlay.id;
+        },
+        onDeselected: () => {
+          selectedOverlayId = null;
+        }
+      });
+
+      if (overlayId) {
+        createdOverlayIds.push(overlayId);
       }
     }
 
-    // Feature 5: Green & Red Candles / Bars only
-    function createMainSeries() {
-      if (!chart) return;
-      if (mainSeries) {
-        try { chart.removeSeries(mainSeries); } catch (e) {}
-      }
-      if (useBarStyle) {
-        mainSeries = chart.addBarSeries({
-          upColor: UP_COLOR,
-          downColor: DOWN_COLOR,
-          thinBars: false,
-        });
+    function toggleMagnetMode() {
+      isMagnet = !isMagnet;
+      const btn = document.getElementById('magnetBtn');
+      if (isMagnet) {
+        btn.innerText = 'Magnet: ON';
+        btn.className = 'px-2 py-0.5 rounded bg-blue-600 text-white font-semibold';
       } else {
-        mainSeries = chart.addCandlestickSeries({
-          upColor: UP_COLOR,
-          downColor: DOWN_COLOR,
-          borderVisible: false,
-          wickUpColor: UP_COLOR,
-          wickDownColor: DOWN_COLOR,
-        });
+        btn.innerText = 'Magnet: OFF';
+        btn.className = 'px-2 py-0.5 rounded border border-std text-secondary hover:text-primary font-medium';
       }
-      if (cachedCandles.length > 0) {
-        mainSeries.setData(cachedCandles);
+    }
+
+    function removeSelectedOrLastOverlay() {
+      if (!kChart) return;
+      if (selectedOverlayId) {
+        kChart.removeOverlay({ id: selectedOverlayId });
+        createdOverlayIds = createdOverlayIds.filter(id => id !== selectedOverlayId);
+        selectedOverlayId = null;
+      } else if (createdOverlayIds.length > 0) {
+        const lastId = createdOverlayIds.pop();
+        kChart.removeOverlay({ id: lastId });
       }
+      setToolbarActiveButton('cursor');
+    }
+
+    function clearAllOverlays() {
+      if (!kChart) return;
+      kChart.removeOverlay();
+      createdOverlayIds = [];
+      selectedOverlayId = null;
+      setToolbarActiveButton('cursor');
     }
 
     // =========================================================================
     // FEATURE 4: USER CUSTOMIZABLE EMA ENGINE
     // =========================================================================
-    function calculateEMA(data, period) {
+    function computeEmaArrayForValues(candles, period) {
       const k = 2 / (period + 1);
-      let emaArray = [];
-      let prevEma = null;
-      for (let i = 0; i < data.length; i++) {
-        const close = data[i].close;
-        prevEma = prevEma === null ? close : (close * k) + (prevEma * (1 - k));
+      const out = {};
+      let prev = null;
+      for (let i = 0; i < candles.length; i++) {
+        const c = candles[i].close;
+        prev = prev === null ? c : (c * k) + (prev * (1 - k));
         if (i >= period - 1) {
-          emaArray.push({ time: data[i].time, value: Math.round(prevEma * 100) / 100 });
+          out[i] = prev;
         }
       }
-      return emaArray;
+      return out;
     }
 
     function rebuildUserEmaSeries() {
-      if (!chart) return;
-      // Remove existing EMA series
-      userEmas.forEach(ema => {
-        if (ema.series) {
-          try { chart.removeSeries(ema.series); } catch (e) {}
-          ema.series = null;
-        }
+      if (!kChart) return;
+
+      const activeEmas = userEmas.filter(e => e.enabled);
+      document.getElementById('emaCountBadge').innerText = activeEmas.length;
+
+      // Pre-compute values for the top-left legend
+      activeEmas.forEach(ema => {
+        ema.computedValues = computeEmaArrayForValues(cachedCandles, ema.period);
       });
 
-      // Add enabled EMA series
-      const legendContainer = document.getElementById('legendEmaContainer');
-      legendContainer.innerHTML = '';
-
-      let activeCount = 0;
-      userEmas.forEach(ema => {
-        if (!ema.enabled) return;
-        activeCount++;
-        ema.series = chart.addLineSeries({
-          color: ema.color,
-          lineWidth: 1.6,
-          priceLineVisible: false,
-          lastValueVisible: false,
-        });
+      if (activeEmas.length === 0) {
+        kChart.removeIndicator('candle_pane', 'EMA');
         if (cachedCandles.length > 0) {
-          const emaData = calculateEMA(cachedCandles, ema.period);
-          ema.series.setData(emaData);
-          const lastVal = emaData.length > 0 ? emaData[emaData.length - 1].value : '-';
-          legendContainer.innerHTML += `<span>EMA ${ema.period} <strong style="color:${ema.color}">${lastVal}</strong></span>`;
-        } else {
-          legendContainer.innerHTML += `<span>EMA ${ema.period} <strong style="color:${ema.color}">-</strong></span>`;
+          updateTopLeftLegend(cachedCandles[cachedCandles.length - 1], cachedCandles.length - 1);
         }
-      });
+        return;
+      }
 
-      document.getElementById('emaCountBadge').innerText = activeCount;
+      const calcParams = activeEmas.map(e => e.period);
+      const lineStyles = activeEmas.map(e => ({
+        style: 'solid',
+        smooth: false,
+        size: 1.8,
+        color: e.color
+      }));
+
+      // Create or override EMA indicator on main candle_pane
+      kChart.createIndicator(
+        {
+          name: 'EMA',
+          calcParams: calcParams,
+          styles: { lines: lineStyles }
+        },
+        true,
+        { id: 'candle_pane' }
+      );
+
+      kChart.overrideIndicator(
+        {
+          name: 'EMA',
+          calcParams: calcParams,
+          styles: { lines: lineStyles }
+        },
+        'candle_pane'
+      );
+
+      if (cachedCandles.length > 0) {
+        updateTopLeftLegend(cachedCandles[cachedCandles.length - 1], cachedCandles.length - 1);
+      }
     }
 
     function openEmaModal() {
@@ -687,9 +1010,6 @@
     }
 
     function removeUserEma(idx) {
-      if (userEmas[idx].series && chart) {
-        try { chart.removeSeries(userEmas[idx].series); } catch (e) {}
-      }
       userEmas.splice(idx, 1);
       renderEmaModalList();
       rebuildUserEmaSeries();
@@ -704,8 +1024,7 @@
         id: 'ema_' + Date.now(),
         period: p,
         color: colorInput.value || '#F59E0B',
-        enabled: true,
-        series: null
+        enabled: true
       });
       renderEmaModalList();
       rebuildUserEmaSeries();
@@ -734,345 +1053,22 @@
         botBtn.className = 'px-2 py-0.5 rounded border border-rose-500/30 bg-rose-500/10 text-rose-600 font-medium transition-colors';
       }
 
-      // Immediately resize chart canvas to fill freed vertical space
-      setTimeout(resizeChartToContainer, 20);
+      setTimeout(() => {
+        if (kChart) kChart.resize();
+      }, 30);
     }
 
     async function refreshChartView() {
       const icon = document.getElementById('refreshIconSvg');
       if (icon) icon.classList.add('animate-spin');
       await selectStock(currentSymbol);
-      if (chart) {
-        chart.timeScale().fitContent();
+      if (kChart) {
+        kChart.scrollToRealTime();
+        kChart.resize();
       }
-      renderDrawingsOverlay();
       setTimeout(() => {
         if (icon) icon.classList.remove('animate-spin');
       }, 350);
-    }
-
-    // =========================================================================
-    // FEATURE 3: INTERACTIVE DRAWING TOOLS (Trendline, Horizontal Line, Measure, Path, Rect, Text, Price Label)
-    // =========================================================================
-    let isDraggingShape = false;
-    let dragStartScreen = null;
-
-    function setDrawingTool(tool) {
-      // If finishing a multi-point path, commit it if it has >= 2 points
-      if (activeTool === 'path' && draftDrawing && draftDrawing.points && draftDrawing.points.length >= 2) {
-        drawings.push(draftDrawing);
-      }
-      draftDrawing = null;
-      isDraggingShape = false;
-      activeTool = tool;
-
-      const tools = ['cursor', 'trendline', 'hline', 'measure', 'path', 'rect', 'text', 'pricelabel'];
-      tools.forEach(t => {
-        const btn = document.getElementById('tool_' + t);
-        if (btn) {
-          if (t === tool) btn.classList.add('draw-btn-active');
-          else btn.classList.remove('draw-btn-active');
-        }
-      });
-
-      const svgOverlay = document.getElementById('drawingSvgOverlay');
-      const banner = document.getElementById('drawingStatusBanner');
-      const bannerText = document.getElementById('drawingStatusText');
-
-      const toolDescriptions = {
-        trendline: 'Trendline: Click & drag (or click two points) on the chart',
-        hline: 'Horizontal Line: Click anywhere on chart to place horizontal level',
-        measure: 'Price Measurement: Click & drag (or click two points) to measure',
-        path: 'Path: Click points sequentially (Double-click or Esc to finish)',
-        rect: 'Rectangle: Click & drag (or click two corners) to draw box',
-        text: 'Text Note: Click anywhere on chart to insert text',
-        pricelabel: 'Price Label: Click anywhere on chart to stamp price callout',
-      };
-
-      if (tool === 'cursor') {
-        svgOverlay.classList.add('pointer-events-none');
-        svgOverlay.style.cursor = 'default';
-        banner.classList.add('hidden');
-        banner.classList.remove('flex');
-        if (chart) {
-          chart.applyOptions({ handleScroll: true, handleScale: true });
-        }
-      } else {
-        svgOverlay.classList.remove('pointer-events-none');
-        svgOverlay.style.cursor = 'crosshair';
-        bannerText.innerText = toolDescriptions[tool] || 'Drawing Mode';
-        banner.classList.remove('hidden');
-        banner.classList.add('flex');
-        if (chart) {
-          chart.applyOptions({ handleScroll: false, handleScale: false });
-        }
-      }
-
-      renderDrawingsOverlay();
-    }
-
-    function getChartPointFromEvent(e) {
-      const svg = document.getElementById('drawingSvgOverlay');
-      const rect = svg.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
-      if (!chart || !mainSeries) return { x, y, logical: null, time: null, price: null };
-
-      // Use logical bar index for 100% reliable horizontal coordinate conversion
-      // (works even in empty margin space or between bars)
-      const logical = chart.timeScale().coordinateToLogical(x);
-      let time = chart.timeScale().coordinateToTime(x);
-      if (!time && logical !== null && cachedCandles.length > 0) {
-        const clampedIdx = Math.max(0, Math.min(cachedCandles.length - 1, Math.round(logical)));
-        time = cachedCandles[clampedIdx].time;
-      }
-      const price = mainSeries.coordinateToPrice(y);
-      return { x, y, logical, time, price };
-    }
-
-    function pointToScreen(pt) {
-      if (!chart || !mainSeries || !pt) return null;
-      let x = null;
-      if (pt.logical !== null && pt.logical !== undefined) {
-        x = chart.timeScale().logicalToCoordinate(pt.logical);
-      }
-      if (x === null && pt.time) {
-        x = chart.timeScale().timeToCoordinate(pt.time);
-      }
-      if (x === null && pt.x !== undefined) {
-        x = pt.x;
-      }
-      let y = null;
-      if (pt.price !== null && pt.price !== undefined) {
-        y = mainSeries.priceToCoordinate(pt.price);
-      }
-      if (y === null && pt.y !== undefined) {
-        y = pt.y;
-      }
-      if (x === null || y === null) return null;
-      return { x, y };
-    }
-
-    function setupDrawingEvents() {
-      const svg = document.getElementById('drawingSvgOverlay');
-
-      // Support both Click-and-Drag AND Two-Click workflows seamlessly
-      svg.addEventListener('mousedown', (e) => {
-        if (activeTool === 'cursor' || e.button !== 0) return;
-        const pt = getChartPointFromEvent(e);
-        if (pt.price === null) return;
-
-        if (activeTool === 'trendline' || activeTool === 'measure' || activeTool === 'rect') {
-          if (!draftDrawing) {
-            draftDrawing = { type: activeTool, p1: pt, p2: pt };
-            isDraggingShape = true;
-            dragStartScreen = { x: pt.x, y: pt.y };
-            mousePos = pt;
-          } else {
-            // Second click in 2-click mode completes the drawing
-            draftDrawing.p2 = pt;
-            drawings.push(draftDrawing);
-            draftDrawing = null;
-            isDraggingShape = false;
-            setDrawingTool('cursor');
-          }
-          renderDrawingsOverlay();
-        } else if (activeTool === 'hline') {
-          drawings.push({ type: 'hline', p1: pt });
-          setDrawingTool('cursor');
-          renderDrawingsOverlay();
-        } else if (activeTool === 'path') {
-          if (!draftDrawing) {
-            draftDrawing = { type: 'path', points: [pt] };
-          } else {
-            draftDrawing.points.push(pt);
-          }
-          mousePos = pt;
-          renderDrawingsOverlay();
-        } else if (activeTool === 'text') {
-          const userText = prompt('Enter chart annotation text:', 'Breakout Pivot');
-          if (userText && userText.trim()) {
-            drawings.push({ type: 'text', p1: pt, text: userText.trim() });
-          }
-          setDrawingTool('cursor');
-          renderDrawingsOverlay();
-        } else if (activeTool === 'pricelabel') {
-          drawings.push({ type: 'pricelabel', p1: pt });
-          setDrawingTool('cursor');
-          renderDrawingsOverlay();
-        }
-      });
-
-      svg.addEventListener('mousemove', (e) => {
-        if (activeTool === 'cursor') return;
-        const pt = getChartPointFromEvent(e);
-        mousePos = pt;
-        if (draftDrawing) {
-          if (draftDrawing.type !== 'path') {
-            draftDrawing.p2 = pt;
-          }
-          renderDrawingsOverlay();
-        }
-      });
-
-      svg.addEventListener('mouseup', (e) => {
-        if (activeTool === 'cursor' || !isDraggingShape || !draftDrawing) return;
-        const pt = getChartPointFromEvent(e);
-        const dist = dragStartScreen ? Math.hypot(pt.x - dragStartScreen.x, pt.y - dragStartScreen.y) : 0;
-
-        // If user dragged the mouse (> 6px), finish the shape immediately on release!
-        // If user just clicked (< 6px), stay in 2-click mode waiting for the second click.
-        if (dist > 6) {
-          draftDrawing.p2 = pt;
-          drawings.push(draftDrawing);
-          draftDrawing = null;
-          isDraggingShape = false;
-          setDrawingTool('cursor');
-          renderDrawingsOverlay();
-        } else {
-          isDraggingShape = false;
-        }
-      });
-
-      svg.addEventListener('dblclick', () => {
-        if (activeTool === 'path' && draftDrawing && draftDrawing.points.length >= 2) {
-          drawings.push(draftDrawing);
-          draftDrawing = null;
-          setDrawingTool('cursor');
-          renderDrawingsOverlay();
-        }
-      });
-    }
-
-    function undoLastDrawing() {
-      if (draftDrawing) {
-        draftDrawing = null;
-      } else if (drawings.length > 0) {
-        drawings.pop();
-      }
-      renderDrawingsOverlay();
-    }
-
-    function clearAllDrawings() {
-      drawings = [];
-      draftDrawing = null;
-      renderDrawingsOverlay();
-    }
-
-    function renderDrawingsOverlay() {
-      const svg = document.getElementById('drawingSvgOverlay');
-      if (!svg) return;
-      const svgWidth = svg.clientWidth || 900;
-
-      const allToRender = [...drawings];
-      if (draftDrawing && mousePos) {
-        if (draftDrawing.type === 'path') {
-          allToRender.push({
-            type: 'path',
-            points: [...draftDrawing.points, mousePos]
-          });
-        } else {
-          allToRender.push({
-            ...draftDrawing,
-            p2: mousePos
-          });
-        }
-      }
-
-      let html = '';
-
-      allToRender.forEach(d => {
-        if (d.type === 'trendline') {
-          const s1 = pointToScreen(d.p1);
-          const s2 = pointToScreen(d.p2);
-          if (!s1 || !s2) return;
-          html += `
-            <line x1="${s1.x}" y1="${s1.y}" x2="${s2.x}" y2="${s2.y}" stroke="#2563EB" stroke-width="2.2" />
-            <circle cx="${s1.x}" cy="${s1.y}" r="4" fill="#FFFFFF" stroke="#2563EB" stroke-width="2" />
-            <circle cx="${s2.x}" cy="${s2.y}" r="4" fill="#FFFFFF" stroke="#2563EB" stroke-width="2" />
-          `;
-        } else if (d.type === 'hline') {
-          const s1 = pointToScreen(d.p1);
-          if (!s1 || d.p1.price === null) return;
-          const pStr = `₹${d.p1.price.toFixed(2)}`;
-          html += `
-            <line x1="0" y1="${s1.y}" x2="${svgWidth}" y2="${s1.y}" stroke="#2563EB" stroke-width="1.8" stroke-dasharray="5 3" />
-            <g transform="translate(${svgWidth - 78}, ${s1.y})">
-              <rect x="0" y="-10" width="74" height="20" rx="3" fill="#2563EB" />
-              <text x="37" y="4" fill="#FFFFFF" font-size="10.5" font-family="monospace" font-weight="bold" text-anchor="middle">${pStr}</text>
-            </g>
-          `;
-        } else if (d.type === 'rect') {
-          const s1 = pointToScreen(d.p1);
-          const s2 = pointToScreen(d.p2);
-          if (!s1 || !s2) return;
-          const rx = Math.min(s1.x, s2.x);
-          const ry = Math.min(s1.y, s2.y);
-          const rw = Math.abs(s2.x - s1.x);
-          const rh = Math.abs(s2.y - s1.y);
-          html += `
-            <rect x="${rx}" y="${ry}" width="${rw}" height="${rh}" fill="rgba(37, 99, 235, 0.14)" stroke="#2563EB" stroke-width="1.5" />
-          `;
-        } else if (d.type === 'measure') {
-          const s1 = pointToScreen(d.p1);
-          const s2 = pointToScreen(d.p2);
-          if (!s1 || !s2) return;
-          const rx = Math.min(s1.x, s2.x);
-          const ry = Math.min(s1.y, s2.y);
-          const rw = Math.abs(s2.x - s1.x);
-          const rh = Math.abs(s2.y - s1.y);
-          const diff = d.p2.price - d.p1.price;
-          const pct = ((diff / d.p1.price) * 100).toFixed(2);
-          const isGain = diff >= 0;
-          const boxFill = isGain ? 'rgba(22, 163, 74, 0.16)' : 'rgba(220, 38, 38, 0.16)';
-          const strokeCol = isGain ? '#16A34A' : '#DC2626';
-          const sign = isGain ? '+' : '';
-          const labelText = `${sign}₹${diff.toFixed(2)} (${sign}${pct}%)`;
-          const midX = rx + rw / 2;
-          const labelY = ry > 28 ? ry - 8 : ry + rh + 18;
-
-          html += `
-            <rect x="${rx}" y="${ry}" width="${rw}" height="${rh}" fill="${boxFill}" stroke="${strokeCol}" stroke-width="1.5" stroke-dasharray="4 2" />
-            <line x1="${s1.x}" y1="${s1.y}" x2="${s2.x}" y2="${s2.y}" stroke="${strokeCol}" stroke-width="1.5" />
-            <g transform="translate(${midX}, ${labelY})">
-              <rect x="-65" y="-14" width="130" height="20" rx="4" fill="${strokeCol}" />
-              <text x="0" y="-1" fill="#FFFFFF" font-size="11" font-weight="bold" text-anchor="middle">${labelText}</text>
-            </g>
-          `;
-        } else if (d.type === 'path') {
-          const coords = (d.points || []).map(pointToScreen).filter(Boolean);
-          if (coords.length < 2) return;
-          const ptsAttr = coords.map(c => `${c.x},${c.y}`).join(' ');
-          html += `<polyline points="${ptsAttr}" fill="none" stroke="#8B5CF6" stroke-width="2" />`;
-          coords.forEach(c => {
-            html += `<circle cx="${c.x}" cy="${c.y}" r="3" fill="#FFFFFF" stroke="#8B5CF6" stroke-width="2" />`;
-          });
-        } else if (d.type === 'text') {
-          const s1 = pointToScreen(d.p1);
-          if (!s1) return;
-          const safeText = (d.text || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-          const boxW = Math.max(60, safeText.length * 7 + 16);
-          html += `
-            <g transform="translate(${s1.x}, ${s1.y})">
-              <rect x="0" y="-18" width="${boxW}" height="22" rx="4" fill="#1E293B" stroke="#475569" stroke-width="1" />
-              <text x="8" y="-4" fill="#F8FAFC" font-size="11" font-weight="600">${safeText}</text>
-            </g>
-          `;
-        } else if (d.type === 'pricelabel') {
-          const s1 = pointToScreen(d.p1);
-          if (!s1 || d.p1.price === null) return;
-          const priceStr = `₹${d.p1.price.toFixed(2)}`;
-          html += `
-            <g transform="translate(${s1.x}, ${s1.y})">
-              <circle cx="0" cy="0" r="3" fill="#2563EB" />
-              <path d="M0,0 L10,-10 L78,-10 L78,10 L10,10 Z" fill="#2563EB" />
-              <text x="44" y="4" fill="#FFFFFF" font-size="10.5" font-family="monospace" font-weight="bold" text-anchor="middle">${priceStr}</text>
-            </g>
-          `;
-        }
-      });
-
-      svg.innerHTML = html;
     }
 
     // =========================================================================
@@ -1126,11 +1122,8 @@
     }
 
     async function selectStock(sym) {
-      if (sym !== currentSymbol) {
-        // Clear stock-specific drawings when switching symbols
-        drawings = [];
-        draftDrawing = null;
-        renderDrawingsOverlay();
+      if (sym !== currentSymbol && kChart) {
+        clearAllOverlays();
       }
       currentSymbol = sym;
       renderStockList();
@@ -1154,29 +1147,22 @@
         document.getElementById('legendTitle').innerText = data.name;
         document.getElementById('legendTf').innerText = `${tfMap[currentTimeframe] || '1W'} - NSE`;
 
-        // 3. Update Candlesticks & Volume (Green & Red only)
-        cachedCandles = data.candles || [];
-        if (cachedCandles.length > 0 && mainSeries) {
-          mainSeries.setData(cachedCandles);
+        // 3. Convert Candles to KLineCharts Format (timestamp in ms)
+        const rawCandles = data.candles || [];
+        cachedCandles = rawCandles.map(c => ({
+          timestamp: new Date(c.time + 'T00:00:00Z').getTime(),
+          open: c.open,
+          high: c.high,
+          low: c.low,
+          close: c.close,
+          volume: c.volume,
+          timeStr: c.time
+        }));
 
-          const volData = cachedCandles.map(c => ({
-            time: c.time,
-            value: c.volume,
-            color: c.close >= c.open
-              ? 'rgba(22, 163, 74, 0.45)'
-              : 'rgba(220, 38, 38, 0.45)'
-          }));
-          volumeSeries.setData(volData);
-
+        if (cachedCandles.length > 0 && kChart) {
+          kChart.applyNewData(cachedCandles);
           rebuildUserEmaSeries();
-
-          const last = cachedCandles[cachedCandles.length - 1];
-          document.getElementById('legendOhlc').innerText =
-            `O ${last.open}  H ${last.high}  L ${last.low}  C ${last.close}  ${data.change >= 0 ? '+' : ''}${data.change} (${data.change >= 0 ? '+' : ''}${data.change_pct}%)`;
-          document.getElementById('legendVol').innerText = `Vol ${(last.volume / 10000000).toFixed(2)}Cr`;
-
-          chart.timeScale().fitContent();
-          renderDrawingsOverlay();
+          updateTopLeftLegend(cachedCandles[cachedCandles.length - 1], cachedCandles.length - 1);
         }
 
         // 4. Render Quarterly EPS & Sales Table
@@ -1295,7 +1281,7 @@
     function toggleChartStyle() {
       useBarStyle = !useBarStyle;
       document.getElementById('styleBtn').innerText = useBarStyle ? 'Bars (Green/Red)' : 'Candles (Green/Red)';
-      createMainSeries();
+      applyChartThemeAndStyles();
     }
 
     function toggleLogScale() {
@@ -1304,10 +1290,7 @@
       btn.className = isLogScale
         ? 'px-2 py-0.5 rounded bg-blue-600 text-white font-semibold'
         : 'px-2 py-0.5 rounded border border-std text-secondary';
-      chart.priceScale('right').applyOptions({
-        mode: isLogScale ? LightweightCharts.PriceScaleMode.Logarithmic : LightweightCharts.PriceScaleMode.Normal
-      });
-      renderDrawingsOverlay();
+      applyChartThemeAndStyles();
     }
 
     function toggleTheme() {
@@ -1316,8 +1299,7 @@
         ? 'theme-dark app-surface h-screen w-screen overflow-hidden flex flex-col select-none text-xs'
         : 'theme-light app-surface h-screen w-screen overflow-hidden flex flex-col select-none text-xs';
       document.getElementById('themeBtn').innerText = isDark ? 'Light Mode' : 'Dark Mode';
-      initChart();
-      selectStock(currentSymbol);
+      applyChartThemeAndStyles();
     }
 
     function searchSymbol(val) {
@@ -1390,12 +1372,18 @@
 
     window.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
-        setDrawingTool('cursor');
+        setToolbarActiveButton('cursor');
         closeEmaModal();
         closeFilterModal();
         return;
       }
       if (document.activeElement.tagName === 'INPUT') return;
+      if (e.key === 'Backspace' || e.key === 'Delete') {
+        if (selectedOverlayId) {
+          removeSelectedOrLastOverlay();
+          return;
+        }
+      }
       if (e.key === 'ArrowDown') {
         e.preventDefault();
         prevNextStock(1);
@@ -1407,7 +1395,6 @@
 
     window.onload = async () => {
       initChart();
-      setupDrawingEvents();
       await loadScreenerList();
       await selectStock('RELIANCE');
     };
