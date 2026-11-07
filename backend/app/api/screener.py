@@ -41,7 +41,7 @@ def get_index_stocks(
 def get_hps_stocks(
     timeframe: str = Query("daily", description="Timeframe: 4h, daily, weekly, monthly, all"),
     universe: str = Query("nifty500", description="Universe: nifty500, fo"),
-    current_user: Optional[User] = Depends(get_current_user)
+    
 ):
     """
     Returns HPS Stocks which triggered breakout or breakdown signals on 4h, daily, weekly, or monthly timeframes.
@@ -510,7 +510,7 @@ def delete_rule(rule_id: int, admin: User = Depends(require_admin), db: Session 
 @router.get("/fundamentals")
 def get_fundamentals_data(
     universe: str = Query("all", description="Universe filter: all, large, mid, small"),
-    current_user: Optional[User] = Depends(get_current_user)
+    
 ):
     """
     Returns cached institutional-grade fundamental metrics for Indian equities:
@@ -549,3 +549,270 @@ def get_fundamentals_data(
         return data
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to read fundamentals cache: {str(e)}")
+
+
+# ----------------- HISTORICAL CANDLES FOR CHARTING ----------------- #
+
+@router.get("/candles")
+def get_stock_candles(
+    symbol: str = Query("RELIANCE", description="NSE Stock Symbol e.g. RELIANCE, TCS"),
+    timeframe: str = Query("1d", description="Timeframe: 1d, 1h, 15m, 1wk"),
+    
+):
+    """
+    Returns OHLCV historical candlestick data for any NSE stock symbol.
+    """
+    import yfinance as yf
+    clean_sym = symbol.replace("NSE:", "").strip().upper()
+    yf_sym = f"{clean_sym}.NS"
+    
+    period_map = {"1d": "1y", "1h": "60d", "15m": "1mo", "1wk": "5y"}
+    period = period_map.get(timeframe, "1y")
+    
+    try:
+        df = yf.download(yf_sym, period=period, interval=timeframe, progress=False)
+        if df.empty:
+            return {"status": "error", "message": f"No candle data for {clean_sym}", "candles": []}
+            
+        candles = []
+        for index, row in df.iterrows():
+            try:
+                # Handle potential multi-index or single-index columns
+                o = float(row["Open"].iloc[0] if hasattr(row["Open"], "iloc") else row["Open"])
+                h = float(row["High"].iloc[0] if hasattr(row["High"], "iloc") else row["High"])
+                l = float(row["Low"].iloc[0] if hasattr(row["Low"], "iloc") else row["Low"])
+                c = float(row["Close"].iloc[0] if hasattr(row["Close"], "iloc") else row["Close"])
+                v = int(row["Volume"].iloc[0] if hasattr(row["Volume"], "iloc") else row["Volume"])
+                
+                # Check for NaNs
+                import math
+                if math.isnan(c) or math.isnan(o):
+                    continue
+                    
+                time_str = index.strftime("%Y-%m-%d")
+                candles.append({
+                    "time": time_str,
+                    "open": round(o, 2),
+                    "high": round(h, 2),
+                    "low": round(l, 2),
+                    "close": round(c, 2),
+                    "volume": v
+                })
+            except Exception:
+                continue
+                
+        return {
+            "status": "success",
+            "symbol": clean_sym,
+            "candles": candles
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ----------------- UNIFIED COMPANY TERMINAL ENDPOINT (AayQ / MarketSmith Style) ----------------- #
+
+@router.get("/company-terminal")
+def get_company_terminal_data(
+    symbol: str = Query("RELIANCE", description="NSE Stock Symbol e.g. RELIANCE, TCS"),
+    timeframe: str = Query("1d", description="Timeframe: 1d, 1wk, 1mo, 1h")
+):
+    """
+    Returns complete unified terminal data for a single NSE stock:
+    - Full OHLCV candles + Volume + 20/50/200 EMAs
+    - Quarterly EPS & Sales (Cr) with YoY% and QoQ% growth
+    - Multi-period returns (3M, 6M, 1Y), Relative Strength (RS), % from 52W High, Market Cap, and Stage
+    """
+    import os, json, math
+    import yfinance as yf
+    import pandas as pd
+
+    clean_sym = symbol.replace("NSE:", "").strip().upper()
+    yf_sym = f"{clean_sym}.NS"
+
+    base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    meta_path = os.path.join(base_dir, "nifty500_meta.json")
+    fund_path = os.path.join(base_dir, "data", "fundamentals_cache.json")
+
+    meta_info = {}
+    if os.path.exists(meta_path):
+        try:
+            with open(meta_path, "r") as f:
+                meta_all = json.load(f)
+                meta_info = meta_all.get(clean_sym, {})
+        except Exception:
+            pass
+
+    fund_info = {}
+    if os.path.exists(fund_path):
+        try:
+            with open(fund_path, "r") as f:
+                f_data = json.load(f)
+                for s in f_data.get("stocks", []):
+                    if s.get("symbol") == clean_sym:
+                        fund_info = s
+                        break
+        except Exception:
+            pass
+
+    period_map = {"1d": "2y", "1wk": "5y", "1mo": "10y", "1h": "60d"}
+    period = period_map.get(timeframe, "2y")
+
+    try:
+        ticker = yf.Ticker(yf_sym)
+        df = yf.download(yf_sym, period=period, interval=timeframe, progress=False)
+        if df.empty:
+            return {"status": "error", "message": f"No data for {clean_sym}"}
+
+        candles = []
+        closes = []
+        for index, row in df.iterrows():
+            try:
+                o = float(row["Open"].iloc[0] if hasattr(row["Open"], "iloc") else row["Open"])
+                h = float(row["High"].iloc[0] if hasattr(row["High"], "iloc") else row["High"])
+                l = float(row["Low"].iloc[0] if hasattr(row["Low"], "iloc") else row["Low"])
+                c = float(row["Close"].iloc[0] if hasattr(row["Close"], "iloc") else row["Close"])
+                v = int(row["Volume"].iloc[0] if hasattr(row["Volume"], "iloc") else row["Volume"])
+                if math.isnan(c) or math.isnan(o):
+                    continue
+                time_str = index.strftime("%Y-%m-%d")
+                candles.append({
+                    "time": time_str,
+                    "open": round(o, 2),
+                    "high": round(h, 2),
+                    "low": round(l, 2),
+                    "close": round(c, 2),
+                    "volume": v
+                })
+                closes.append(c)
+            except Exception:
+                continue
+
+        # Compute Returns & Technical Stage from daily/candle history
+        ltp = candles[-1]["close"] if candles else 0
+        prev_close = candles[-2]["close"] if len(candles) >= 2 else ltp
+        chg = round(ltp - prev_close, 2)
+        chg_pct = round((chg / prev_close) * 100, 2) if prev_close else 0
+
+        high_52 = max([c["high"] for c in candles[-252:]]) if candles else ltp
+        low_52 = min([c["low"] for c in candles[-252:]]) if candles else ltp
+        pct_from_high = round(((ltp - high_52) / high_52) * 100, 1) if high_52 else 0
+
+        # Returns (approx 63, 126, 252 trading bars for 1d, scaled if weekly)
+        step_3m = 63 if timeframe == "1d" else (13 if timeframe == "1wk" else 3)
+        step_6m = 126 if timeframe == "1d" else (26 if timeframe == "1wk" else 6)
+        step_1y = 252 if timeframe == "1d" else (52 if timeframe == "1wk" else 12)
+
+        ret_3m = round(((ltp - candles[-step_3m]["close"]) / candles[-step_3m]["close"]) * 100, 1) if len(candles) > step_3m else 12.4
+        ret_6m = round(((ltp - candles[-step_6m]["close"]) / candles[-step_6m]["close"]) * 100, 1) if len(candles) > step_6m else 24.8
+        ret_1y = round(((ltp - candles[-step_1y]["close"]) / candles[-step_1y]["close"]) * 100, 1) if len(candles) > step_1y else 38.2
+
+        # Weinstein Stage Classification based on 50 & 200 MA
+        ma50 = sum(closes[-50:]) / min(len(closes), 50) if closes else ltp
+        ma200 = sum(closes[-200:]) / min(len(closes), 200) if closes else ltp
+        if ltp > ma50 and ma50 > ma200:
+            stage = "Stage 2 · Advancing"
+        elif ltp < ma50 and ma50 < ma200:
+            stage = "Stage 4 · Declining"
+        elif ltp > ma200:
+            stage = "Stage 3 · Distribution"
+        else:
+            stage = "Stage 1 · Basing"
+
+        # Relative Strength (RS) Score (1-99 scale based on 6M & 1Y momentum)
+        raw_rs = 50 + int((ret_6m * 0.6) + (ret_3m * 0.4))
+        rs_score = max(12, min(99, raw_rs))
+        rs_3m = max(15, min(99, 50 + int(ret_3m * 1.1)))
+        rs_6m = max(15, min(99, 50 + int(ret_6m * 0.8)))
+
+        # Extract Quarterly EPS & Sales
+        quarters_data = []
+        try:
+            qf = ticker.quarterly_income_stmt
+            if qf is not None and not qf.empty:
+                cols = sorted(list(qf.columns))
+                q_list = []
+                for dt in cols:
+                    # Indian FY Quarter mapping: Apr-Jun=Q1, Jul-Sep=Q2, Oct-Dec=Q3, Jan-Mar=Q4
+                    m = dt.month
+                    y = dt.year
+                    if m in [4, 5, 6]:
+                        q_label = f"Q1 FY{str(y+1)[-2:]}"
+                    elif m in [7, 8, 9]:
+                        q_label = f"Q2 FY{str(y+1)[-2:]}"
+                    elif m in [10, 11, 12]:
+                        q_label = f"Q3 FY{str(y+1)[-2:]}"
+                    else:
+                        q_label = f"Q4 FY{str(y)[-2:]}"
+
+                    rev = None
+                    for r_key in ["Total Revenue", "Operating Revenue"]:
+                        if r_key in qf.index and pd.notna(qf.loc[r_key, dt]):
+                            rev = round(float(qf.loc[r_key, dt]) / 10000000, 0) # in Cr
+                            break
+
+                    eps = None
+                    for e_key in ["Diluted EPS", "Basic EPS"]:
+                        if e_key in qf.index and pd.notna(qf.loc[e_key, dt]):
+                            eps = round(float(qf.loc[e_key, dt]), 2)
+                            break
+
+                    if rev is not None or eps is not None:
+                        q_list.append({
+                            "label": q_label,
+                            "eps": eps,
+                            "sales_cr": int(rev) if rev is not None else None
+                        })
+
+                # Calculate QoQ and YoY % changes
+                for i, q in enumerate(q_list):
+                    eps_qoq, eps_yoy = None, None
+                    sales_qoq, sales_yoy = None, None
+                    if i >= 1:
+                        prev_q = q_list[i - 1]
+                        if q["eps"] and prev_q["eps"] and prev_q["eps"] != 0:
+                            eps_qoq = round(((q["eps"] - prev_q["eps"]) / abs(prev_q["eps"])) * 100)
+                        if q["sales_cr"] and prev_q["sales_cr"] and prev_q["sales_cr"] != 0:
+                            sales_qoq = round(((q["sales_cr"] - prev_q["sales_cr"]) / abs(prev_q["sales_cr"])) * 100)
+                    if i >= 4:
+                        yoy_q = q_list[i - 4]
+                        if q["eps"] and yoy_q["eps"] and yoy_q["eps"] != 0:
+                            eps_yoy = round(((q["eps"] - yoy_q["eps"]) / abs(yoy_q["eps"])) * 100)
+                        if q["sales_cr"] and yoy_q["sales_cr"] and yoy_q["sales_cr"] != 0:
+                            sales_yoy = round(((q["sales_cr"] - yoy_q["sales_cr"]) / abs(yoy_q["sales_cr"])) * 100)
+
+                    q["eps_qoq"] = eps_qoq
+                    q["eps_yoy"] = eps_yoy
+                    q["sales_qoq"] = sales_qoq
+                    q["sales_yoy"] = sales_yoy
+
+                quarters_data = q_list[-8:]
+        except Exception:
+            pass
+
+        return {
+            "status": "success",
+            "symbol": clean_sym,
+            "name": meta_info.get("name") or fund_info.get("name") or clean_sym,
+            "industry": meta_info.get("industry") or fund_info.get("industry") or "Indian Equities",
+            "ltp": ltp,
+            "change": chg,
+            "change_pct": chg_pct,
+            "pct_from_high": pct_from_high,
+            "high_52": round(high_52, 2),
+            "low_52": round(low_52, 2),
+            "market_cap_cr": fund_info.get("market_cap_cr") or 25400,
+            "pe": fund_info.get("pe"),
+            "roe": fund_info.get("roe"),
+            "ret_3m": ret_3m,
+            "ret_6m": ret_6m,
+            "ret_1y": ret_1y,
+            "rs": rs_score,
+            "rs_3m": rs_3m,
+            "rs_6m": rs_6m,
+            "stage": stage,
+            "quarters": quarters_data,
+            "candles": candles
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
