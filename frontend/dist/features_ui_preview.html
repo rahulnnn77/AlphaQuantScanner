@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AlphaQuant - Unified Screener, Charting & Quarterly Fundamentals</title>
+  <title>AlphaQuant - Unified Screener, Charting &amp; Quarterly Fundamentals</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Pinned Lightweight Charts v4.2.0 for 100% consistent API compatibility -->
   <script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
@@ -50,6 +50,18 @@
     .text-tertiary { color: var(--text-muted); }
     .row-item:hover { background-color: var(--bg-hover); }
     .row-active { background-color: var(--bg-active) !important; font-weight: 600; border-left: 3px solid #2563EB; }
+
+    .draw-btn {
+      width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 6px;
+      transition: all 0.15s;
+    }
+    .draw-btn:hover { background-color: var(--bg-hover); color: var(--text-main); }
+    .draw-btn-active { background-color: #2563EB !important; color: #FFFFFF !important; }
   </style>
 </head>
 <body class="theme-light app-surface h-screen w-screen overflow-hidden flex flex-col select-none text-xs">
@@ -65,7 +77,6 @@
       <!-- Screener Dropdown Header -->
       <div class="h-11 px-3 border-b border-std flex items-center justify-between gap-1.5 shrink-0">
         <div class="flex items-center space-x-1.5 flex-1 min-w-0">
-          <span class="text-amber-500 text-xs">★</span>
           <select id="screenerPresetSelect" onchange="applyScreenerPreset(this.value)" class="bg-transparent font-semibold text-primary text-xs focus:outline-none cursor-pointer truncate flex-1">
             <option value="all">Screener (498)</option>
             <option value="high_rs">High ROE Leaders (&gt; 15%)</option>
@@ -87,7 +98,7 @@
         <span class="w-16 text-right">Last</span>
         <span class="w-16 text-right cursor-pointer flex items-center justify-end space-x-0.5" onclick="toggleSort()">
           <span id="sortLabel">ROE%</span>
-          <span>▼</span>
+          <span>v</span>
         </span>
       </div>
 
@@ -123,7 +134,7 @@
 
           <div class="flex items-center space-x-2 truncate">
             <h1 id="headerCompanyName" class="text-sm font-bold text-primary truncate">Reliance Industries Limited</h1>
-            <span id="headerSymbolSector" class="text-xs text-secondary truncate hidden md:inline">NSE:RELIANCE · Oil Gas &amp; Consumable Fuels</span>
+            <span id="headerSymbolSector" class="text-xs text-secondary truncate hidden md:inline">NSE:RELIANCE - Oil Gas &amp; Consumable Fuels</span>
           </div>
         </div>
 
@@ -139,7 +150,7 @@
         </div>
       </header>
 
-      <!-- 2. CHART TOOLBAR (Timeframes D | W | M, Bar/Candle style, Log, Indicators) -->
+      <!-- 2. CHART TOOLBAR (Timeframes D | W | M, Bar/Candle style, Log, User EMA Builder, Fundamental Toggle) -->
       <div class="h-9 px-4 border-b border-std header-surface flex items-center justify-between gap-2 shrink-0 text-[11px]">
         <div class="flex items-center space-x-1">
           <button id="tf_1d" onclick="changeTimeframe('1d')" class="px-2 py-0.5 rounded font-medium text-secondary hover:text-primary">D</button>
@@ -148,8 +159,8 @@
           
           <span class="mx-1.5 text-tertiary">|</span>
 
-          <button id="styleBtn" onclick="toggleChartStyle()" class="px-2 py-0.5 rounded border border-std font-medium text-primary hover:bg-slate-200/40" title="Switch between HLC Bars and Candlesticks">
-            Bars (Blue/Pink)
+          <button id="styleBtn" onclick="toggleChartStyle()" class="px-2 py-0.5 rounded border border-std font-medium text-primary hover:bg-slate-200/40" title="Switch between Candlesticks and HLC Bars (Green/Red)">
+            Candles (Green/Red)
           </button>
 
           <button id="logBtn" onclick="toggleLogScale()" class="px-2 py-0.5 rounded bg-blue-600 text-white font-semibold">
@@ -158,61 +169,119 @@
 
           <span class="mx-1.5 text-tertiary">|</span>
 
-          <span class="px-2 py-0.5 rounded border border-std text-secondary">
-            ƒ Indicators (EMA 20, EMA 50)
-          </span>
+          <!-- User Custom EMA Configuration Button -->
+          <button onclick="openEmaModal()" class="px-2.5 py-0.5 rounded border border-std text-primary hover:bg-slate-200/40 font-medium flex items-center space-x-1">
+            <span>EMA Settings</span>
+            <span id="emaCountBadge" class="px-1.5 py-0.2 bg-blue-600/15 text-blue-600 rounded font-bold text-[10px]">2</span>
+          </button>
         </div>
 
         <div class="flex items-center space-x-2 text-secondary">
+          <button id="toggleFundamentalsBtn" onclick="toggleBottomFundamentals()" class="px-2.5 py-0.5 rounded bg-blue-600/10 text-blue-600 border border-blue-600/25 font-medium">
+            Hide Fundamentals
+          </button>
           <button onclick="openFilterModal()" class="px-2.5 py-0.5 rounded bg-emerald-500/10 text-emerald-600 border border-emerald-500/25 font-medium">
             Fundamental Filters
-          </button>
-          <button onclick="resetChartZoom()" class="px-2 py-0.5 rounded border border-std hover:text-primary">
-            Reset View
           </button>
         </div>
       </div>
 
-      <!-- 3. MAIN INTERACTIVE CHART AREA (With Left Drawing Tools Strip & Floating Legend) -->
+      <!-- 3. MAIN INTERACTIVE CHART AREA (With Left Drawing Tools Strip & Interactive SVG Drawing Layer) -->
       <div class="flex-1 flex relative overflow-hidden">
         
-        <!-- Left Vertical Drawing Toolbar -->
-        <div class="w-9 border-r border-std sidebar-surface flex flex-col items-center py-2 space-y-2.5 text-secondary shrink-0 z-10">
-          <button onclick="resetChartZoom()" title="Crosshair" class="p-1.5 rounded bg-blue-600/10 text-blue-600">✚</button>
-          <button onclick="drawHorizontalLine()" title="Draw Horizontal Pivot Line" class="p-1.5 rounded hover:bg-slate-200/50">―</button>
-          <button onclick="toggleEMAs()" title="Toggle Moving Averages" class="p-1.5 rounded hover:bg-slate-200/50">∿</button>
-          <button onclick="toggleLogScale()" title="Toggle Logarithmic Scale" class="p-1.5 rounded hover:bg-slate-200/50">%</button>
-          <button onclick="clearLines()" title="Clear Drawn Lines" class="p-1.5 rounded hover:bg-slate-200/50 text-rose-500">✕</button>
+        <!-- Left Vertical Drawing Toolbar (Feature 3: Trendline, Price Measurement, Path, Rectangle, Text, Price Label) -->
+        <div class="w-10 border-r border-std sidebar-surface flex flex-col items-center py-2 space-y-1.5 text-secondary shrink-0 z-30">
+          <!-- Cursor / Crosshair -->
+          <button id="tool_cursor" onclick="setDrawingTool('cursor')" title="Cursor / Crosshair (Esc)" class="draw-btn draw-btn-active">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M12 3v18M3 12h18"/></svg>
+          </button>
+
+          <!-- Trendline -->
+          <button id="tool_trendline" onclick="setDrawingTool('trendline')" title="Trendline (Click start point, then end point)" class="draw-btn">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><line x1="4" y1="20" x2="20" y2="4"/><circle cx="4" cy="20" r="2" fill="currentColor"/><circle cx="20" cy="4" r="2" fill="currentColor"/></svg>
+          </button>
+
+          <!-- Price Movement Measurement -->
+          <button id="tool_measure" onclick="setDrawingTool('measure')" title="Price &amp; Bar Range Measurement (Click start, then end)" class="draw-btn">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M3 5h18v14H3z"/><path d="M7 5v4M12 5v6M17 5v4"/></svg>
+          </button>
+
+          <!-- Multi-point Path -->
+          <button id="tool_path" onclick="setDrawingTool('path')" title="Path Tool (Click points to connect, Double-click or Esc to finish)" class="draw-btn">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><polyline points="3 17 9 11 13 15 21 7"/><circle cx="3" cy="17" r="1.5"/><circle cx="9" cy="11" r="1.5"/><circle cx="13" cy="15" r="1.5"/><circle cx="21" cy="7" r="1.5"/></svg>
+          </button>
+
+          <!-- Rectangle Zone -->
+          <button id="tool_rect" onclick="setDrawingTool('rect')" title="Rectangle Zone (Click corner 1, then corner 2)" class="draw-btn">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="1"/></svg>
+          </button>
+
+          <!-- Text Note -->
+          <button id="tool_text" onclick="setDrawingTool('text')" title="Text Annotation (Click on chart to type text)" class="draw-btn font-serif font-bold text-sm">
+            T
+          </button>
+
+          <!-- Price Label -->
+          <button id="tool_pricelabel" onclick="setDrawingTool('pricelabel')" title="Price Label Callout (Click on chart to stamp exact price)" class="draw-btn">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+          </button>
+
+          <div class="w-5 border-t border-std my-1"></div>
+
+          <!-- Undo Last Drawing -->
+          <button onclick="undoLastDrawing()" title="Undo Last Drawing" class="draw-btn text-secondary">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg>
+          </button>
+
+          <!-- Clear All Drawings -->
+          <button onclick="clearAllDrawings()" title="Clear All Drawings" class="draw-btn text-rose-500">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+          </button>
         </div>
 
-        <!-- Canvas Container + Floating OHLCV Legend -->
-        <div class="flex-1 relative h-full w-full">
+        <!-- Canvas Container + Floating OHLCV Legend + Interactive Drawing Overlay -->
+        <div id="chartWrapper" class="flex-1 relative h-full w-full overflow-hidden">
+          <!-- Active Drawing Mode Banner -->
+          <div id="drawingStatusBanner" class="hidden absolute top-2.5 right-20 z-30 px-3 py-1 rounded-full bg-blue-600 text-white text-[11px] font-semibold shadow-md items-center space-x-2">
+            <span id="drawingStatusText">Drawing Mode</span>
+            <button onclick="setDrawingTool('cursor')" class="underline ml-2 text-[10px] opacity-90 hover:opacity-100">Done (Esc)</button>
+          </div>
+
           <!-- Floating Top-Left Chart Legend -->
           <div class="absolute top-2.5 left-3 z-20 pointer-events-none space-y-0.5">
             <div class="flex items-center space-x-2 text-xs">
               <span id="legendTitle" class="font-bold text-primary">Reliance Industries Limited</span>
-              <span id="legendTf" class="text-secondary">1W · NSE</span>
+              <span id="legendTf" class="text-secondary">1W - NSE</span>
               <span id="legendOhlc" class="font-mono text-[11px] text-primary tabular-nums">Loading chart bars...</span>
-              <span id="legendVol" class="font-mono text-[11px] text-blue-600 tabular-nums"></span>
+              <span id="legendVol" class="font-mono text-[11px] text-emerald-600 tabular-nums"></span>
             </div>
-            <div id="legendEma" class="text-[11px] font-mono text-secondary tabular-nums">
-              EMA 50 <span class="text-indigo-600 font-semibold">—</span> · EMA 20 <span class="text-sky-500 font-semibold">—</span>
+            <div id="legendEmaContainer" class="text-[11px] font-mono text-secondary tabular-nums flex flex-wrap items-center gap-x-3">
             </div>
           </div>
 
+          <!-- Lightweight Charts Container -->
           <div id="tvChartCanvas" class="w-full h-full"></div>
+
+          <!-- SVG Vector Drawing Overlay (Synced with Price & Time Coordinates) -->
+          <svg
+            id="drawingSvgOverlay"
+            class="absolute inset-0 w-full h-full z-20 pointer-events-none"
+          ></svg>
         </div>
       </div>
 
-      <!-- 4. BOTTOM QUARTERLY FUNDAMENTAL TABLE (EPS ₹ & Sales Cr with YoY% and QoQ%) -->
-      <div class="h-36 border-t border-std header-surface flex flex-col shrink-0">
-        
-        <!-- Quarterly Grid Table -->
+      <!-- 4. BOTTOM QUARTERLY FUNDAMENTAL TABLE (Can be toggled ON/OFF via Feature 2) -->
+      <div id="bottomFundamentalsPanel" class="h-28 border-t border-std header-surface flex flex-col shrink-0 transition-all">
         <div class="flex-1 overflow-x-auto">
           <table class="w-full h-full text-left border-collapse tabular-nums">
             <thead>
               <tr id="quarterHeaderRow" class="border-b border-std text-[11px] text-secondary bg-slate-50/50 dark:bg-slate-900/40">
-                <th class="py-1.5 px-3 w-28 font-semibold border-r border-std">▼ Stats</th>
+                <th class="py-1.5 px-3 w-28 font-semibold border-r border-std">
+                  <div class="flex items-center justify-between">
+                    <span>Stats</span>
+                    <button onclick="toggleBottomFundamentals()" title="Hide Quarterly Table" class="text-[10px] text-tertiary hover:text-primary px-1">Hide</button>
+                  </div>
+                </th>
               </tr>
             </thead>
             <tbody class="divide-y divide-slate-200/60 dark:divide-slate-800/60 text-xs">
@@ -241,34 +310,88 @@
             </tbody>
           </table>
         </div>
+      </div>
 
-        <!-- 5. BOTTOM SUMMARY STRIP (3M, 6M, 1Y, RS, RS 3M, RS 6M, Mcap, Stage, 52W) -->
-        <div class="h-8 px-4 border-t border-std sidebar-surface flex items-center justify-between text-[11px] overflow-x-auto shrink-0 tabular-nums">
-          <div class="flex items-center space-x-4 shrink-0">
-            <span>3M <strong id="strip3m" class="text-emerald-600">+12.4%</strong></span>
-            <span>6M <strong id="strip6m" class="text-emerald-600">+28.6%</strong></span>
-            <span>1Y <strong id="strip1y" class="text-emerald-600">+41.2%</strong></span>
-            <span class="text-tertiary">|</span>
-            <span>RS <strong id="stripRs" class="text-primary">88</strong></span>
-            <span>RS 3M <strong id="stripRs3m" class="text-primary">91</strong></span>
-            <span>RS 6M <strong id="stripRs6m" class="text-primary">89</strong></span>
-            <span class="text-tertiary">|</span>
-            <span>Mcap <strong id="stripMcap" class="text-primary">₹17,86,286 Cr</strong></span>
-            <span>P/E <strong id="stripPe" class="text-primary">21.8</strong></span>
-            <span>ROE <strong id="stripRoe" class="text-emerald-600">15.4%</strong></span>
-            <span class="text-tertiary">|</span>
-            <span id="stripStage" class="font-semibold text-indigo-600">Stage 2 · Advancing</span>
-          </div>
-
-          <div class="flex items-center space-x-2 shrink-0 ml-4">
-            <span id="strip52w" class="text-secondary">52W ₹987 - ₹1,604</span>
-          </div>
+      <!-- 5. BOTTOM SUMMARY STRIP + CHART REFRESH & FUNDAMENTAL TOGGLE CONTROLS (Features 1 & 2) -->
+      <div class="h-9 px-4 border-t border-std sidebar-surface flex items-center justify-between text-[11px] overflow-x-auto shrink-0 tabular-nums">
+        <div class="flex items-center space-x-3.5 shrink-0">
+          <span>3M <strong id="strip3m" class="text-emerald-600">+12.4%</strong></span>
+          <span>6M <strong id="strip6m" class="text-emerald-600">+28.6%</strong></span>
+          <span>1Y <strong id="strip1y" class="text-emerald-600">+41.2%</strong></span>
+          <span class="text-tertiary">|</span>
+          <span>RS <strong id="stripRs" class="text-primary">88</strong></span>
+          <span>RS 3M <strong id="stripRs3m" class="text-primary">91</strong></span>
+          <span>RS 6M <strong id="stripRs6m" class="text-primary">89</strong></span>
+          <span class="text-tertiary">|</span>
+          <span>Mcap <strong id="stripMcap" class="text-primary">₹17,86,286 Cr</strong></span>
+          <span>P/E <strong id="stripPe" class="text-primary">21.8</strong></span>
+          <span>ROE <strong id="stripRoe" class="text-emerald-600">15.4%</strong></span>
+          <span class="text-tertiary">|</span>
+          <span id="stripStage" class="font-semibold text-indigo-600">Stage 2 - Advancing</span>
         </div>
 
+        <!-- Bottom-Right Controls: 52W Range + Toggle Fundamentals + Refresh Chart Button -->
+        <div class="flex items-center space-x-2.5 shrink-0 ml-4">
+          <span id="strip52w" class="text-secondary hidden xl:inline">52W ₹987 - ₹1,604</span>
+          
+          <button
+            onclick="toggleBottomFundamentals()"
+            id="bottomToggleFundBtn"
+            class="px-2 py-0.5 rounded border border-std text-secondary hover:text-primary font-medium transition-colors"
+            title="Show or Hide the bottom Quarterly EPS &amp; Sales table"
+          >
+            Fundamentals: ON
+          </button>
+
+          <button
+            onclick="refreshChartView()"
+            id="bottomRefreshBtn"
+            class="px-2.5 py-0.5 rounded bg-blue-600 hover:bg-blue-500 text-white font-semibold flex items-center space-x-1 shadow-xs transition-colors"
+            title="Reload chart candles, reset zoom, and refresh data"
+          >
+            <svg id="refreshIconSvg" class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+              <path d="M23 4v6h-6M1 20v-6h6"/>
+              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+            </svg>
+            <span>Refresh Chart</span>
+          </button>
+        </div>
       </div>
 
     </section>
 
+  </div>
+
+  <!-- ================= USER CUSTOM EMA CONFIGURATION MODAL (Feature 4) ================= -->
+  <div id="emaModal" class="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 hidden items-center justify-center p-4">
+    <div class="app-surface border border-std rounded-2xl max-w-md w-full p-5 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between border-b border-std pb-3">
+        <div>
+          <h3 class="text-sm font-bold text-primary">Custom EMA Indicators</h3>
+          <p class="text-[11px] text-secondary">Add, customize period length, color, or toggle up to 5 Exponential Moving Averages.</p>
+        </div>
+        <button onclick="closeEmaModal()" class="text-secondary hover:text-primary text-sm px-1">X</button>
+      </div>
+
+      <!-- Existing EMA List -->
+      <div id="emaListContainer" class="space-y-2.5 max-h-60 overflow-y-auto pr-1"></div>
+
+      <!-- Add New EMA Row -->
+      <div class="pt-3 border-t border-std flex items-center justify-between gap-2">
+        <div class="flex items-center space-x-2">
+          <span class="text-secondary text-xs">New EMA Period:</span>
+          <input id="newEmaPeriodInput" type="number" min="2" max="500" value="200" class="w-20 px-2 py-1 rounded border border-std bg-transparent text-primary font-mono text-xs">
+          <input id="newEmaColorInput" type="color" value="#F59E0B" class="w-7 h-7 rounded cursor-pointer border-0 bg-transparent">
+        </div>
+        <button onclick="addNewUserEma()" class="px-3 py-1 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs">
+          + Add EMA
+        </button>
+      </div>
+
+      <div class="flex justify-end space-x-2 pt-3 border-t border-std">
+        <button onclick="closeEmaModal()" class="px-4 py-1.5 rounded bg-blue-600 text-white font-semibold text-xs">Done</button>
+      </div>
+    </div>
   </div>
 
   <!-- ================= FUNDAMENTAL FILTER MODAL OVERLAY ================= -->
@@ -276,7 +399,7 @@
     <div class="app-surface border border-std rounded-2xl max-w-md w-full p-5 shadow-2xl space-y-4">
       <div class="flex items-center justify-between border-b border-std pb-3">
         <h3 class="text-sm font-bold text-primary">Fundamental Screener Criteria</h3>
-        <button onclick="closeFilterModal()" class="text-secondary hover:text-primary text-sm">✕</button>
+        <button onclick="closeFilterModal()" class="text-secondary hover:text-primary text-sm">X</button>
       </div>
 
       <div class="space-y-3 text-xs">
@@ -313,23 +436,43 @@
   </div>
 
   <script>
+    // =========================================================================
+    // STATE & USER CONFIGURATIONS
+    // =========================================================================
     let allStocks = [];
     let filteredStocks = [];
     let currentSymbol = 'RELIANCE';
     let currentTimeframe = '1wk';
     let isLogScale = true;
-    let useBarStyle = true;
-    let showEMAs = true;
+    let useBarStyle = false; // Default to Green & Red Candlesticks per Feature 5
     let isDark = false;
+    let showBottomFundamentals = true;
+
+    // Feature 5: Strictly Green (#16A34A) and Red (#DC2626) only
+    const UP_COLOR = '#16A34A';
+    const DOWN_COLOR = '#DC2626';
+
+    // Feature 4: User-customizable EMAs
+    let userEmas = [
+      { id: 'ema_20', period: 20, color: '#0284C7', enabled: true, series: null },
+      { id: 'ema_50', period: 50, color: '#4F46E5', enabled: true, series: null },
+      { id: 'ema_200', period: 200, color: '#F59E0B', enabled: false, series: null },
+    ];
 
     let chart = null;
     let mainSeries = null;
     let volumeSeries = null;
-    let ema50Series = null;
-    let ema20Series = null;
     let cachedCandles = [];
-    let drawnPriceLines = [];
 
+    // Feature 3: Interactive Drawing Tool Engine State
+    let activeTool = 'cursor'; // 'cursor' | 'trendline' | 'measure' | 'path' | 'rect' | 'text' | 'pricelabel'
+    let drawings = [];         // Completed vector shapes anchored by { time, price }
+    let draftDrawing = null;   // Currently in-progress shape
+    let mousePos = null;       // Current { time, price, x, y }
+
+    // =========================================================================
+    // CHART INITIALIZATION
+    // =========================================================================
     function initChart() {
       const container = document.getElementById('tvChartCanvas');
       container.innerHTML = '';
@@ -362,7 +505,7 @@
         },
       });
 
-      // Volume Series at bottom (Soft Blue & Pink like MarketSmith / AayQ)
+      // Volume Series at bottom (Green & Red matching candles)
       volumeSeries = chart.addHistogramSeries({
         priceFormat: { type: 'volume' },
         priceScaleId: '',
@@ -371,24 +514,11 @@
         scaleMargins: { top: 0.82, bottom: 0 },
       });
 
-      // 50 EMA Line (Indigo/Navy line like reference)
-      ema50Series = chart.addLineSeries({
-        color: isDark ? '#818CF8' : '#4F46E5',
-        lineWidth: 1.5,
-        priceLineVisible: false,
-        lastValueVisible: false,
-      });
-
-      // 20 EMA Line
-      ema20Series = chart.addLineSeries({
-        color: isDark ? '#38BDF8' : '#0284C7',
-        lineWidth: 1.2,
-        priceLineVisible: false,
-        lastValueVisible: false,
-      });
-
-      // Create either HLC Bar series (Blue/Pink) or Candlestick series
+      // Create Main Candle/Bar Series (Green & Red)
       createMainSeries();
+
+      // Create User EMA Line Series
+      rebuildUserEmaSeries();
 
       // Crosshair move handler for live OHLCV legend
       chart.subscribeCrosshairMove(param => {
@@ -403,16 +533,26 @@
         }
       });
 
-      window.addEventListener('resize', () => {
-        if (chart && container) {
-          chart.applyOptions({
-            width: container.clientWidth,
-            height: container.clientHeight
-          });
-        }
+      // Re-render vector drawings whenever user pans or zooms the chart
+      chart.timeScale().subscribeVisibleLogicalRangeChange(() => {
+        renderDrawingsOverlay();
       });
+
+      window.addEventListener('resize', resizeChartToContainer);
     }
 
+    function resizeChartToContainer() {
+      const container = document.getElementById('tvChartCanvas');
+      if (chart && container) {
+        chart.applyOptions({
+          width: container.clientWidth,
+          height: container.clientHeight
+        });
+        renderDrawingsOverlay();
+      }
+    }
+
+    // Feature 5: Green & Red Candles / Bars only
     function createMainSeries() {
       if (!chart) return;
       if (mainSeries) {
@@ -420,17 +560,17 @@
       }
       if (useBarStyle) {
         mainSeries = chart.addBarSeries({
-          upColor: '#1E1B9B',
-          downColor: '#D946EF',
+          upColor: UP_COLOR,
+          downColor: DOWN_COLOR,
           thinBars: false,
         });
       } else {
         mainSeries = chart.addCandlestickSeries({
-          upColor: '#1E1B9B',
-          downColor: '#D946EF',
+          upColor: UP_COLOR,
+          downColor: DOWN_COLOR,
           borderVisible: false,
-          wickUpColor: '#1E1B9B',
-          wickDownColor: '#D946EF',
+          wickUpColor: UP_COLOR,
+          wickDownColor: DOWN_COLOR,
         });
       }
       if (cachedCandles.length > 0) {
@@ -438,6 +578,9 @@
       }
     }
 
+    // =========================================================================
+    // FEATURE 4: USER CUSTOMIZABLE EMA ENGINE
+    // =========================================================================
     function calculateEMA(data, period) {
       const k = 2 / (period + 1);
       let emaArray = [];
@@ -452,6 +595,411 @@
       return emaArray;
     }
 
+    function rebuildUserEmaSeries() {
+      if (!chart) return;
+      // Remove existing EMA series
+      userEmas.forEach(ema => {
+        if (ema.series) {
+          try { chart.removeSeries(ema.series); } catch (e) {}
+          ema.series = null;
+        }
+      });
+
+      // Add enabled EMA series
+      const legendContainer = document.getElementById('legendEmaContainer');
+      legendContainer.innerHTML = '';
+
+      let activeCount = 0;
+      userEmas.forEach(ema => {
+        if (!ema.enabled) return;
+        activeCount++;
+        ema.series = chart.addLineSeries({
+          color: ema.color,
+          lineWidth: 1.6,
+          priceLineVisible: false,
+          lastValueVisible: false,
+        });
+        if (cachedCandles.length > 0) {
+          const emaData = calculateEMA(cachedCandles, ema.period);
+          ema.series.setData(emaData);
+          const lastVal = emaData.length > 0 ? emaData[emaData.length - 1].value : '-';
+          legendContainer.innerHTML += `<span>EMA ${ema.period} <strong style="color:${ema.color}">${lastVal}</strong></span>`;
+        } else {
+          legendContainer.innerHTML += `<span>EMA ${ema.period} <strong style="color:${ema.color}">-</strong></span>`;
+        }
+      });
+
+      document.getElementById('emaCountBadge').innerText = activeCount;
+    }
+
+    function openEmaModal() {
+      renderEmaModalList();
+      document.getElementById('emaModal').classList.remove('hidden');
+      document.getElementById('emaModal').classList.add('flex');
+    }
+
+    function closeEmaModal() {
+      document.getElementById('emaModal').classList.add('hidden');
+      document.getElementById('emaModal').classList.remove('flex');
+    }
+
+    function renderEmaModalList() {
+      const container = document.getElementById('emaListContainer');
+      if (userEmas.length === 0) {
+        container.innerHTML = '<div class="text-secondary text-center py-3">No EMAs configured. Add one below.</div>';
+        return;
+      }
+      container.innerHTML = userEmas.map((ema, idx) => `
+        <div class="flex items-center justify-between p-2 rounded-lg border border-std bg-slate-500/5">
+          <div class="flex items-center space-x-2.5">
+            <input type="checkbox" ${ema.enabled ? 'checked' : ''} onchange="toggleUserEma(${idx}, this.checked)" class="w-4 h-4 accent-blue-600 cursor-pointer">
+            <span class="font-semibold text-primary">EMA</span>
+            <input type="number" min="2" max="500" value="${ema.period}" onchange="updateUserEmaPeriod(${idx}, this.value)" class="w-16 px-2 py-0.5 rounded border border-std bg-transparent text-primary font-mono text-xs">
+          </div>
+          <div class="flex items-center space-x-2">
+            <input type="color" value="${ema.color}" onchange="updateUserEmaColor(${idx}, this.value)" class="w-6 h-6 rounded cursor-pointer border-0 bg-transparent">
+            <button onclick="removeUserEma(${idx})" class="text-rose-500 hover:text-rose-600 px-1.5 py-0.5 text-xs font-semibold">Remove</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function toggleUserEma(idx, checked) {
+      userEmas[idx].enabled = checked;
+      rebuildUserEmaSeries();
+    }
+
+    function updateUserEmaPeriod(idx, val) {
+      const p = parseInt(val, 10);
+      if (!p || p < 2) return;
+      userEmas[idx].period = p;
+      rebuildUserEmaSeries();
+    }
+
+    function updateUserEmaColor(idx, col) {
+      userEmas[idx].color = col;
+      rebuildUserEmaSeries();
+    }
+
+    function removeUserEma(idx) {
+      if (userEmas[idx].series && chart) {
+        try { chart.removeSeries(userEmas[idx].series); } catch (e) {}
+      }
+      userEmas.splice(idx, 1);
+      renderEmaModalList();
+      rebuildUserEmaSeries();
+    }
+
+    function addNewUserEma() {
+      const periodInput = document.getElementById('newEmaPeriodInput');
+      const colorInput = document.getElementById('newEmaColorInput');
+      const p = parseInt(periodInput.value, 10);
+      if (!p || p < 2 || p > 500) return;
+      userEmas.push({
+        id: 'ema_' + Date.now(),
+        period: p,
+        color: colorInput.value || '#F59E0B',
+        enabled: true,
+        series: null
+      });
+      renderEmaModalList();
+      rebuildUserEmaSeries();
+    }
+
+    // =========================================================================
+    // FEATURE 1 & 2: CHART REFRESH BUTTON & TOGGLE BOTTOM FUNDAMENTALS
+    // =========================================================================
+    function toggleBottomFundamentals() {
+      showBottomFundamentals = !showBottomFundamentals;
+      const panel = document.getElementById('bottomFundamentalsPanel');
+      const topBtn = document.getElementById('toggleFundamentalsBtn');
+      const botBtn = document.getElementById('bottomToggleFundBtn');
+
+      if (showBottomFundamentals) {
+        panel.classList.remove('hidden');
+        panel.classList.add('flex');
+        topBtn.innerText = 'Hide Fundamentals';
+        botBtn.innerText = 'Fundamentals: ON';
+        botBtn.className = 'px-2 py-0.5 rounded border border-std text-secondary hover:text-primary font-medium transition-colors';
+      } else {
+        panel.classList.add('hidden');
+        panel.classList.remove('flex');
+        topBtn.innerText = 'Show Fundamentals';
+        botBtn.innerText = 'Fundamentals: OFF';
+        botBtn.className = 'px-2 py-0.5 rounded border border-rose-500/30 bg-rose-500/10 text-rose-600 font-medium transition-colors';
+      }
+
+      // Immediately resize chart canvas to fill freed vertical space
+      setTimeout(resizeChartToContainer, 20);
+    }
+
+    async function refreshChartView() {
+      const icon = document.getElementById('refreshIconSvg');
+      if (icon) icon.classList.add('animate-spin');
+      await selectStock(currentSymbol);
+      if (chart) {
+        chart.timeScale().fitContent();
+      }
+      renderDrawingsOverlay();
+      setTimeout(() => {
+        if (icon) icon.classList.remove('animate-spin');
+      }, 350);
+    }
+
+    // =========================================================================
+    // FEATURE 3: INTERACTIVE DRAWING TOOLS (Trendline, Measure, Path, Rect, Text, Price Label)
+    // =========================================================================
+    function setDrawingTool(tool) {
+      // If finishing a multi-point path, commit it if it has >= 2 points
+      if (activeTool === 'path' && draftDrawing && draftDrawing.points && draftDrawing.points.length >= 2) {
+        drawings.push(draftDrawing);
+      }
+      draftDrawing = null;
+      activeTool = tool;
+
+      const tools = ['cursor', 'trendline', 'measure', 'path', 'rect', 'text', 'pricelabel'];
+      tools.forEach(t => {
+        const btn = document.getElementById('tool_' + t);
+        if (btn) {
+          if (t === tool) btn.classList.add('draw-btn-active');
+          else btn.classList.remove('draw-btn-active');
+        }
+      });
+
+      const svgOverlay = document.getElementById('drawingSvgOverlay');
+      const banner = document.getElementById('drawingStatusBanner');
+      const bannerText = document.getElementById('drawingStatusText');
+
+      const toolDescriptions = {
+        trendline: 'Trendline: Click point 1, then point 2',
+        measure: 'Price Measurement: Click start bar, then end bar',
+        path: 'Path: Click points to connect (Double-click or Esc to finish)',
+        rect: 'Rectangle: Click top-left corner, then bottom-right corner',
+        text: 'Text Note: Click anywhere on chart to insert text',
+        pricelabel: 'Price Label: Click anywhere on chart to stamp price callout',
+      };
+
+      if (tool === 'cursor') {
+        svgOverlay.classList.add('pointer-events-none');
+        svgOverlay.style.cursor = 'default';
+        banner.classList.add('hidden');
+        banner.classList.remove('flex');
+      } else {
+        svgOverlay.classList.remove('pointer-events-none');
+        svgOverlay.style.cursor = 'crosshair';
+        bannerText.innerText = toolDescriptions[tool] || 'Drawing Mode';
+        banner.classList.remove('hidden');
+        banner.classList.add('flex');
+      }
+
+      renderDrawingsOverlay();
+    }
+
+    function getChartPointFromEvent(e) {
+      const svg = document.getElementById('drawingSvgOverlay');
+      const rect = svg.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      if (!chart || !mainSeries) return { x, y, time: null, price: null };
+
+      let time = chart.timeScale().coordinateToTime(x);
+      // Fallback if clicked slightly outside existing bar range: snap to nearest logical index candle
+      if (!time && cachedCandles.length > 0) {
+        const logical = chart.timeScale().coordinateToLogical(x);
+        if (logical !== null) {
+          const clampedIdx = Math.max(0, Math.min(cachedCandles.length - 1, Math.round(logical)));
+          time = cachedCandles[clampedIdx].time;
+        }
+      }
+      const price = mainSeries.coordinateToPrice(y);
+      return { x, y, time, price };
+    }
+
+    function pointToScreen(pt) {
+      if (!chart || !mainSeries || !pt) return null;
+      let x = pt.time ? chart.timeScale().timeToCoordinate(pt.time) : null;
+      if (x === null && pt.x !== undefined) x = pt.x;
+      const y = pt.price !== null && pt.price !== undefined ? mainSeries.priceToCoordinate(pt.price) : pt.y;
+      if (x === null || y === null) return null;
+      return { x, y };
+    }
+
+    function setupDrawingEvents() {
+      const svg = document.getElementById('drawingSvgOverlay');
+
+      svg.addEventListener('mousemove', (e) => {
+        if (activeTool === 'cursor') return;
+        mousePos = getChartPointFromEvent(e);
+        if (draftDrawing) {
+          renderDrawingsOverlay();
+        }
+      });
+
+      svg.addEventListener('click', (e) => {
+        if (activeTool === 'cursor') return;
+        const pt = getChartPointFromEvent(e);
+        if (pt.price === null) return;
+
+        if (activeTool === 'trendline' || activeTool === 'measure' || activeTool === 'rect') {
+          if (!draftDrawing) {
+            draftDrawing = { type: activeTool, p1: pt, p2: pt };
+          } else {
+            draftDrawing.p2 = pt;
+            drawings.push(draftDrawing);
+            draftDrawing = null;
+            setDrawingTool('cursor');
+          }
+        } else if (activeTool === 'path') {
+          if (!draftDrawing) {
+            draftDrawing = { type: 'path', points: [pt] };
+          } else {
+            draftDrawing.points.push(pt);
+          }
+        } else if (activeTool === 'text') {
+          const userText = prompt('Enter chart annotation text:', 'Breakout Pivot');
+          if (userText && userText.trim()) {
+            drawings.push({ type: 'text', p1: pt, text: userText.trim() });
+          }
+          setDrawingTool('cursor');
+        } else if (activeTool === 'pricelabel') {
+          drawings.push({ type: 'pricelabel', p1: pt });
+          setDrawingTool('cursor');
+        }
+
+        renderDrawingsOverlay();
+      });
+
+      svg.addEventListener('dblclick', () => {
+        if (activeTool === 'path' && draftDrawing && draftDrawing.points.length >= 2) {
+          drawings.push(draftDrawing);
+          draftDrawing = null;
+          setDrawingTool('cursor');
+        }
+      });
+    }
+
+    function undoLastDrawing() {
+      if (draftDrawing) {
+        draftDrawing = null;
+      } else if (drawings.length > 0) {
+        drawings.pop();
+      }
+      renderDrawingsOverlay();
+    }
+
+    function clearAllDrawings() {
+      drawings = [];
+      draftDrawing = null;
+      renderDrawingsOverlay();
+    }
+
+    function renderDrawingsOverlay() {
+      const svg = document.getElementById('drawingSvgOverlay');
+      if (!svg) return;
+
+      const allToRender = [...drawings];
+      if (draftDrawing && mousePos) {
+        if (draftDrawing.type === 'path') {
+          allToRender.push({
+            type: 'path',
+            points: [...draftDrawing.points, mousePos]
+          });
+        } else {
+          allToRender.push({
+            ...draftDrawing,
+            p2: mousePos
+          });
+        }
+      }
+
+      let html = '';
+
+      allToRender.forEach(d => {
+        if (d.type === 'trendline') {
+          const s1 = pointToScreen(d.p1);
+          const s2 = pointToScreen(d.p2);
+          if (!s1 || !s2) return;
+          html += `
+            <line x1="${s1.x}" y1="${s1.y}" x2="${s2.x}" y2="${s2.y}" stroke="#2563EB" stroke-width="2" />
+            <circle cx="${s1.x}" cy="${s1.y}" r="3.5" fill="#FFFFFF" stroke="#2563EB" stroke-width="2" />
+            <circle cx="${s2.x}" cy="${s2.y}" r="3.5" fill="#FFFFFF" stroke="#2563EB" stroke-width="2" />
+          `;
+        } else if (d.type === 'rect') {
+          const s1 = pointToScreen(d.p1);
+          const s2 = pointToScreen(d.p2);
+          if (!s1 || !s2) return;
+          const rx = Math.min(s1.x, s2.x);
+          const ry = Math.min(s1.y, s2.y);
+          const rw = Math.abs(s2.x - s1.x);
+          const rh = Math.abs(s2.y - s1.y);
+          html += `
+            <rect x="${rx}" y="${ry}" width="${rw}" height="${rh}" fill="rgba(37, 99, 235, 0.14)" stroke="#2563EB" stroke-width="1.5" />
+          `;
+        } else if (d.type === 'measure') {
+          const s1 = pointToScreen(d.p1);
+          const s2 = pointToScreen(d.p2);
+          if (!s1 || !s2) return;
+          const rx = Math.min(s1.x, s2.x);
+          const ry = Math.min(s1.y, s2.y);
+          const rw = Math.abs(s2.x - s1.x);
+          const rh = Math.abs(s2.y - s1.y);
+          const diff = d.p2.price - d.p1.price;
+          const pct = ((diff / d.p1.price) * 100).toFixed(2);
+          const isGain = diff >= 0;
+          const boxFill = isGain ? 'rgba(22, 163, 74, 0.16)' : 'rgba(220, 38, 38, 0.16)';
+          const strokeCol = isGain ? '#16A34A' : '#DC2626';
+          const sign = isGain ? '+' : '';
+          const labelText = `${sign}₹${diff.toFixed(2)} (${sign}${pct}%)`;
+          const midX = rx + rw / 2;
+          const labelY = ry > 28 ? ry - 8 : ry + rh + 18;
+
+          html += `
+            <rect x="${rx}" y="${ry}" width="${rw}" height="${rh}" fill="${boxFill}" stroke="${strokeCol}" stroke-width="1.5" stroke-dasharray="4 2" />
+            <line x1="${s1.x}" y1="${s1.y}" x2="${s2.x}" y2="${s2.y}" stroke="${strokeCol}" stroke-width="1.5" />
+            <g transform="translate(${midX}, ${labelY})">
+              <rect x="-65" y="-14" width="130" height="20" rx="4" fill="${strokeCol}" />
+              <text x="0" y="-1" fill="#FFFFFF" font-size="11" font-weight="bold" text-anchor="middle">${labelText}</text>
+            </g>
+          `;
+        } else if (d.type === 'path') {
+          const coords = (d.points || []).map(pointToScreen).filter(Boolean);
+          if (coords.length < 2) return;
+          const ptsAttr = coords.map(c => `${c.x},${c.y}`).join(' ');
+          html += `<polyline points="${ptsAttr}" fill="none" stroke="#8B5CF6" stroke-width="2" />`;
+          coords.forEach(c => {
+            html += `<circle cx="${c.x}" cy="${c.y}" r="3" fill="#FFFFFF" stroke="#8B5CF6" stroke-width="2" />`;
+          });
+        } else if (d.type === 'text') {
+          const s1 = pointToScreen(d.p1);
+          if (!s1) return;
+          const safeText = (d.text || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+          const boxW = Math.max(60, safeText.length * 7 + 16);
+          html += `
+            <g transform="translate(${s1.x}, ${s1.y})">
+              <rect x="0" y="-18" width="${boxW}" height="22" rx="4" fill="#1E293B" stroke="#475569" stroke-width="1" />
+              <text x="8" y="-4" fill="#F8FAFC" font-size="11" font-weight="600">${safeText}</text>
+            </g>
+          `;
+        } else if (d.type === 'pricelabel') {
+          const s1 = pointToScreen(d.p1);
+          if (!s1 || d.p1.price === null) return;
+          const priceStr = `₹${d.p1.price.toFixed(2)}`;
+          html += `
+            <g transform="translate(${s1.x}, ${s1.y})">
+              <circle cx="0" cy="0" r="3" fill="#2563EB" />
+              <path d="M0,0 L10,-10 L78,-10 L78,10 L10,10 Z" fill="#2563EB" />
+              <text x="44" y="4" fill="#FFFFFF" font-size="10.5" font-family="monospace" font-weight="bold" text-anchor="middle">${priceStr}</text>
+            </g>
+          `;
+        }
+      });
+
+      svg.innerHTML = html;
+    }
+
+    // =========================================================================
+    // SCREENER LIST & COMPANY TERMINAL DATA LOADING
+    // =========================================================================
     async function loadScreenerList() {
       try {
         const res = await fetch('/api/v1/screener/fundamentals');
@@ -500,6 +1048,12 @@
     }
 
     async function selectStock(sym) {
+      if (sym !== currentSymbol) {
+        // Clear stock-specific drawings when switching symbols
+        drawings = [];
+        draftDrawing = null;
+        renderDrawingsOverlay();
+      }
       currentSymbol = sym;
       renderStockList();
 
@@ -513,16 +1067,16 @@
 
         // 1. Update Top Header
         document.getElementById('headerCompanyName').innerText = data.name;
-        document.getElementById('headerSymbolSector').innerText = `NSE:${data.symbol} · ${data.industry}`;
+        document.getElementById('headerSymbolSector').innerText = `NSE:${data.symbol} - ${data.industry}`;
         document.getElementById('headerLtp').innerText = `₹${data.ltp.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
         document.getElementById('headerFromHigh').innerText = `${data.pct_from_high}% from high`;
 
         // 2. Update Floating Chart Legend
         const tfMap = { '1d': '1D', '1wk': '1W', '1mo': '1M' };
         document.getElementById('legendTitle').innerText = data.name;
-        document.getElementById('legendTf').innerText = `${tfMap[currentTimeframe] || '1W'} · NSE`;
+        document.getElementById('legendTf').innerText = `${tfMap[currentTimeframe] || '1W'} - NSE`;
 
-        // 3. Update Candlesticks & Volume
+        // 3. Update Candlesticks & Volume (Green & Red only)
         cachedCandles = data.candles || [];
         if (cachedCandles.length > 0 && mainSeries) {
           mainSeries.setData(cachedCandles);
@@ -531,27 +1085,20 @@
             time: c.time,
             value: c.volume,
             color: c.close >= c.open
-              ? (isDark ? 'rgba(99, 102, 241, 0.45)' : 'rgba(129, 140, 248, 0.55)')
-              : (isDark ? 'rgba(217, 70, 239, 0.4)' : 'rgba(240, 171, 252, 0.6)')
+              ? 'rgba(22, 163, 74, 0.45)'
+              : 'rgba(220, 38, 38, 0.45)'
           }));
           volumeSeries.setData(volData);
 
-          const ema50 = calculateEMA(cachedCandles, 50);
-          const ema20 = calculateEMA(cachedCandles, 20);
-          ema50Series.setData(showEMAs ? ema50 : []);
-          ema20Series.setData(showEMAs ? ema20 : []);
+          rebuildUserEmaSeries();
 
           const last = cachedCandles[cachedCandles.length - 1];
-          const lastEma50 = ema50.length > 0 ? ema50[ema50.length - 1].value : '-';
-          const lastEma20 = ema20.length > 0 ? ema20[ema20.length - 1].value : '-';
-
           document.getElementById('legendOhlc').innerText =
             `O ${last.open}  H ${last.high}  L ${last.low}  C ${last.close}  ${data.change >= 0 ? '+' : ''}${data.change} (${data.change >= 0 ? '+' : ''}${data.change_pct}%)`;
           document.getElementById('legendVol').innerText = `Vol ${(last.volume / 10000000).toFixed(2)}Cr`;
-          document.getElementById('legendEma').innerHTML =
-            `EMA 50 <span class="text-indigo-600 font-semibold">${lastEma50}</span> · EMA 20 <span class="text-sky-500 font-semibold">${lastEma20}</span>`;
 
           chart.timeScale().fitContent();
+          renderDrawingsOverlay();
         }
 
         // 4. Render Quarterly EPS & Sales Table
@@ -592,7 +1139,13 @@
       const epsRow = document.getElementById('quarterEpsRow');
       const salesRow = document.getElementById('quarterSalesRow');
 
-      hRow.innerHTML = '<th class="py-1.5 px-3 w-28 font-semibold border-r border-std">▼ Stats</th>';
+      hRow.innerHTML = `
+        <th class="py-1.5 px-3 w-28 font-semibold border-r border-std">
+          <div class="flex items-center justify-between">
+            <span>Stats</span>
+            <button onclick="toggleBottomFundamentals()" title="Hide Quarterly Table" class="text-[10px] text-blue-600 hover:underline font-normal">Hide</button>
+          </div>
+        </th>`;
       epsRow.innerHTML = `
         <td class="py-1.5 px-3 border-r border-std font-medium text-secondary">
           <div class="flex items-center justify-between">
@@ -617,7 +1170,7 @@
         hRow.innerHTML += `<th class="py-1.5 px-3 border-r border-std font-medium text-secondary min-w-[110px]">${q.label}</th>`;
 
         const fmtPct = (v) => {
-          if (v === null || v === undefined) return '<span class="text-tertiary">—</span>';
+          if (v === null || v === undefined) return '<span class="text-tertiary">-</span>';
           const color = v >= 0 ? 'text-emerald-600' : 'text-rose-500';
           return `<span class="${color}">${v >= 0 ? '+' : ''}${v}%</span>`;
         };
@@ -625,7 +1178,7 @@
         epsRow.innerHTML += `
           <td class="py-1.5 px-3 border-r border-std">
             <div class="flex items-center justify-between">
-              <span class="font-bold text-primary">${q.eps !== null && q.eps !== undefined ? q.eps.toFixed(2) : '—'}</span>
+              <span class="font-bold text-primary">${q.eps !== null && q.eps !== undefined ? q.eps.toFixed(2) : '-'}</span>
               <div class="text-[10px] leading-tight text-right font-medium">
                 <div>${fmtPct(q.eps_yoy)}</div>
                 <div>${fmtPct(q.eps_qoq)}</div>
@@ -637,7 +1190,7 @@
         salesRow.innerHTML += `
           <td class="py-1.5 px-3 border-r border-std">
             <div class="flex items-center justify-between">
-              <span class="font-bold text-primary">${q.sales_cr !== null && q.sales_cr !== undefined ? q.sales_cr.toLocaleString('en-IN') : '—'}</span>
+              <span class="font-bold text-primary">${q.sales_cr !== null && q.sales_cr !== undefined ? q.sales_cr.toLocaleString('en-IN') : '-'}</span>
               <div class="text-[10px] leading-tight text-right font-medium">
                 <div>${fmtPct(q.sales_yoy)}</div>
                 <div>${fmtPct(q.sales_qoq)}</div>
@@ -663,7 +1216,7 @@
 
     function toggleChartStyle() {
       useBarStyle = !useBarStyle;
-      document.getElementById('styleBtn').innerText = useBarStyle ? 'Bars (Blue/Pink)' : 'Candles';
+      document.getElementById('styleBtn').innerText = useBarStyle ? 'Bars (Green/Red)' : 'Candles (Green/Red)';
       createMainSeries();
     }
 
@@ -676,35 +1229,7 @@
       chart.priceScale('right').applyOptions({
         mode: isLogScale ? LightweightCharts.PriceScaleMode.Logarithmic : LightweightCharts.PriceScaleMode.Normal
       });
-    }
-
-    function toggleEMAs() {
-      showEMAs = !showEMAs;
-      selectStock(currentSymbol);
-    }
-
-    function drawHorizontalLine() {
-      if (!cachedCandles.length || !mainSeries) return;
-      const lastPrice = cachedCandles[cachedCandles.length - 1].close;
-      const line = mainSeries.createPriceLine({
-        price: lastPrice,
-        color: '#2563EB',
-        lineWidth: 1.5,
-        lineStyle: LightweightCharts.LineStyle.Solid,
-        axisLabelVisible: true,
-        title: 'Pivot',
-      });
-      drawnPriceLines.push(line);
-    }
-
-    function clearLines() {
-      if (!mainSeries) return;
-      drawnPriceLines.forEach(l => mainSeries.removePriceLine(l));
-      drawnPriceLines = [];
-    }
-
-    function resetChartZoom() {
-      if (chart) chart.timeScale().fitContent();
+      renderDrawingsOverlay();
     }
 
     function toggleTheme() {
@@ -786,6 +1311,12 @@
     }
 
     window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        setDrawingTool('cursor');
+        closeEmaModal();
+        closeFilterModal();
+        return;
+      }
       if (document.activeElement.tagName === 'INPUT') return;
       if (e.key === 'ArrowDown') {
         e.preventDefault();
@@ -798,6 +1329,7 @@
 
     window.onload = async () => {
       initChart();
+      setupDrawingEvents();
       await loadScreenerList();
       await selectStock('RELIANCE');
     };
