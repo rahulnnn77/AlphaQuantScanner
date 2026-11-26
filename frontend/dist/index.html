@@ -6363,7 +6363,8 @@ function PublicLandingPage({ onOpenLogin, onOpenRegister, onOpenLegal }) {
                         symbol: stk.symbol, name: stk.name, ltp: stk.ltp, change_pct: stk.spread_pct,
                         volume: stk.volume || null, adx: stk.adx || null,
                         timeframe: stk.timeframe || timeframe.toUpperCase(),
-                        triggered_criteria: [`${stk.level} (${stk.status})`]
+                        triggered_criteria: [`${stk.level} (${stk.status})`],
+                        levelLine: { price: levelPrice, color: lvlColor, title: stk.level }
                       });
                       return (
                         <MiniChartCard
@@ -6491,7 +6492,12 @@ function PublicLandingPage({ onOpenLogin, onOpenRegister, onOpenLegal }) {
                             volume: stk.volume || null,
                             adx: stk.adx || null,
                             timeframe: stk.timeframe || timeframe.toUpperCase(),
-                            triggered_criteria: [`${stk.level} (${stk.status})`]
+                            triggered_criteria: [`${stk.level} (${stk.status})`],
+                            levelLine: {
+                              price: Number(stk.ltp) / (1 + spreadVal / 100),
+                              color: stk.level === 'Level-1' ? '#10B981' : stk.level === 'Level-2' ? '#06B6D4' : '#F59E0B',
+                              title: stk.level
+                            }
                           })}
                           className="hover:bg-white/[0.04] cursor-pointer transition-colors group"
                         >
@@ -9233,7 +9239,8 @@ function PublicLandingPage({ onOpenLogin, onOpenRegister, onOpenLegal }) {
           '3M': { stock: 0, sector: 0, diff: 0 },
           '6M': { stock: 0, sector: 0, diff: 0 },
           '12M': { stock: 0, sector: 0, diff: 0 }
-        }
+        },
+        levelLine: stock.levelLine || null
       };
 
       const modalContent = (
@@ -11096,6 +11103,17 @@ function PublicLandingPage({ onOpenLogin, onOpenRegister, onOpenLegal }) {
           wickUpColor: isLightInit ? '#089981' : '#8b95a1',
           wickDownColor: isLightInit ? '#f23645' : '#8b95a1'
         });
+        // Draw dashed Mean Reversion Level-1 / Level-2 / Level-3 line ONLY when opened from HPS Mean Reversion
+        if (stock && stock.levelLine && stock.levelLine.price > 0) {
+          candles.createPriceLine({
+            price: Number(stock.levelLine.price),
+            color: stock.levelLine.color || '#F59E0B',
+            lineWidth: 1.5,
+            lineStyle: 2,
+            axisLabelVisible: true,
+            title: stock.levelLine.title || 'Level'
+          });
+        }
 
         // Attach Native ISeriesPrimitive Drawing Engine (zero-lag, pans/zooms in sync with candles)
         const symKey = `aq_drawings_v2_${getAqUserKey()}_${stock.symbol}`;
@@ -12071,6 +12089,11 @@ function PublicLandingPage({ onOpenLogin, onOpenRegister, onOpenLegal }) {
                     )}
                   </div>
                   <div className="flex flex-wrap items-center gap-x-3 text-[10.5px] font-mono tabular-nums font-medium">
+                    {stock.levelLine && stock.levelLine.price > 0 && (
+                      <span style={{ color: stock.levelLine.color || '#F59E0B' }}>
+                        {stock.levelLine.title || 'Level'} Support ₹{rsFmt(stock.levelLine.price)}
+                      </span>
+                    )}
                     {stock.isIpo && showIpoPivot && stock.ath > 0 && (
                       <span style={{ color: '#f59e0b' }}>
                         IPO High Pivot ₹{rsFmt(stock.ath)} ({(((activeBar.close || stock.ltp) / stock.ath - 1) * 100).toFixed(2)}%)
