@@ -4570,6 +4570,8 @@ function PublicLandingPage({ onOpenLogin, onOpenRegister, onOpenLegal }) {
       const [searchQuery, setSearchQuery] = useState('');
       const [breakoutFilter, setBreakoutFilter] = useState('ALL'); // 'ALL', 'BROKEN_ABOVE', 'BROKEN_BELOW'
       const [sortField, setSortField] = useState('spread'); // 'symbol', 'name', 'ltp', 'spread', 'adx'
+      const [viewMode, setViewMode] = useState('cards'); // 'cards' (chart cards) or 'table'
+      const [cardsShown, setCardsShown] = useState(12);
       const [sortAsc, setSortAsc] = useState(false);
       const [copiedSymbol, setCopiedSymbol] = useState(null);
       const [exportSuccess, setExportSuccess] = useState(false);
@@ -4854,6 +4856,14 @@ function PublicLandingPage({ onOpenLogin, onOpenRegister, onOpenLegal }) {
                 </button>
               </div>
 
+              {/* View toggle: chart cards or table */}
+              <div className="flex items-center p-0.5 bg-[#070C16] border border-white/[0.08] rounded-xl text-xs font-medium" role="group" aria-label="View">
+                {[['cards', 'Cards'], ['table', 'Table']].map(([k, l]) => (
+                  <button key={k} type="button" onClick={() => setViewMode(k)} aria-pressed={viewMode === k}
+                    className={`px-3 py-1 rounded-lg transition-colors ${viewMode === k ? 'bg-white/[0.1] text-white' : 'text-slate-400 hover:text-slate-200'}`}>{l}</button>
+                ))}
+              </div>
+
               {/* Export CSV Button */}
               <button
                 type="button"
@@ -4882,8 +4892,55 @@ function PublicLandingPage({ onOpenLogin, onOpenRegister, onOpenLegal }) {
             </div>
           </div>
 
+          {/* Chart cards view: one card per breakout, with its daily chart */}
+          {viewMode === 'cards' && (
+            <div>
+              {loading ? (
+                <div className="py-16 text-center text-xs font-mono text-slate-500">Loading breakouts...</div>
+              ) : filteredList.length === 0 ? (
+                <div className="py-16 text-center text-xs font-mono text-slate-500">No stocks match this timeframe and filter</div>
+              ) : (
+                <React.Fragment>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-4">
+                    {filteredList.slice(0, cardsShown).map((stk) => {
+                      const isBull = stk.status === 'BROKEN_ABOVE';
+                      const spreadVal = Number(stk.diff_pct != null ? stk.diff_pct : stk.spread_pct || 0);
+                      const open = () => onSelectStock({
+                        symbol: stk.symbol, name: stk.name, ltp: stk.ltp, change_pct: spreadVal,
+                        volume: stk.volume || null, adx: stk.adx || null,
+                        timeframe: stk.timeframe || activeTimeframe.toUpperCase(),
+                        triggered_criteria: [stk.action || (isBull ? 'Bullish Breakout' : 'Bearish Breakdown')]
+                      });
+                      return (
+                        <MiniChartCard
+                          key={stk.symbol}
+                          stk={{ symbol: stk.symbol, name: stk.name, sector: stk.industry || stk.sector, ltp: stk.ltp }}
+                          onOpenTechChart={open}
+                          hideChange
+                          eyebrow={`${isBull ? 'Bullish Breakout' : 'Bearish Breakdown'} · ${activeTimeframe.toUpperCase()}`}
+                          eyebrowCls={isBull ? 'text-emerald-400' : 'text-rose-400'}
+                          stats={[
+                            ['Spread', `${spreadVal >= 0 ? '+' : ''}${spreadVal.toFixed(2)}%`],
+                            ['ADX', stk.adx ? Number(stk.adx).toFixed(1) : '—'],
+                            ['Segment', stk.is_fo ? 'F&O' : 'CASH']
+                          ]}
+                        />
+                      );
+                    })}
+                  </div>
+                  <div className="mt-4 flex items-center justify-between text-[11px] font-mono text-slate-500">
+                    <span>Showing <span className="text-white font-semibold">{Math.min(cardsShown, filteredList.length)}</span> of <span className="text-white font-semibold">{filteredList.length}</span> on <span className="text-cyan-400 font-semibold">{activeTimeframe.toUpperCase()}</span></span>
+                    {cardsShown < filteredList.length && (
+                      <button type="button" onClick={() => setCardsShown(n => n + 12)} className="px-3.5 py-1.5 bg-white/[0.04] hover:bg-white/[0.08] text-slate-300 hover:text-white text-xs font-medium rounded-xl border border-white/[0.08] transition-colors">Show 12 more</button>
+                    )}
+                  </div>
+                </React.Fragment>
+              )}
+            </div>
+          )}
+
           {/* Premium Financial Data Table */}
-          <div className="bg-[#0B101B]/90 backdrop-blur-md border border-white/[0.08] rounded-2xl overflow-hidden shadow-2xl">
+          <div className={`bg-[#0B101B]/90 backdrop-blur-md border border-white/[0.08] rounded-2xl overflow-hidden shadow-2xl ${viewMode === 'table' ? '' : 'hidden'}`}>
             <div className="overflow-x-auto custom-scrollbar">
               <table className="w-full text-left text-xs font-sans tabular-nums border-collapse">
                 <thead>
@@ -5078,6 +5135,7 @@ function PublicLandingPage({ onOpenLogin, onOpenRegister, onOpenLegal }) {
     // ----------------- FEATURE 3B: HPS SELECTED (TOP 10 BY ADX PER TIMEFRAME + SAVED TOP 3 F&O 7-DAY HISTORY) ----------------- //
     function HpsSelectedSection({ onSelectStock }) {
       const [viewMode, setViewMode] = useState('live'); // 'live' (Live Top 10) or 'history' (Saved Top 3 F&O 7-Day History)
+      const [layout, setLayout] = useState('cards'); // live list as 'cards' (chart cards) or 'table'
       const [universe, setUniverse] = useState('nifty500'); // 'nifty500' or 'fo'
       const [activeTimeframe, setActiveTimeframe] = useState('daily'); // '4h', 'daily', 'weekly', 'monthly'
       const [dataByTimeframe, setDataByTimeframe] = useState({ '4h': [], daily: [], weekly: [], monthly: [] });
@@ -5478,6 +5536,14 @@ function PublicLandingPage({ onOpenLogin, onOpenRegister, onOpenLegal }) {
                 </button>
               </div>
 
+              {/* View toggle: chart cards or table */}
+              {viewMode === 'live' && (<div className="flex items-center p-0.5 bg-[#070C16] border border-white/[0.08] rounded-xl text-xs font-medium" role="group" aria-label="View">
+                {[['cards', 'Cards'], ['table', 'Table']].map(([k, l]) => (
+                  <button key={k} type="button" onClick={() => setLayout(k)} aria-pressed={layout === k}
+                    className={`px-3 py-1 rounded-lg transition-colors ${layout === k ? 'bg-white/[0.1] text-white' : 'text-slate-400 hover:text-slate-200'}`}>{l}</button>
+                ))}
+              </div>)}
+
               {/* Export CSV Button */}
               <button
                 type="button"
@@ -5509,8 +5575,48 @@ function PublicLandingPage({ onOpenLogin, onOpenRegister, onOpenLegal }) {
             </div>
           </div>
 
+          {/* Chart cards view for the live Top 10 */}
+          {viewMode === 'live' && layout === 'cards' && (
+            <div>
+              {loading ? (
+                <div className="py-16 text-center text-xs font-mono text-slate-500">Loading ranked breakouts...</div>
+              ) : filteredList.length === 0 ? (
+                <div className="py-16 text-center text-xs font-mono text-slate-500">No ranked stocks match this timeframe and filter</div>
+              ) : (
+                <div className="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-4">
+                  {filteredList.map((stk, i) => {
+                    const isBull = stk.status === 'BROKEN_ABOVE';
+                    const adxVal = Number(stk.adx || 0);
+                    const spreadVal = Number(stk.diff_pct != null ? stk.diff_pct : stk.spread_pct || 0);
+                    const open = () => onSelectStock({
+                      symbol: stk.symbol, name: stk.name, ltp: stk.ltp, change_pct: spreadVal,
+                      volume: stk.volume || null, adx: stk.adx || null,
+                      timeframe: stk.timeframe || activeTimeframe.toUpperCase(),
+                      triggered_criteria: [stk.action || (isBull ? 'Bullish Breakout' : 'Bearish Breakdown')]
+                    });
+                    return (
+                      <MiniChartCard
+                        key={stk.symbol}
+                        stk={{ symbol: stk.symbol, name: stk.name, sector: stk.industry || stk.sector, ltp: stk.ltp }}
+                        onOpenTechChart={open}
+                        hideChange
+                        eyebrow={`#${i + 1} · ${isBull ? 'Bullish Breakout' : 'Bearish Breakdown'} · ${activeTimeframe.toUpperCase()}`}
+                        eyebrowCls={isBull ? 'text-emerald-400' : 'text-rose-400'}
+                        stats={[
+                          ['ADX', adxVal ? `${adxVal.toFixed(2)} · ${adxVal >= 40 ? 'Extreme Trend' : adxVal >= 25 ? 'Strong Trend' : 'Trend'}` : '—'],
+                          ['Spread', `${spreadVal >= 0 ? '+' : ''}${spreadVal.toFixed(2)}%`],
+                          ['Segment', stk.is_fo ? 'F&O' : 'CASH']
+                        ]}
+                      />
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Table Container: Live Top 10 OR Saved 7-Day History */}
-          <div className="bg-[#0B101B]/90 backdrop-blur-md border border-white/[0.08] rounded-2xl overflow-hidden shadow-2xl">
+          <div className={`bg-[#0B101B]/90 backdrop-blur-md border border-white/[0.08] rounded-2xl overflow-hidden shadow-2xl ${viewMode === 'live' && layout === 'cards' ? 'hidden' : ''}`}>
             <div className="overflow-x-auto custom-scrollbar">
               {viewMode === 'history' ? (
                 /* HISTORY TABLE VIEW */
@@ -5833,6 +5939,8 @@ function PublicLandingPage({ onOpenLogin, onOpenRegister, onOpenLegal }) {
       const [timeframe, setTimeframe] = useState('daily'); // 'daily', 'weekly', 'monthly'
       const [level, setLevel] = useState('all'); // 'all', 'level1', 'level2', 'level3'
       const [statusFilter, setStatusFilter] = useState('ALL'); // 'ALL', 'SUPPORT', 'TESTING'
+      const [layout, setLayout] = useState('cards'); // 'cards' (chart cards) or 'table'
+      const [cardsShown, setCardsShown] = useState(12);
       const [dataByTimeframe, setDataByTimeframe] = useState({
         daily: { level1: [], level2: [], level3: [] },
         weekly: { level1: [], level2: [], level3: [] },
@@ -6199,6 +6307,14 @@ function PublicLandingPage({ onOpenLogin, onOpenRegister, onOpenLegal }) {
                 </button>
               </div>
 
+              {/* View toggle: chart cards or table */}
+              <div className="flex items-center p-0.5 bg-[#070C16] border border-white/[0.08] rounded-xl text-xs font-medium" role="group" aria-label="View">
+                {[['cards', 'Cards'], ['table', 'Table']].map(([k, l]) => (
+                  <button key={k} type="button" onClick={() => setLayout(k)} aria-pressed={layout === k}
+                    className={`px-3 py-1 rounded-lg transition-colors ${layout === k ? 'bg-white/[0.1] text-white' : 'text-slate-400 hover:text-slate-200'}`}>{l}</button>
+                ))}
+              </div>
+
               {/* Export CSV Button */}
               <button
                 type="button"
@@ -6227,8 +6343,59 @@ function PublicLandingPage({ onOpenLogin, onOpenRegister, onOpenLegal }) {
             </div>
           </div>
 
+          {/* Chart cards view: one card per setup, with the support level drawn on its chart */}
+          {layout === 'cards' && (
+            <div>
+              {loading ? (
+                <div className="py-16 text-center text-xs font-mono text-slate-500">Loading setups...</div>
+              ) : filteredList.length === 0 ? (
+                <div className="py-16 text-center text-xs font-mono text-slate-500">No setups match this level and filter</div>
+              ) : (
+                <React.Fragment>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-4">
+                    {filteredList.slice(0, cardsShown).map((stk, i) => {
+                      const isSupport = stk.status === 'At Support Level';
+                      const spreadVal = Number(stk.spread_pct != null ? stk.spread_pct : 0);
+                      const lvlColor = stk.level === 'Level-1' ? '#10B981' : stk.level === 'Level-2' ? '#06B6D4' : '#F59E0B';
+                      const lvlCls = stk.level === 'Level-1' ? 'text-emerald-400' : stk.level === 'Level-2' ? 'text-cyan-400' : 'text-amber-400';
+                      const levelPrice = Number(stk.ltp) / (1 + spreadVal / 100);
+                      const open = () => onSelectStock({
+                        symbol: stk.symbol, name: stk.name, ltp: stk.ltp, change_pct: stk.spread_pct,
+                        volume: stk.volume || null, adx: stk.adx || null,
+                        timeframe: stk.timeframe || timeframe.toUpperCase(),
+                        triggered_criteria: [`${stk.level} (${stk.status})`]
+                      });
+                      return (
+                        <MiniChartCard
+                          key={`${stk.symbol}-${stk.level}-${i}`}
+                          stk={{ symbol: stk.symbol, name: stk.name, sector: stk.industry || stk.sector, ltp: stk.ltp }}
+                          onOpenTechChart={open}
+                          hideChange
+                          hideHps
+                          levelLine={{ price: levelPrice, color: lvlColor, title: stk.level }}
+                          eyebrow={`${stk.level} · ${isSupport ? 'At Support' : 'Testing Level'} · ${timeframe.toUpperCase()}`}
+                          eyebrowCls={lvlCls}
+                          stats={[
+                            ['Distance to level', `${spreadVal >= 0 ? '+' : ''}${spreadVal.toFixed(2)}%`],
+                            ['Segment', stk.is_fo ? 'F&O' : 'CASH']
+                          ]}
+                        />
+                      );
+                    })}
+                  </div>
+                  <div className="mt-4 flex items-center justify-between text-[11px] font-mono text-slate-500">
+                    <span>Showing <span className="text-white font-semibold">{Math.min(cardsShown, filteredList.length)}</span> of <span className="text-white font-semibold">{filteredList.length}</span> setups</span>
+                    {cardsShown < filteredList.length && (
+                      <button type="button" onClick={() => setCardsShown(n => n + 12)} className="px-3.5 py-1.5 bg-white/[0.04] hover:bg-white/[0.08] text-slate-300 hover:text-white text-xs font-medium rounded-xl border border-white/[0.08] transition-colors">Show 12 more</button>
+                    )}
+                  </div>
+                </React.Fragment>
+              )}
+            </div>
+          )}
+
           {/* Premium Financial Data Table */}
-          <div className="bg-[#0B101B]/90 backdrop-blur-md border border-white/[0.08] rounded-2xl overflow-hidden shadow-2xl">
+          <div className={`bg-[#0B101B]/90 backdrop-blur-md border border-white/[0.08] rounded-2xl overflow-hidden shadow-2xl ${layout === 'table' ? '' : 'hidden'}`}>
             <div className="overflow-x-auto custom-scrollbar">
               <table className="w-full text-left text-xs font-sans tabular-nums border-collapse">
                 <thead>
@@ -12044,7 +12211,7 @@ function PublicLandingPage({ onOpenLogin, onOpenRegister, onOpenLegal }) {
     }
 
 
-    function MiniChartCard({ stk, onOpenTechChart }) {
+    function MiniChartCard({ stk, onOpenTechChart, eyebrow, eyebrowCls, stats, hideChange, hideHps, levelLine }) {
       const boxRef = React.useRef(null);
       const chartRef = React.useRef(null);
       const [visible, setVisible] = React.useState(false);
@@ -12097,13 +12264,16 @@ function PublicLandingPage({ onOpenLogin, onOpenRegister, onOpenLegal }) {
           wickUpColor: '#10B981', wickDownColor: '#F43F5E'
         });
         cs.setData(candles.map(c => ({ time: c.time, open: c.open, high: c.high, low: c.low, close: c.close })));
-        const hps = chart.addLineSeries({ color: '#06B6D4', lineWidth: 1.8 });
+        const hps = hideHps ? null : chart.addLineSeries({ color: '#06B6D4', lineWidth: 1.8 });
         let ema = candles[0].close;
         const k = 2 / 64;
-        hps.setData(candles.map((c, idx) => {
+        if (hps) hps.setData(candles.map((c, idx) => {
           ema = idx === 0 ? c.close : (c.close * k + ema * (1 - k));
           return { time: c.time, value: +ema.toFixed(2) };
         }));
+        if (levelLine && levelLine.price > 0) {
+          cs.createPriceLine({ price: levelLine.price, color: levelLine.color || '#F59E0B', lineWidth: 1, lineStyle: 2, axisLabelVisible: true, title: levelLine.title || 'Level' });
+        }
         chart.timeScale().fitContent();
         chartRef.current = chart;
         return () => { chart.remove(); chartRef.current = null; };
@@ -12155,8 +12325,8 @@ function PublicLandingPage({ onOpenLogin, onOpenRegister, onOpenLegal }) {
         <div className="bg-[#0B101B] border border-white/[0.08] hover:border-cyan-500/35 rounded-xl p-3.5 flex flex-col gap-2 transition-colors">
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
-              <div className="text-[10px] font-mono font-semibold text-cyan-400">
-                {stk.isIpo ? 'IPO Base Setup' : (stk.ltp > stk.e50 ? 'HPS Alpha Uptrend' : 'Watchlist Candidate')}
+              <div className={`text-[10px] font-mono font-semibold ${eyebrowCls || 'text-cyan-400'}`}>
+                {eyebrow || (stk.isIpo ? 'IPO Base Setup' : (stk.ltp > stk.e50 ? 'HPS Alpha Uptrend' : 'Watchlist Candidate'))}
               </div>
               <div className="flex items-baseline gap-2 flex-wrap">
                 <span className="text-sm font-bold text-white truncate">{stk.name || stk.symbol}</span>
@@ -12169,13 +12339,19 @@ function PublicLandingPage({ onOpenLogin, onOpenRegister, onOpenLegal }) {
                 Tech Chart ›
               </button>
               <div className="text-xs font-mono font-bold text-white">
-                ₹{Number(stk.ltp || 0).toLocaleString('en-IN')} <span className={chg >= 0 ? 'text-emerald-400' : 'text-rose-400'}>({chg >= 0 ? '+' : ''}{chg.toFixed(2)}%)</span>
+                ₹{Number(stk.ltp || 0).toLocaleString('en-IN')}{!hideChange && <span className={chg >= 0 ? ' text-emerald-400' : ' text-rose-400'}> ({chg >= 0 ? '+' : ''}{chg.toFixed(2)}%)</span>}
               </div>
             </div>
           </div>
           <div className="flex items-center flex-wrap gap-3 text-[11px] font-mono text-slate-400 pb-1.5 border-b border-white/[0.05]">
-            <span>Vol <strong className="text-slate-200">{stk.vol_x ? `${Number(stk.vol_x).toFixed(2)}x` : '—'}</strong></span>
-            <span>RSI <strong className="text-slate-200">{stk.rsi ? Number(stk.rsi).toFixed(1) : '—'}</strong></span>
+            {stats ? stats.map(([l, v]) => (
+              <span key={l}>{l} <strong className="text-slate-200">{v}</strong></span>
+            )) : (
+              <React.Fragment>
+                <span>Vol <strong className="text-slate-200">{stk.vol_x ? `${Number(stk.vol_x).toFixed(2)}x` : '—'}</strong></span>
+                <span>RSI <strong className="text-slate-200">{stk.rsi ? Number(stk.rsi).toFixed(1) : '—'}</strong></span>
+              </React.Fragment>
+            )}
           </div>
           <div ref={boxRef} className="w-full h-[220px] bg-[#070B13] rounded-lg overflow-hidden border border-white/[0.05] flex items-center justify-center text-[11px] font-mono text-slate-500">
             {!candles ? 'Loading chart...' : (candles.length === 0 ? 'No historical candles' : '')}
@@ -12295,6 +12471,7 @@ function PublicLandingPage({ onOpenLogin, onOpenRegister, onOpenLegal }) {
       const [viewChartCards, setViewChartCards] = useState(false);
       const [cardsPage, setCardsPage] = useState(1);
       const [draft, setDraft] = useState({ k: 'roe', op: '>', v: '' });
+      const [filtersOpen, setFiltersOpen] = useState(false);
       const [selected, setSelected] = useState(RS_DATA[0].symbol);
       const [sortKey, setSortKey] = useState('change_pct');
       const [q, setQ] = useState('');
@@ -12494,6 +12671,24 @@ function PublicLandingPage({ onOpenLogin, onOpenRegister, onOpenLegal }) {
       };
 
       const reset = () => { setFilters([]); if (universe === 'ipo') setUniverse('n500'); setTech(t => ({ ...t, ipoBase: false, above21: false, nearHps: false, nearAth: false, near52: false, sectorOutperf: false, sectorMomentum: false, rsMomentum: false, above200: false, above50: false, golden: false, rsi60: false, volSpike: false })); setViewSectorChart(false); };
+      // Active technical toggles, shown as removable chips above the (collapsible) filter drawer
+      const TECH_CHIP_LABELS = [
+        ['above21', 'Above 21 EMA'], ['above50', 'Above 50 EMA'], ['above200', 'Above 200 EMA'], ['golden', '50 EMA > 200 EMA'],
+        ['nearHps', `Near HPS Alpha (${tech.nearHpsPct}%)`], ['hpsBreakout', 'HPS Alpha Breakout'],
+        ['nearAth', `Within ${tech.nearAthPct}% ATH`], ['near52', `Within ${tech.near52Pct}% 52WH`],
+        ['rsMomentum', 'High RS Momentum (RS > 75)'], ['sectorOutperf', 'Sector Outperformer (3M)'], ['sectorMomentum', 'Sector Momentum (1M+3M RS)'],
+        ['rsi60', 'RSI > 60'], ['volSpike', 'Volume 2x']
+      ];
+      const sectorsOn = mode === 'sectors' || universe === 'sectors';
+      const activeTechChips = [
+        ...(sectorsOn ? [{ id: 'sectorScope', label: sectorScope === 'main19' ? 'Main 19 Sectors' : 'All Sector View (38)', cls: 'bg-cyan-500/10 border-cyan-500/30 text-cyan-300',
+          off: () => { setMode('technical'); setUniverse('n500'); setSelected(RS_DATA[0].symbol); } }] : []),
+        ...(tech.ipoBase ? [{ id: 'ipoBase', label: `IPO Base (<${tech.ipoAthPct}% ATH)`, cls: 'bg-amber-500/10 border-amber-500/30 text-amber-300',
+          off: () => { if (universe === 'ipo') setUniverse('n500'); setTech(t => ({ ...t, ipoBase: false })); } }] : []),
+        ...TECH_CHIP_LABELS.filter(([k]) => tech[k]).map(([k, label]) => ({ id: k, label, cls: 'bg-amber-500/10 border-amber-500/30 text-amber-300',
+          off: () => setTech(t => ({ ...t, [k]: false })) }))
+      ];
+      const activeFilterCount = activeTechChips.length + filters.length;
       const fieldOpts = Object.entries(RS_FIELDS).filter(([, [, kind]]) => mode === 'fundamental' ? kind === 'f' : kind === 't');
       const Toggle = ({ k, label }) => (
         <button onClick={() => setTech(t => ({ ...t, [k]: !t[k] }))}
@@ -12923,17 +13118,48 @@ function PublicLandingPage({ onOpenLogin, onOpenRegister, onOpenLegal }) {
                   ))}
                 </div>
 
-                {/* Curated Presets: Near All-Time High & Sector Best Performers */}
-                <div className="flex gap-1 overflow-x-auto pb-0.5">
-                  {RS_PRESETS.map(p => (
-                    <button key={p.name} onClick={() => applyPreset(p)} className="shrink-0 px-2.5 py-1 rounded border border-[#1A2538] text-[10px] text-slate-300 hover:text-white hover:border-slate-500 bg-[#0A0E17]">
-                      {p.name}
-                    </button>
-                  ))}
+                {/* Compact filter bar: presets menu + collapsible filter drawer (keeps the results list visible) */}
+                <div className="flex items-center gap-1.5">
+                  <select value="" onChange={e => { const p = RS_PRESETS.find(x => x.name === e.target.value); if (p) applyPreset(p); }} aria-label="Apply a preset screen"
+                    className="flex-1 min-w-0 bg-[#0A0E17] border border-[#1A2538] rounded-md text-[11px] text-slate-300 px-2 py-1.5 focus:outline-none focus:border-blue-500/60">
+                    <option value="">Presets…</option>
+                    {RS_PRESETS.map(p => <option key={p.name} value={p.name}>{p.name}</option>)}
+                  </select>
+                  <button onClick={() => setFiltersOpen(o => !o)} aria-expanded={filtersOpen}
+                    className={`shrink-0 px-2.5 py-1.5 rounded-md text-[11px] border flex items-center gap-1.5 transition-colors ${filtersOpen ? 'bg-white/[0.08] border-slate-500 text-white' : 'border-[#1A2538] bg-[#0A0E17] text-slate-300 hover:text-white hover:border-slate-500'}`}>
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5h18l-7 8v5l-4 2v-7L3 5z" /></svg>
+                    <span>Filters</span>
+                    {activeFilterCount > 0 && <span className="px-1.5 rounded bg-amber-500/20 text-amber-300 font-mono font-semibold">{activeFilterCount}</span>}
+                    <svg className={`w-3 h-3 transition-transform ${filtersOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" /></svg>
+                  </button>
                 </div>
 
-                {(mode === 'technical' || mode === 'sectors') && (
-                  <div className="flex flex-wrap gap-1 pt-1">
+                {/* Active filters: always visible, one chip per filter that is on */}
+                {activeFilterCount > 0 && (
+                  <div className="flex flex-wrap gap-1">
+                    {activeTechChips.map(c => (
+                      <span key={c.id} className={`inline-flex items-center gap-1 pl-2 pr-1 py-0.5 rounded text-[11px] border ${c.cls}`}>
+                        {c.label}
+                        <button onClick={c.off} aria-label={`Remove ${c.label}`} className="px-1 opacity-60 hover:opacity-100">x</button>
+                      </span>
+                    ))}
+                    {filters.map((f, i) => (
+                      <span key={i} className={`inline-flex items-center gap-1 pl-2 pr-1 py-0.5 rounded text-[11px] border ${RS_FIELDS[f.k][1] === 'f' ? 'bg-blue-500/10 border-blue-500/30 text-blue-300' : 'bg-amber-500/10 border-amber-500/30 text-amber-300'}`}>
+                        {RS_FIELDS[f.k][0]} {f.op} {f.v}
+                        <button onClick={() => setFilters(fs => fs.filter((_, j) => j !== i))} aria-label="Remove filter" className="px-1 opacity-60 hover:opacity-100">x</button>
+                      </span>
+                    ))}
+                    <button onClick={reset} className="text-[11px] text-slate-500 hover:text-slate-300 px-1">Reset all</button>
+                  </div>
+                )}
+
+                {filtersOpen && (
+                  <div className="rounded-md border border-[#1A2538] bg-[#0A0E17] p-2 space-y-2.5 max-h-[46vh] overflow-y-auto custom-scrollbar apple-modal-card">
+                    {(mode === 'technical' || mode === 'sectors') && (
+                      <React.Fragment>
+                        <div>
+                          <div className="text-[10px] uppercase tracking-wider text-slate-500 mb-1">Universe</div>
+                          <div className="flex flex-wrap gap-1">
                     <button
                       onClick={() => {
                         if ((mode === 'sectors' || universe === 'sectors') && sectorScope === 'main19') {
@@ -12988,19 +13214,36 @@ function PublicLandingPage({ onOpenLogin, onOpenRegister, onOpenLegal }) {
                     >
                       <span>IPO Base (&lt;{tech.ipoAthPct}% ATH)</span>
                     </button>
-                    <Toggle k="above21" label="Above 21 EMA" />
-                    <Toggle k="nearHps" label="Near HPS Alpha" />
-                    <Toggle k="sectorOutperf" label="Sector Outperformer (3M)" />
-                    <Toggle k="sectorMomentum" label="Sector Momentum (1M+3M RS)" />
-                    <Toggle k="rsMomentum" label="High RS Momentum (RS > 75)" />
-                    <Toggle k="nearAth" label={`Within ${tech.nearAthPct}% ATH`} />
-                    <Toggle k="near52" label={`Within ${tech.near52Pct}% 52WH`} />
-                    <Toggle k="above200" label="Above 200 EMA" />
-                    <Toggle k="above50" label="Above 50 EMA" />
-                    <Toggle k="golden" label="50 EMA > 200 EMA" />
-                    <Toggle k="rsi60" label="RSI > 60" />
-                    <Toggle k="volSpike" label="Volume 2x" />
-                    
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-[10px] uppercase tracking-wider text-slate-500 mb-1">Trend</div>
+                          <div className="flex flex-wrap gap-1">
+                            <Toggle k="above21" label="Above 21 EMA" />
+                            <Toggle k="above50" label="Above 50 EMA" />
+                            <Toggle k="above200" label="Above 200 EMA" />
+                            <Toggle k="golden" label="50 EMA > 200 EMA" />
+                            <Toggle k="nearHps" label="Near HPS Alpha" />
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-[10px] uppercase tracking-wider text-slate-500 mb-1">Highs</div>
+                          <div className="flex flex-wrap gap-1">
+                            <Toggle k="nearAth" label={`Within ${tech.nearAthPct}% ATH`} />
+                            <Toggle k="near52" label={`Within ${tech.near52Pct}% 52WH`} />
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-[10px] uppercase tracking-wider text-slate-500 mb-1">Strength &amp; volume</div>
+                          <div className="flex flex-wrap gap-1">
+                            <Toggle k="rsMomentum" label="High RS Momentum (RS > 75)" />
+                            <Toggle k="sectorOutperf" label="Sector Outperformer (3M)" />
+                            <Toggle k="sectorMomentum" label="Sector Momentum (1M+3M RS)" />
+                            <Toggle k="rsi60" label="RSI > 60" />
+                            <Toggle k="volSpike" label="Volume 2x" />
+                          </div>
+                        </div>
+                        <div className="flex flex-wrap">
                     {tech.ipoBase && (
                       <div className="w-full flex items-center gap-2 text-[11px] text-amber-300/90 pt-1">
                         <span>IPO Max % From ATH</span>
@@ -13029,9 +13272,11 @@ function PublicLandingPage({ onOpenLogin, onOpenRegister, onOpenLegal }) {
                         <span className="text-slate-300 w-8 text-right font-mono">{tech.near52Pct}%</span>
                       </div>
                     )}
-                  </div>
-                )}
-
+                        </div>
+                      </React.Fragment>
+                    )}
+                    <div>
+                      <div className="text-[10px] uppercase tracking-wider text-slate-500 mb-1">Custom rule</div>
                 <div className="flex gap-1 pt-1">
                   <select value={draft.k} onChange={e => setDraft(d => ({ ...d, k: e.target.value }))} className="flex-1 min-w-0 bg-[#0A0E17] border border-[#1A2538] rounded text-[11px] text-slate-200 px-1.5 py-1 focus:outline-none">
                     {fieldOpts.map(([k, [l]]) => <option key={k} value={k}>{l}</option>)}
@@ -13043,16 +13288,7 @@ function PublicLandingPage({ onOpenLogin, onOpenRegister, onOpenLegal }) {
                     className="w-16 bg-[#0A0E17] border border-[#1A2538] rounded text-[11px] text-slate-200 px-1.5 py-1 focus:outline-none focus:border-blue-500/60 font-mono" />
                   <button onClick={addFilter} className="px-2 rounded bg-blue-600 hover:bg-blue-500 text-white text-[11px]">Add</button>
                 </div>
-
-                {(filters.length > 0 || techOn) && (
-                  <div className="flex flex-wrap gap-1">
-                    {filters.map((f, i) => (
-                      <span key={i} className={`inline-flex items-center gap-1 pl-2 pr-1 py-0.5 rounded text-[11px] border ${RS_FIELDS[f.k][1] === 'f' ? 'bg-blue-500/10 border-blue-500/30 text-blue-300' : 'bg-amber-500/10 border-amber-500/30 text-amber-300'}`}>
-                        {RS_FIELDS[f.k][0]} {f.op} {f.v}
-                        <button onClick={() => setFilters(fs => fs.filter((_, j) => j !== i))} className="px-1 opacity-60 hover:opacity-100">x</button>
-                      </span>
-                    ))}
-                    <button onClick={reset} className="text-[11px] text-slate-500 hover:text-slate-300 px-1">Reset all</button>
+                    </div>
                   </div>
                 )}
               </div>
