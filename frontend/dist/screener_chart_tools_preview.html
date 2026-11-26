@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AlphaQuant Screener · Chart</title>
+<script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
+<style>
+  :root{--chrome:#0d121d;--chromeLine:rgba(255,255,255,.08);--chromeText:#cbd5e1;--chromeMute:#64748b}
+  *{box-sizing:border-box}
+  body{margin:0;background:#070B13;color:var(--chromeText);font:13px/1.4 -apple-system,BlinkMacSystemFont,"Inter","Segoe UI",sans-serif;-webkit-font-smoothing:antialiased;padding:24px}
+  .card{max-width:1320px;margin:0 auto;border:1px solid var(--chromeLine);border-radius:10px;overflow:hidden;background:var(--chrome)}
+  .hdr{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--chromeLine)}
+  .hdr .name{font-size:15px;font-weight:600;color:#f1f5f9}
+  .hdr .meta{font:12px ui-monospace,"SF Mono",Menlo,monospace;color:var(--chromeMute);margin-left:10px}
+  .hdr .px{font:600 14px ui-monospace,"SF Mono",Menlo,monospace;color:#f1f5f9}
+  .bar{display:flex;align-items:center;justify-content:space-between;padding:6px 10px 6px 12px;border-bottom:1px solid var(--chromeLine);font-size:12px}
+  .bar-r{display:flex;align-items:center;gap:8px}
+  .actbtn{all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:5px;border:1px solid var(--chromeLine);color:var(--chromeText);font-size:12px;transition:background .15s,border-color .15s}
+  .actbtn:hover{background:rgba(255,255,255,.07);border-color:rgba(255,255,255,.18)}
+  .actbtn svg{width:14px;height:14px}
+  .tf{display:flex;gap:2px}
+  .tf span{padding:4px 9px;border-radius:4px;color:var(--chromeMute);cursor:default}
+  .tf span.on{color:#e2e8f0;background:rgba(255,255,255,.07)}
+  .seg{display:inline-flex;border:1px solid var(--chromeLine);border-radius:5px;padding:2px}
+  .seg button{all:unset;cursor:pointer;padding:3px 10px;border-radius:3px;color:var(--chromeMute);font-size:12px}
+  .seg button.on{background:rgba(255,255,255,.09);color:#f1f5f9}
+  .seg button:focus-visible{outline:1px solid #2962ff}
+
+  /* chart segment: only this area follows the chart theme */
+  .seg-chart{display:flex;height:600px;--bg:#131722;--rail:#131722;--railLine:#2a2e39;--icon:#b2b5be;--iconHover:#d1d4dc;--hoverBg:#2a2e39;--accent:#2962ff;--tip:#1e222d;--tipText:#d1d4dc}
+  .seg-chart.light{--bg:#ffffff;--rail:#ffffff;--railLine:#e0e3eb;--icon:#131722;--iconHover:#131722;--hoverBg:#f0f3fa;--accent:#2962ff;--tip:#131722;--tipText:#ffffff}
+  .rail{width:44px;flex:none;background:var(--rail);border-right:1px solid var(--railLine);display:flex;flex-direction:column;align-items:center;padding:6px 0;gap:2px;user-select:none}
+  .rail .sep{width:22px;height:1px;background:var(--railLine);margin:5px 0}
+  .tb{all:unset;width:36px;height:34px;border-radius:4px;display:flex;align-items:center;justify-content:center;color:var(--icon);cursor:pointer;position:relative}
+  .tb:hover{background:var(--hoverBg);color:var(--iconHover)}
+  .tb.on{color:var(--accent)}
+  .tb.on::before{content:"";position:absolute;left:-4px;top:8px;bottom:8px;width:2px;border-radius:2px;background:var(--accent)}
+  .tb svg{width:22px;height:22px}
+  .tb .tip{position:absolute;left:44px;top:50%;transform:translateY(-50%);background:var(--tip);color:var(--tipText);font-size:12px;padding:5px 8px;border-radius:4px;white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .12s .25s;z-index:40}
+  .tb .tip kbd{font:11px ui-monospace,monospace;opacity:.6;margin-left:8px}
+  .tb:hover .tip{opacity:1}
+  .wrap{flex:1;position:relative;background:var(--bg);min-width:0}
+  #chart{position:absolute;inset:0}
+  .legend{position:absolute;left:12px;top:8px;z-index:5;pointer-events:none;font:12px -apple-system,BlinkMacSystemFont,sans-serif;display:flex;gap:10px;color:var(--icon)}
+  .legend b{font-weight:500}
+  .txtin{position:absolute;z-index:30;font:13px -apple-system,BlinkMacSystemFont,sans-serif;padding:4px 6px;border:1px solid var(--accent);border-radius:3px;background:var(--bg);color:var(--icon);outline:none;min-width:160px}
+  .flt{position:absolute;top:10px;left:50%;transform:translateX(-50%);z-index:35;display:none;align-items:center;gap:6px;padding:5px 8px;border-radius:6px;background:var(--rail);border:1px solid var(--railLine);box-shadow:0 8px 24px rgba(0,0,0,.35);font-size:11.5px;color:var(--icon);user-select:none}
+  .flt.on{display:flex}
+  .flt .fsep{width:1px;height:16px;background:var(--railLine)}
+  .flt button,.flt select{all:unset;cursor:pointer;padding:3px 7px;border-radius:4px;font-size:11.5px;color:var(--icon);border:1px solid transparent}
+  .flt button:hover,.flt select:hover{background:var(--hoverBg);color:var(--iconHover)}
+  .flt button.on{background:rgba(41,98,255,.16);color:var(--accent);border-color:rgba(41,98,255,.35)}
+  .flt input[type=color]{width:20px;height:20px;padding:0;border:1px solid var(--railLine);border-radius:4px;background:transparent;cursor:pointer}
+  .modal-bg{position:fixed;inset:0;z-index:80;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center}
+  .modal-bg.on{display:flex}
+  .modal{width:340px;background:var(--rail);color:var(--icon);border:1px solid var(--railLine);border-radius:8px;box-shadow:0 20px 50px rgba(0,0,0,.5);font-size:12.5px;overflow:hidden}
+  .modal .mh{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--railLine);font-weight:600;color:var(--iconHover)}
+  .modal .mb{padding:14px 16px;display:flex;flex-direction:column;gap:12px}
+  .modal .row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .modal .row label{color:var(--icon)}
+  .modal input[type=color]{width:28px;height:24px;padding:0;border:1px solid var(--railLine);border-radius:4px;background:transparent;cursor:pointer}
+  .modal input[type=range]{width:110px;accent-color:var(--accent)}
+  .modal select{background:var(--bg);color:var(--iconHover);border:1px solid var(--railLine);border-radius:4px;padding:4px 8px;font-size:12px}
+  .modal .mf{display:flex;justify-content:flex-end;gap:8px;padding:10px 16px;border-top:1px solid var(--railLine)}
+  .modal .mbtn{all:unset;cursor:pointer;padding:6px 14px;border-radius:4px;font-size:12px;font-weight:500}
+  .modal .mbtn.pri{background:var(--accent);color:#fff}
+  .modal .mbtn.sec{border:1px solid var(--railLine);color:var(--icon)}
+  .foot{max-width:1320px;margin:10px auto 0;color:#475569;font-size:12px;display:flex;justify-content:space-between}
+  .foot kbd{font:11px ui-monospace,monospace;color:#64748b;border:1px solid #1e293b;border-radius:3px;padding:0 4px}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="hdr">
+    <div><span class="name">Bharat Electronics</span><span class="meta">NSE:BEL · Aerospace &amp; Defence</span></div>
+    <div class="px" id="hdrPx">—</div>
+  </div>
+  <div class="bar">
+    <div class="tf"><span>4h</span><span class="on">Daily</span><span>Weekly</span><span>1M</span><span>3M</span><span>1Y</span><span>5Y</span></div>
+    <div class="bar-r">
+      <button class="actbtn" id="btnCopy" onclick="copyChartImage()" title="Copy high-res chart image to clipboard">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        <span id="copyLbl">Copy Chart</span>
+      </button>
+      <div class="seg" role="group" aria-label="Chart theme">
+        <button id="thDark" class="on" onclick="setTheme('dark')">Dark</button>
+        <button id="thLight" onclick="setTheme('light')">Light</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="seg-chart" id="segChart">
+    <div class="rail" id="rail">
+      <button class="tb on" data-tool="cursor" aria-label="Cursor"><svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M14 6v16M6 14h16"/></svg><span class="tip">Cursor<kbd>Esc</kbd></span></button>
+      <div class="sep"></div>
+      <button class="tb" data-tool="trend" aria-label="Trend line"><svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M8.5 19.5l11-11"/><circle cx="7.5" cy="20.5" r="2"/><circle cx="20.5" cy="7.5" r="2"/></svg><span class="tip">Trend line<kbd>Alt T</kbd></span></button>
+      <button class="tb" data-tool="hline" aria-label="Horizontal line"><svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M4 14h7.5M16.5 14H24"/><circle cx="14" cy="14" r="2"/></svg><span class="tip">Horizontal line<kbd>Alt H</kbd></span></button>
+      <button class="tb" data-tool="channel" aria-label="Parallel channel"><svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M5 17.5l14-10M9 21.5l14-10"/><path d="M7 19.5l14-10" stroke-dasharray="2 2" opacity=".55"/><circle cx="5" cy="17.5" r="1.6" fill="currentColor"/><circle cx="19" cy="7.5" r="1.6" fill="currentColor"/></svg><span class="tip">Parallel channel (3 clicks)</span></button>
+      <div class="sep"></div>
+      <button class="tb" data-tool="long" aria-label="Long position"><svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M6 6.5h16v7H6z" fill="rgba(8,153,129,.25)" stroke="#089981"/><path d="M6 15.5h16v6H6z" fill="rgba(242,54,69,.18)" stroke="#f23645"/><path d="M4 14.5h20"/></svg><span class="tip">Long position</span></button>
+      <button class="tb" data-tool="short" aria-label="Short position"><svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M6 6.5h16v6H6z" fill="rgba(242,54,69,.18)" stroke="#f23645"/><path d="M6 14.5h16v7H6z" fill="rgba(8,153,129,.25)" stroke="#089981"/><path d="M4 13.5h20"/></svg><span class="tip">Short position</span></button>
+      <button class="tb" data-tool="measure" aria-label="Price and date range"><svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M6.5 6.5h15v15h-15z"/><path d="M14 9v10M11.5 11.5L14 9l2.5 2.5M9 14h10M16.5 11.5L19 14l-2.5 2.5"/></svg><span class="tip">Price &amp; date range</span></button>
+      <div class="sep"></div>
+      <button class="tb" data-tool="text" aria-label="Text"><svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M8 8.5h12M14 8.5v12M11.5 20.5h5"/></svg><span class="tip">Text</span></button>
+      <button class="tb" data-tool="note" aria-label="Price note"><svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M9 6.5h13v9h-8l-3.5 3v-3H9z"/><circle cx="6.5" cy="21.5" r="1.6" fill="currentColor"/></svg><span class="tip">Price note</span></button>
+      <div class="sep"></div>
+      <button class="tb on" id="tbMagnet" aria-label="Magnet"><svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M8 7v8a6 6 0 0 0 12 0V7h-4v8a2 2 0 0 1-4 0V7z"/><path d="M8 10.5h4M16 10.5h4"/></svg><span class="tip">Magnet: snap to OHLC</span></button>
+      <button class="tb" id="tbHide" aria-label="Hide all drawings"><svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M4 14s3.6-6.5 10-6.5S24 14 24 14s-3.6 6.5-10 6.5S4 14 4 14z"/><circle cx="14" cy="14" r="3"/><path id="hideSlash" d="M6 22L22 6" style="display:none"/></svg><span class="tip" id="hideTip">Hide all drawings</span></button>
+      <button class="tb" id="tbUndo" aria-label="Undo"><svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M8 11h9.5a4.5 4.5 0 0 1 0 9H12"/><path d="M11.5 7.5L8 11l3.5 3.5"/></svg><span class="tip">Undo<kbd>⌘Z</kbd></span></button>
+      <button class="tb" id="tbDelete" aria-label="Remove drawings"><svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M7.5 9h13M11.5 9V7h5v2M9 9l1 12.5h8L19 9"/></svg><span class="tip" id="delTip">Remove all drawings</span></button>
+    </div>
+    <div class="wrap" id="wrap">
+      <div class="legend" id="legend"></div>
+      <div class="flt" id="chanBar">
+        <input type="color" id="chColor" value="#2962ff" title="Line color" oninput="setChanStyle('color', this.value)" />
+        <div class="fsep"></div>
+        <button id="chW1" onclick="setChanStyle('width', 1)">1px</button>
+        <button id="chW2" onclick="setChanStyle('width', 2)">2px</button>
+        <button id="chW3" onclick="setChanStyle('width', 3)">3px</button>
+        <div class="fsep"></div>
+        <button id="chSolid" onclick="setChanStyle('dash', 'solid')">Solid</button>
+        <button id="chDash" onclick="setChanStyle('dash', 'dash')">Dashed</button>
+        <button id="chDot" onclick="setChanStyle('dash', 'dot')">Dotted</button>
+        <div class="fsep"></div>
+        <button id="chMid" onclick="setChanStyle('mid', !getChanStyle().mid)">Midline</button>
+        <button id="chFill" onclick="setChanStyle('fill', !getChanStyle().fill)">Fill</button>
+        <button id="chExtL" onclick="setChanStyle('extL', !getChanStyle().extL)">Ext L</button>
+        <button id="chExtR" onclick="setChanStyle('extR', !getChanStyle().extR)">Ext R</button>
+        <div class="fsep"></div>
+        <button onclick="openChanModal()" title="Settings">Settings</button>
+        <button onclick="deleteSelected()" style="color:#f23645" title="Delete channel">Delete</button>
+      </div>
+      <div class="modal-bg" id="setModal" onclick="if(event.target===this)closeChanModal()">
+        <div class="modal">
+          <div class="mh"><span>Parallel Channel Settings</span><button class="mbtn" onclick="closeChanModal()">✕</button></div>
+          <div class="mb">
+            <div class="row"><label>Channel Border Color</label><input type="color" id="mColor" oninput="setChanStyle('color', this.value)" /></div>
+            <div class="row"><label>Line Width</label><select id="mWidth" onchange="setChanStyle('width', +this.value)"><option value="1">1 px</option><option value="2">2 px</option><option value="3">3 px</option><option value="4">4 px</option></select></div>
+            <div class="row"><label>Line Style</label><select id="mDash" onchange="setChanStyle('dash', this.value)"><option value="solid">Solid</option><option value="dash">Dashed</option><option value="dot">Dotted</option></select></div>
+            <div class="row"><label><input type="checkbox" id="mMid" onchange="setChanStyle('mid', this.checked)" /> Show Midline</label><input type="color" id="mMidColor" oninput="setChanStyle('midColor', this.value)" /></div>
+            <div class="row"><label><input type="checkbox" id="mFill" onchange="setChanStyle('fill', this.checked)" /> Background Fill</label><input type="color" id="mFillColor" oninput="setChanStyle('fillColor', this.value)" /></div>
+            <div class="row"><label>Fill Opacity (<span id="mOpVal">12</span>%)</label><input type="range" id="mOp" min="0" max="60" value="12" oninput="document.getElementById('mOpVal').textContent=this.value;setChanStyle('fillOp', +this.value/100)" /></div>
+            <div class="row"><label><input type="checkbox" id="mExtL" onchange="setChanStyle('extL', this.checked)" /> Extend Left</label><label><input type="checkbox" id="mExtR" onchange="setChanStyle('extR', this.checked)" /> Extend Right</label></div>
+          </div>
+          <div class="mf"><button class="mbtn pri" onclick="closeChanModal()">Done</button></div>
+        </div>
+      </div>
+      <div id="chart"></div>
+    </div>
+  </div>
+</div>
+<div class="foot">
+  <span>Drawings are saved automatically for this user and symbol.</span>
+  <span>Drag a drawing or its handles to edit &nbsp;·&nbsp; <kbd>Del</kbd> remove &nbsp;·&nbsp; <kbd>⌘Z</kbd> undo &nbsp;·&nbsp; <kbd>Esc</kbd> cancel</span>
+</div>
+
+<script>
+/* ---------------- state ---------------- */
+const USER = 'demo', SYMBOL = 'BEL';
+const KEY = `aq_drawings_v2_${USER}_${SYMBOL}`;
+const S = {
+  chart: null, series: null, prim: null, candles: [], idx: new Map(),
+  drawings: (() => { try { const a = JSON.parse(localStorage.getItem(KEY) || '[]'); return Array.isArray(a) ? a.filter(d => d && Array.isArray(d.pts) && d.pts.length) : []; } catch { return []; } })(),
+  tool: 'cursor', draft: null, sel: null, hover: null, drag: null,
+  hidden: false, magnet: true, undo: [],
+  theme: localStorage.getItem('aq_chart_theme') || 'dark'
+};
+const THEME = {
+  dark:  { bg:'#131722', text:'#b2b5be', grid:'rgba(42,46,57,.6)', border:'#2a2e39', up:'#089981', down:'#f23645', line:'#2962ff', ink:'#d1d4dc', label:'#1e222d', crosshair:'#758696' },
+  light: { bg:'#ffffff', text:'#131722', grid:'rgba(42,46,57,.06)', border:'#e0e3eb', up:'#089981', down:'#f23645', line:'#2962ff', ink:'#131722', label:'#ffffff', crosshair:'#9598a1' }
+};
+const T = () => THEME[S.theme];
+const fmt = p => p.toFixed(2);
+let measureCtx = document.createElement('canvas').getContext('2d');
+
+/* ------------- anchors: stored as {t: bar time, b: bars beyond} so they survive pan, zoom, reload and new data ------------- */
+function logicalOf(a) {
+  let i = S.idx.get(a.t);
+  if (i == null) { // data changed: nearest bar at or before
+    let lo = 0, hi = S.candles.length - 1;
+    while (lo < hi) { const m = (lo + hi + 1) >> 1; S.candles[m].time <= a.t ? lo = m : hi = m - 1; }
+    i = lo;
+  }
+  return i + (a.b || 0);
+}
+function anchorAt(l) {
+  const last = S.candles.length - 1, li = Math.round(l);
+  if (li <= last) return { t: S.candles[Math.max(0, li)].time, b: Math.min(0, li) };
+  return { t: S.candles[last].time, b: li - last };
+}
+const xOf = a => S.chart.timeScale().logicalToCoordinate(logicalOf(a));
+const yOf = p => S.series.priceToCoordinate(p);
+function pointFrom(x, y) {
+  const l = S.chart.timeScale().coordinateToLogical(x);
+  if (l == null) return null;
+  const a = anchorAt(l);
+  let p = S.series.coordinateToPrice(y);
+  if (p == null) return null;
+  const bar = S.candles[logicalOf(a)];
+  if (S.magnet && bar && !a.b) {
+    let best = null, bd = 14;
+    [bar.open, bar.high, bar.low, bar.close].forEach(v => { const d = Math.abs(yOf(v) - y); if (d < bd) { bd = d; best = v; } });
+    if (best != null) p = best;
+  }
+  return { a, p };
+}
+
+/* ---------------- geometry shared by renderer and hit-testing ---------------- */
+function geo(d) {
+  return d.pts.map(pt => ({ x: d.type === 'hline' ? null : xOf(pt.a), y: yOf(pt.p) }));
+}
+function textBox(d, g) {
+  const pTxt = `₹${fmt(d.pts[0].p)}`;
+  const lab = d.type === 'note' ? (d.text ? `${pTxt} · ${d.text}` : pTxt) : d.text;
+  measureCtx.font = d.type === 'note' ? '600 12px ui-monospace,"SF Mono",Menlo,monospace' : '14px -apple-system,BlinkMacSystemFont,sans-serif';
+  const w = measureCtx.measureText(lab).width;
+  if (d.type === 'note') return { lab, x: g[0].x + 12, y: g[0].y - 34, w: w + 16, h: 24 };
+  return { lab, x: g[0].x, y: g[0].y - 10, w, h: 20 };
+}
+
+/* ---------------- renderer (runs inside the chart paint, so it never lags the chart) ---------------- */
+function render(ctx, W, H) {
+  if (S.hidden) return;
+  const th = T();
+  const list = S.draft ? [...S.drawings, S.draft] : S.drawings;
+  list.forEach(d => {
+    const g = geo(d), active = d === S.sel || d === S.draft, hov = d === S.hover;
+    ctx.save();
+    ctx.lineWidth = active || hov ? 2 : 1.5;
+    if (d.type === 'trend') {
+      ctx.strokeStyle = th.line;
+      ctx.beginPath(); ctx.moveTo(g[0].x, g[0].y); ctx.lineTo(g[1].x, g[1].y); ctx.stroke();
+    }
+    if (d.type === 'hline') {
+      ctx.strokeStyle = th.line;
+      ctx.beginPath(); ctx.moveTo(0, Math.round(g[0].y) + .5); ctx.lineTo(W, Math.round(g[0].y) + .5); ctx.stroke();
+    }
+    if (d.type === 'channel') {
+      const st = Object.assign({ color: th.line, midColor: th.line, fillColor: th.line, fillOp: 0.12, width: 1.5, dash: 'solid', mid: true, fill: true, extL: false, extR: false }, d.style || {});
+      const p0 = g[0], p1 = g[1], p2 = g[2];
+      const dy = p2 ? (p2.y - (p0.y + p1.y) / 2) : 0;
+      let ax = p0.x, ay = p0.y, bx = p1.x, by = p1.y;
+      if (bx < ax) { [ax, bx] = [bx, ax]; [ay, by] = [by, ay]; }
+      const dx = bx - ax, slope = Math.abs(dx) > 0.5 ? (by - ay) / dx : 0;
+      if (st.extL && Math.abs(dx) > 0.5) { ay = ay - slope * ax; ax = 0; }
+      if (st.extR && Math.abs(dx) > 0.5) { by = by + slope * (W - bx); bx = W; }
+      const q0 = { x: ax, y: ay + dy }, q1 = { x: bx, y: by + dy };
+      if (p2 && st.fill) {
+        ctx.fillStyle = st.fillColor || st.color; ctx.globalAlpha = st.fillOp != null ? st.fillOp : 0.12;
+        ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(bx, by); ctx.lineTo(q1.x, q1.y); ctx.lineTo(q0.x, q0.y); ctx.closePath(); ctx.fill();
+        ctx.globalAlpha = 1;
+      }
+      if (p2 && st.mid) {
+        ctx.strokeStyle = st.midColor || st.color; ctx.lineWidth = 1; ctx.setLineDash([4, 4]); ctx.globalAlpha = .75;
+        ctx.beginPath(); ctx.moveTo(ax, ay + dy / 2); ctx.lineTo(bx, by + dy / 2); ctx.stroke();
+        ctx.setLineDash([]); ctx.globalAlpha = 1;
+      }
+      ctx.strokeStyle = st.color; ctx.lineWidth = (active || hov) ? Math.max(st.width, 2) : st.width;
+      ctx.setLineDash(st.dash === 'dash' ? [6, 4] : st.dash === 'dot' ? [2, 3] : []);
+      ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(bx, by);
+      if (p2) { ctx.moveTo(q0.x, q0.y); ctx.lineTo(q1.x, q1.y); }
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+    if (d.type === 'long' || d.type === 'short') {
+      const x1 = Math.min(g[0].x, g[1].x), x2 = Math.max(g[0].x, g[1].x), ye = g[0].y, yt = g[1].y, ys = g[2].y;
+      ctx.fillStyle = 'rgba(8,153,129,.2)'; ctx.fillRect(x1, Math.min(ye, yt), x2 - x1, Math.abs(yt - ye));
+      ctx.fillStyle = 'rgba(242,54,69,.2)'; ctx.fillRect(x1, Math.min(ye, ys), x2 - x1, Math.abs(ys - ye));
+      ctx.strokeStyle = th.ink; ctx.lineWidth = 1; ctx.globalAlpha = .7;
+      ctx.beginPath(); ctx.moveTo(x1, ye); ctx.lineTo(x2, ye); ctx.stroke(); ctx.globalAlpha = 1;
+      const e = d.pts[0].p, t = d.pts[1].p, s = d.pts[2].p;
+      const rw = Math.abs(t - e), rk = Math.abs(e - s) || 1e-9;
+      const lbl = (txt, y, bg) => {
+        ctx.font = '12px -apple-system,BlinkMacSystemFont,sans-serif';
+        const w = ctx.measureText(txt).width + 12, cx = (x1 + x2) / 2;
+        ctx.fillStyle = bg; ctx.beginPath(); ctx.roundRect ? ctx.roundRect(cx - w / 2, y - 10, w, 20, 3) : ctx.rect(cx - w / 2, y - 10, w, 20); ctx.fill();
+        ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(txt, cx, y + .5);
+      };
+      if (active || hov || x2 - x1 > 150) {
+        const up = d.type === 'long';
+        lbl(`Target: ${fmt(t)} (${(rw / e * 100).toFixed(2)}%) ${fmt(rw)}`, yt + (up ? -14 : 14), '#089981');
+        lbl(`Stop: ${fmt(s)} (${(rk / e * 100).toFixed(2)}%) ${fmt(rk)}`, ys + (up ? 14 : -14), '#f23645');
+        lbl(`Risk/Reward ${(rw / rk).toFixed(2)}`, ye + (up ? 14 : -14), d.type === 'long' ? '#089981' : '#f23645');
+      }
+    }
+    if (d.type === 'measure') {
+      const up = d.pts[1].p >= d.pts[0].p, col = up ? '#2962ff' : '#f23645';
+      const x1 = Math.min(g[0].x, g[1].x), x2 = Math.max(g[0].x, g[1].x), y1 = Math.min(g[0].y, g[1].y), y2 = Math.max(g[0].y, g[1].y);
+      ctx.fillStyle = up ? 'rgba(41,98,255,.14)' : 'rgba(242,54,69,.14)'; ctx.fillRect(x1, y1, x2 - x1, y2 - y1);
+      ctx.strokeStyle = col; ctx.lineWidth = 1;
+      const mx = (x1 + x2) / 2, my = (y1 + y2) / 2;
+      ctx.beginPath(); ctx.moveTo(mx, g[0].y); ctx.lineTo(mx, g[1].y); ctx.moveTo(g[0].x, my); ctx.lineTo(g[1].x, my); ctx.stroke();
+      const ah = (x, y, dx, dy) => { ctx.beginPath(); ctx.moveTo(x - 4 * dy - 4 * dx, y - 4 * dx - 4 * dy); ctx.lineTo(x, y); ctx.lineTo(x + 4 * dy - 4 * dx, y + 4 * dx - 4 * dy); ctx.stroke(); };
+      ah(mx, g[1].y, 0, g[1].y > g[0].y ? 1 : -1); ah(g[1].x, my, g[1].x > g[0].x ? 1 : -1, 0);
+      const dp = d.pts[1].p - d.pts[0].p, bars = Math.round(logicalOf(d.pts[1].a) - logicalOf(d.pts[0].a));
+      const days = Math.round((S.candles[Math.min(S.candles.length - 1, logicalOf(d.pts[1].a))]?.time - S.candles[Math.min(S.candles.length - 1, logicalOf(d.pts[0].a))]?.time) / 86400) || 0;
+      const l1 = `${dp >= 0 ? '' : '−'}${fmt(Math.abs(dp))} (${(dp / d.pts[0].p * 100).toFixed(2)}%)`, l2 = `${bars} bars, ${Math.abs(days)}d`;
+      ctx.font = '12px -apple-system,BlinkMacSystemFont,sans-serif';
+      const w = Math.max(ctx.measureText(l1).width, ctx.measureText(l2).width) + 16, by = up ? y1 - 46 : y2 + 6;
+      ctx.fillStyle = col; ctx.beginPath(); ctx.roundRect ? ctx.roundRect(mx - w / 2, by, w, 40, 3) : ctx.rect(mx - w / 2, by, w, 40); ctx.fill();
+      ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(l1, mx, by + 13); ctx.fillText(l2, mx, by + 28);
+    }
+    if (d.type === 'text' || d.type === 'note') {
+      const b = textBox(d, g);
+      if (d.type === 'note') {
+        ctx.strokeStyle = th.line; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(g[0].x, g[0].y); ctx.lineTo(b.x, b.y + b.h); ctx.stroke();
+        ctx.fillStyle = th.line; ctx.beginPath(); ctx.arc(g[0].x, g[0].y, 3, 0, 7); ctx.fill();
+        ctx.fillStyle = th.line; ctx.beginPath(); ctx.roundRect ? ctx.roundRect(b.x, b.y, b.w, b.h, 3) : ctx.rect(b.x, b.y, b.w, b.h); ctx.fill();
+        ctx.fillStyle = '#fff'; ctx.font = '600 12px ui-monospace,"SF Mono",Menlo,monospace';
+        ctx.textBaseline = 'middle'; ctx.fillText(b.lab, b.x + 8, b.y + b.h / 2 + .5);
+      } else {
+        ctx.fillStyle = th.line; ctx.font = '14px -apple-system,BlinkMacSystemFont,sans-serif';
+        ctx.textBaseline = 'middle'; ctx.fillText(b.lab, b.x, b.y + b.h / 2);
+        if (active || hov) { ctx.strokeStyle = th.line; ctx.lineWidth = 1; ctx.setLineDash([3, 3]); ctx.strokeRect(b.x - 4, b.y - 2, b.w + 8, b.h + 4); }
+      }
+    }
+    if (active || hov) handlesOf(d, g).forEach(h => {
+      ctx.setLineDash([]); ctx.fillStyle = th.bg; ctx.strokeStyle = th.line; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.arc(h.x, h.y, 5, 0, 7); ctx.fill(); ctx.stroke();
+    });
+    ctx.restore();
+  });
+}
+function handlesOf(d, g) {
+  if (d.type === 'trend' || d.type === 'measure') return g.map((p, i) => ({ ...p, i }));
+  if (d.type === 'channel') {
+    const hs = [{ x: g[0].x, y: g[0].y, i: 0 }, { x: g[1].x, y: g[1].y, i: 1 }];
+    if (g[2]) hs.push({ x: (g[0].x + g[1].x) / 2, y: g[2].y, i: 2 });
+    return hs;
+  }
+  if (d.type === 'long' || d.type === 'short') return [{ x: g[0].x, y: g[0].y, i: 0 }, { x: g[1].x, y: g[1].y, i: 1 }, { x: g[2].x, y: g[2].y, i: 2 }];
+  if (d.type === 'hline') return [{ x: S.chart.timeScale().width() / 2, y: g[0].y, i: 0 }];
+  if (d.type === 'note') return [{ x: g[0].x, y: g[0].y, i: 0 }];
+  return [];
+}
+
+/* ---------------- series primitive: draws on the chart's own pane + price-axis labels ---------------- */
+class Drawings {
+  constructor() { this._axis = []; }
+  attached({ requestUpdate }) { this.requestUpdate = requestUpdate; }
+  updateAllViews() {
+    const th = T(), out = [];
+    if (!S.hidden) S.drawings.concat(S.draft ? [S.draft] : []).forEach(d => {
+      const show = d.type === 'hline' || d === S.sel || d === S.draft;
+      if (!show) return;
+      const prices = d.type === 'long' || d.type === 'short' ? [[d.pts[1].p, '#089981'], [d.pts[0].p, th.line], [d.pts[2].p, '#f23645']]
+        : d.type === 'text' ? [] : d.pts.map(p => [p.p, th.line]);
+      prices.forEach(([p, c]) => out.push({ coordinate: () => yOf(p), text: () => fmt(p), textColor: () => '#ffffff', backColor: () => c, visible: () => true, tickVisible: () => true }));
+    });
+    this._axis = out;
+  }
+  priceAxisViews() { return this._axis; }
+  paneViews() { return [{ zOrder: () => 'top', renderer: () => ({ draw: target => target.useMediaCoordinateSpace(({ context, mediaSize }) => render(context, mediaSize.width, mediaSize.height)) }) }]; }
+}
+const repaint = () => S.prim && S.prim.requestUpdate && S.prim.requestUpdate();
+
+/* ---------------- persistence + history ---------------- */
+function save() { localStorage.setItem(KEY, JSON.stringify(S.drawings.map(({ type, pts, text, style }) => ({ type, pts, text, style })))); refreshRail(); }
+function snapshot() { S.undo.push(JSON.stringify(S.drawings)); if (S.undo.length > 100) S.undo.shift(); }
+function undo() {
+  if (S.draft) { S.draft = null; repaint(); return; }
+  if (!S.undo.length) return;
+  S.drawings = JSON.parse(S.undo.pop()); S.sel = S.hover = null; save(); repaint();
+}
+
+/* ---------------- hit testing ---------------- */
+function distSeg(px, py, a, b) {
+  const dx = b.x - a.x, dy = b.y - a.y, L = dx * dx + dy * dy || 1;
+  const t = Math.max(0, Math.min(1, ((px - a.x) * dx + (py - a.y) * dy) / L));
+  return Math.hypot(px - (a.x + t * dx), py - (a.y + t * dy));
+}
+function hit(x, y) {
+  if (S.hidden) return null;
+  for (let k = S.drawings.length - 1; k >= 0; k--) {
+    const d = S.drawings[k], g = geo(d);
+    if (d === S.sel || d === S.hover) for (const h of handlesOf(d, g)) if (Math.hypot(h.x - x, h.y - y) <= 7) return { d, handle: h.i };
+    if (d.type === 'trend' && distSeg(x, y, g[0], g[1]) <= 5) return { d };
+    if (d.type === 'channel') {
+      const p0 = g[0], p1 = g[1], p2 = g[2];
+      const dy = p2 ? (p2.y - (p0.y + p1.y) / 2) : 0;
+      const q0 = { x: p0.x, y: p0.y + dy }, q1 = { x: p1.x, y: p1.y + dy };
+      if (distSeg(x, y, p0, p1) <= 6 || (p2 && distSeg(x, y, q0, q1) <= 6)) return { d };
+    }
+    if (d.type === 'hline' && Math.abs(g[0].y - y) <= 5) return { d };
+    if (d.type === 'measure' || d.type === 'long' || d.type === 'short') {
+      const ys = g.map(p => p.y), xs = g.map(p => p.x);
+      if (x >= Math.min(...xs) && x <= Math.max(...xs) && y >= Math.min(...ys) && y <= Math.max(...ys)) return { d };
+    }
+    if (d.type === 'text' || d.type === 'note') {
+      const b = textBox(d, g);
+      if (x >= b.x - 4 && x <= b.x + b.w + 4 && y >= b.y - 3 && y <= b.y + b.h + 3) return { d };
+      if (d.type === 'note' && Math.hypot(g[0].x - x, g[0].y - y) <= 6) return { d };
+    }
+  }
+  return null;
+}
+
+/* ---------------- tools ---------------- */
+function setTool(t) {
+  S.tool = t; S.draft = null;
+  document.querySelectorAll('.tb[data-tool]').forEach(b => b.classList.toggle('on', b.dataset.tool === t));
+  document.getElementById('wrap').style.cursor = t === 'cursor' ? '' : 'crosshair';
+  S.chart && S.chart.applyOptions({ handleScroll: t === 'cursor', handleScale: t === 'cursor' });
+  repaint();
+}
+function newDrawing(type, pt) {
+  const L = logicalOf(pt.a);
+  if (type === 'hline') return { type, pts: [pt] };
+  if (type === 'long' || type === 'short') {
+    const up = type === 'long', r = anchorAt(L + 20);
+    return { type, pts: [pt, { a: r, p: pt.p * (up ? 1.06 : 0.94) }, { a: r, p: pt.p * (up ? 0.97 : 1.03) }] };
+  }
+  return { type, pts: [pt, { a: { ...pt.a }, p: pt.p }] };
+}
+function finish(d) { snapshot(); S.drawings.push(d); S.draft = null; S.sel = d; save(); setTool('cursor'); }
+function askText(type, pt, x, y) {
+  const wrap = document.getElementById('wrap'), inp = document.createElement('input');
+  inp.className = 'txtin'; inp.placeholder = type === 'note' ? `₹${fmt(pt.p)} (optional note, Enter)` : 'Text'; inp.style.left = x + 'px'; inp.style.top = (y - 14) + 'px';
+  wrap.appendChild(inp); inp.focus();
+  let done = false;
+  const close = ok => { if (done) return; done = true; const v = inp.value.trim(); inp.remove(); if (ok && (type === 'note' || v)) finish({ type, pts: [pt], text: v }); else setTool('cursor'); };
+  inp.addEventListener('keydown', e => { e.stopPropagation(); if (e.key === 'Enter') close(true); if (e.key === 'Escape') close(false); });
+  inp.addEventListener('blur', () => close(true));
+}
+
+/* ---------------- pointer handling (captured before the chart so drawing never pans it) ---------------- */
+const wrap = document.getElementById('wrap');
+const rel = e => { const r = wrap.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; };
+const inPane = ({ x, y }) => S.chart && x < S.chart.timeScale().width() && y < wrap.clientHeight - 28;
+
+wrap.addEventListener('mousedown', e => {
+  if (e.button !== 0 || e.target.classList.contains('txtin') || (e.target.closest && e.target.closest('#chanBar, #setModal'))) return;
+  const m = rel(e); if (!inPane(m)) return;
+  if (S.tool !== 'cursor') {
+    e.stopPropagation(); e.preventDefault();
+    const pt = pointFrom(m.x, m.y); if (!pt) return;
+    if (S.tool === 'text' || S.tool === 'note') return askText(S.tool, pt, m.x, m.y);
+    if (S.tool === 'hline' || S.tool === 'long' || S.tool === 'short') return finish(newDrawing(S.tool, pt));
+    if (S.tool === 'channel') {
+      if (!S.draft) { S.draft = { type: 'channel', pts: [pt, { a: { ...pt.a }, p: pt.p }], _step: 1 }; repaint(); }
+      else if (S.draft._step === 1) { S.draft.pts[1] = pt; S.draft.pts[2] = { a: { ...pt.a }, p: pt.p }; S.draft._step = 2; repaint(); }
+      else { S.draft.pts[2] = pt; delete S.draft._step; finish(S.draft); }
+      return;
+    }
+    if (!S.draft) { S.draft = newDrawing(S.tool, pt); S.draft._start = m; repaint(); }
+    else finish(S.draft);
+    return;
+  }
+  const h = hit(m.x, m.y);
+  if (h) {
+    e.stopPropagation(); e.preventDefault();
+    S.sel = h.d; snapshot();
+    S.drag = { d: h.d, handle: h.handle, start: m, orig: JSON.parse(JSON.stringify(h.d.pts)), moved: false };
+    S.chart.applyOptions({ handleScroll: false, handleScale: false });
+    refreshRail(); repaint();
+  } else if (S.sel) { S.sel = null; refreshRail(); repaint(); }
+}, true);
+
+window.addEventListener('mousemove', e => {
+  if (!S.chart) return;
+  const m = rel(e);
+  if (S.draft) {
+    const pt = pointFrom(m.x, m.y);
+    if (pt) {
+      if (S.draft.type === 'channel' && S.draft._step === 2) S.draft.pts[2] = pt;
+      else S.draft.pts[1] = pt;
+      repaint();
+    }
+    return;
+  }
+  if (S.drag) {
+    const { d, handle, orig, start } = S.drag; S.drag.moved = true;
+    if (handle != null) {
+      const pt = pointFrom(m.x, m.y); if (!pt) return;
+      if (d.type === 'hline') d.pts[0].p = pt.p;
+      else if (d.type === 'long' || d.type === 'short') {
+        if (handle === 0) d.pts[0] = pt;
+        else { d.pts[handle].p = pt.p; d.pts[1].a = d.pts[2].a = pt.a; }
+      } else d.pts[handle] = pt;
+    } else {
+      const ts = S.chart.timeScale();
+      const dl = Math.round(ts.coordinateToLogical(m.x) - ts.coordinateToLogical(start.x));
+      const dp = S.series.coordinateToPrice(m.y) - S.series.coordinateToPrice(start.y);
+      d.pts = orig.map(p => ({ a: anchorAt(logicalOf(p.a) + dl), p: p.p + dp }));
+    }
+    repaint(); return;
+  }
+  if (S.tool === 'cursor' && inPane(m) && e.target.closest && e.target.closest('#wrap')) {
+    const h = hit(m.x, m.y), hv = h ? h.d : null;
+    wrap.style.cursor = h ? (h.handle != null ? 'grab' : 'pointer') : '';
+    if (hv !== S.hover) { S.hover = hv; repaint(); }
+  }
+});
+window.addEventListener('mouseup', e => {
+  if (S.draft && S.draft._start) {
+    const m = rel(e);
+    if (Math.hypot(m.x - S.draft._start.x, m.y - S.draft._start.y) > 6) finish(S.draft); // press-drag-release
+    else if (S.draft) delete S.draft._start;
+  }
+  if (S.drag) {
+    if (!S.drag.moved) S.undo.pop();
+    S.drag = null; save();
+    S.chart.applyOptions({ handleScroll: true, handleScale: true });
+  }
+});
+
+window.addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT') return;
+  if (e.key === 'Escape') { setTool('cursor'); S.sel = null; refreshRail(); repaint(); }
+  if ((e.key === 'Delete' || e.key === 'Backspace') && S.sel) { snapshot(); S.drawings = S.drawings.filter(d => d !== S.sel); S.sel = null; save(); repaint(); }
+  if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z') { e.preventDefault(); undo(); }
+  if (e.altKey && e.code === 'KeyT') setTool('trend');
+  if (e.altKey && e.code === 'KeyH') setTool('hline');
+});
+
+/* ---------------- rail ---------------- */
+document.querySelectorAll('.tb[data-tool]').forEach(b => b.addEventListener('click', () => setTool(S.tool === b.dataset.tool && b.dataset.tool !== 'cursor' ? 'cursor' : b.dataset.tool)));
+document.getElementById('tbMagnet').addEventListener('click', e => { S.magnet = !S.magnet; e.currentTarget.classList.toggle('on', S.magnet); });
+document.getElementById('tbHide').addEventListener('click', () => { S.hidden = !S.hidden; S.sel = null; refreshRail(); repaint(); });
+document.getElementById('tbUndo').addEventListener('click', undo);
+document.getElementById('tbDelete').addEventListener('click', () => {
+  if (!S.drawings.length) return; snapshot();
+  S.drawings = S.sel ? S.drawings.filter(d => d !== S.sel) : []; S.sel = null; save(); repaint();
+});
+function getChanStyle() {
+  return Object.assign({ color: '#2962ff', midColor: '#2962ff', fillColor: '#2962ff', fillOp: 0.12, width: 2, dash: 'solid', mid: true, fill: true, extL: false, extR: false }, (S.sel && S.sel.style) || {});
+}
+function openChanModal() {
+  if (!S.sel || S.sel.type !== 'channel') return;
+  const st = getChanStyle();
+  document.getElementById('mColor').value = st.color;
+  document.getElementById('mMidColor').value = st.midColor || st.color;
+  document.getElementById('mFillColor').value = st.fillColor || st.color;
+  document.getElementById('mWidth').value = String(Math.round(st.width));
+  document.getElementById('mDash').value = st.dash;
+  document.getElementById('mMid').checked = !!st.mid;
+  document.getElementById('mFill').checked = !!st.fill;
+  const op = Math.round((st.fillOp != null ? st.fillOp : 0.12) * 100);
+  document.getElementById('mOp').value = op;
+  document.getElementById('mOpVal').textContent = op;
+  document.getElementById('mExtL').checked = !!st.extL;
+  document.getElementById('mExtR').checked = !!st.extR;
+  document.getElementById('setModal').classList.add('on');
+}
+function closeChanModal() {
+  document.getElementById('setModal').classList.remove('on');
+}
+function setChanStyle(k, v) {
+  if (!S.sel || S.sel.type !== 'channel') return;
+  snapshot();
+  S.sel.style = Object.assign(getChanStyle(), { [k]: v });
+  save(); repaint();
+}
+function deleteSelected() {
+  if (!S.sel) return;
+  snapshot(); S.drawings = S.drawings.filter(d => d !== S.sel); S.sel = null; save(); repaint();
+}
+function refreshRail() {
+  document.getElementById('tbHide').classList.toggle('on', S.hidden);
+  document.getElementById('hideSlash').style.display = S.hidden ? '' : 'none';
+  document.getElementById('hideTip').textContent = S.hidden ? 'Show all drawings' : 'Hide all drawings';
+  document.getElementById('delTip').textContent = S.sel ? 'Remove selected drawing' : 'Remove all drawings';
+  const cb = document.getElementById('chanBar');
+  if (cb) {
+    const show = !!(S.sel && S.sel.type === 'channel' && !S.hidden);
+    cb.classList.toggle('on', show);
+    if (show) {
+      const st = getChanStyle();
+      document.getElementById('chColor').value = st.color;
+      ['1','2','3'].forEach(w => document.getElementById('chW' + w).classList.toggle('on', Math.round(st.width) === +w));
+      document.getElementById('chSolid').classList.toggle('on', st.dash === 'solid');
+      document.getElementById('chDash').classList.toggle('on', st.dash === 'dash');
+      document.getElementById('chDot').classList.toggle('on', st.dash === 'dot');
+      document.getElementById('chMid').classList.toggle('on', !!st.mid);
+      document.getElementById('chFill').classList.toggle('on', !!st.fill);
+      document.getElementById('chExtL').classList.toggle('on', !!st.extL);
+      document.getElementById('chExtR').classList.toggle('on', !!st.extR);
+    }
+  }
+}
+
+/* ---------------- theme (chart segment only) ---------------- */
+function setTheme(t) {
+  S.theme = t; localStorage.setItem('aq_chart_theme', t);
+  document.getElementById('segChart').classList.toggle('light', t === 'light');
+  document.getElementById('thDark').classList.toggle('on', t === 'dark');
+  document.getElementById('thLight').classList.toggle('on', t === 'light');
+  if (!S.chart) return;
+  const th = T();
+  S.chart.applyOptions({
+    layout: { background: { color: th.bg }, textColor: th.text },
+    grid: { vertLines: { color: th.grid }, horzLines: { color: th.grid } },
+    rightPriceScale: { borderColor: th.border }, timeScale: { borderColor: th.border },
+    crosshair: { vertLine: { color: th.crosshair, labelBackgroundColor: S.theme === 'dark' ? '#363a45' : '#131722' }, horzLine: { color: th.crosshair, labelBackgroundColor: S.theme === 'dark' ? '#363a45' : '#131722' } }
+  });
+  S.series.applyOptions({ upColor: th.up, downColor: th.down, wickUpColor: th.up, wickDownColor: th.down, borderVisible: false });
+  legend();
+  repaint();
+}
+function legend(c) {
+  c = c || S.candles[S.candles.length - 1]; if (!c) return;
+  const th = T(), col = c.close >= c.open ? th.up : th.down;
+  document.getElementById('legend').innerHTML =
+    `<span style="color:${th.ink}">BEL · 1D · NSE</span>` +
+    ['O', 'H', 'L', 'C'].map((k, i) => `<span>${k}<b style="color:${col};margin-left:3px">${fmt([c.open, c.high, c.low, c.close][i])}</b></span>`).join('');
+}
+
+async function copyChartImage() {
+  if (!S.chart) return;
+  const lbl = document.getElementById('copyLbl');
+  try {
+    const shot = S.chart.takeScreenshot();
+    const dpr = Math.max(2, window.devicePixelRatio || 2);
+    const headerH = Math.round(42 * dpr);
+    const out = document.createElement('canvas');
+    out.width = shot.width;
+    out.height = shot.height + headerH;
+    const ctx = out.getContext('2d');
+    const th = T();
+    ctx.fillStyle = th.bg;
+    ctx.fillRect(0, 0, out.width, out.height);
+
+    // Top bar: Symbol + Sector on left, @username · alphaquanttechnolgy.com on right
+    ctx.fillStyle = th.border;
+    ctx.fillRect(0, headerH - dpr, out.width, dpr);
+    ctx.fillStyle = th.ink;
+    ctx.font = `600 ${Math.round(13 * dpr)}px -apple-system,BlinkMacSystemFont,"Inter",sans-serif`;
+    ctx.textBaseline = 'middle';
+    ctx.textAlign = 'left';
+    ctx.fillText(`Bharat Electronics (NSE:BEL) · 1D · Aerospace & Defence`, Math.round(16 * dpr), headerH / 2);
+
+    ctx.fillStyle = th.text;
+    ctx.font = `500 ${Math.round(11 * dpr)}px ui-monospace,"SF Mono",Menlo,monospace`;
+    ctx.textAlign = 'right';
+    ctx.fillText(`@${USER}  ·  alphaquanttechnolgy.com`, out.width - Math.round(16 * dpr), headerH / 2);
+
+    ctx.drawImage(shot, 0, headerH);
+
+    const blob = await new Promise(res => out.toBlob(res, 'image/png', 1.0));
+    if (navigator.clipboard && window.ClipboardItem) {
+      await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+      lbl.textContent = 'Copied!';
+    } else {
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob); a.download = `${SYMBOL}_AlphaQuant.png`; a.click();
+      lbl.textContent = 'Saved PNG';
+    }
+    setTimeout(() => { lbl.textContent = 'Copy Chart'; }, 2000);
+  } catch (err) {
+    lbl.textContent = 'Copy failed';
+    setTimeout(() => { lbl.textContent = 'Copy Chart'; }, 2000);
+  }
+}
+
+/* ---------------- boot ---------------- */
+fetch('/assets/landing/charts.json').then(r => r.json()).then(data => {
+  S.candles = data.BEL.map(c => ({ time: c[0], open: c[1], high: c[2], low: c[3], close: c[4], volume: c[5] }));
+  S.candles.forEach((c, i) => S.idx.set(c.time, i));
+  const last = S.candles[S.candles.length - 1], prev = S.candles[S.candles.length - 2], dp = (last.close / prev.close - 1) * 100;
+  document.getElementById('hdrPx').innerHTML = `${fmt(last.close)} <span style="color:${dp >= 0 ? '#089981' : '#f23645'};font-weight:500;margin-left:6px">${dp >= 0 ? '+' : ''}${dp.toFixed(2)}%</span>`;
+
+  const el = document.getElementById('chart');
+  S.chart = LightweightCharts.createChart(el, {
+    autoSize: true,
+    layout: { fontFamily: '-apple-system,BlinkMacSystemFont,"Trebuchet MS",sans-serif', fontSize: 11 },
+    rightPriceScale: { scaleMargins: { top: .08, bottom: .2 } },
+    timeScale: { rightOffset: 14, barSpacing: 7 },
+    crosshair: { mode: LightweightCharts.CrosshairMode.Normal }
+  });
+  S.series = S.chart.addCandlestickSeries({ priceLineVisible: true });
+  S.series.setData(S.candles);
+  const vol = S.chart.addHistogramSeries({ priceScaleId: '', priceFormat: { type: 'volume' }, lastValueVisible: false, priceLineVisible: false });
+  vol.priceScale().applyOptions({ scaleMargins: { top: .84, bottom: 0 } });
+  vol.setData(S.candles.map(c => ({ time: c.time, value: c.volume, color: c.close >= c.open ? 'rgba(8,153,129,.35)' : 'rgba(242,54,69,.35)' })));
+  let e = null; const k = 2 / 64;
+  S.chart.addLineSeries({ color: '#06B6D4', lineWidth: 1.5, priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false })
+    .setData(S.candles.map(c => ({ time: c.time, value: +(e = e == null ? c.close : c.close * k + e * (1 - k)).toFixed(2) })));
+
+  S.prim = new Drawings();
+  S.series.attachPrimitive(S.prim);
+  S.chart.subscribeCrosshairMove(p => legend(p && p.seriesData && p.seriesData.get(S.series)));
+  setTheme(S.theme);
+  refreshRail();
+});
+</script>
+</body>
+</html>

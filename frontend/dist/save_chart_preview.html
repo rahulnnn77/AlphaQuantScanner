@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AlphaQuant — Save High-Quality Chart Preview</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #0A0E17;
+      color: #F8FAFC;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      padding: 24px;
+      min-height: 100vh;
+    }
+    .wrap {
+      max-width: 1180px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    .header h1 { font-size: 20px; font-weight: 700; color: #fff; }
+    .header p { font-size: 12.5px; color: #94A3B8; margin-top: 3px; }
+    .card {
+      background: #0B101B;
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 14px;
+      padding: 16px 20px;
+    }
+    .toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+    .sym-info {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+    }
+    .sym-name { font-size: 18px; font-weight: 700; color: #fff; }
+    .sym-tf {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      padding: 2px 7px;
+      border-radius: 5px;
+      background: rgba(255,255,255,0.06);
+      color: #94A3B8;
+    }
+    .sym-ltp {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 15px;
+      font-weight: 600;
+      color: #34D399;
+    }
+    .actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .user-input {
+      background: #070B13;
+      border: 1px solid rgba(255,255,255,0.12);
+      color: #E2E8F0;
+      border-radius: 8px;
+      padding: 7px 10px;
+      font-size: 12px;
+      font-family: 'JetBrains Mono', monospace;
+      outline: none;
+      width: 150px;
+    }
+    .user-input:focus { border-color: #22D3EE; }
+    .btn-save {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 8px 14px;
+      border-radius: 8px;
+      border: 1px solid rgba(34, 211, 238, 0.38);
+      background: rgba(6, 182, 212, 0.16);
+      color: #22D3EE;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .btn-save:hover {
+      background: rgba(6, 182, 212, 0.28);
+      color: #fff;
+    }
+    .btn-dl {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 8px 14px;
+      border-radius: 8px;
+      border: 1px solid rgba(52, 211, 153, 0.35);
+      background: rgba(16, 185, 129, 0.15);
+      color: #34D399;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-dl:hover {
+      background: rgba(16, 185, 129, 0.25);
+      color: #fff;
+    }
+    #liveChartBox {
+      width: 100%;
+      height: 420px;
+      border-radius: 10px;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.06);
+      background: #070B13;
+    }
+    .preview-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #94A3B8;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .exported-img-wrap {
+      border: 1px solid rgba(34, 211, 238, 0.25);
+      border-radius: 12px;
+      overflow: hidden;
+      background: #070B13;
+    }
+    .exported-img-wrap img {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="header">
+      <div>
+        <h1>Save High-Quality Chart — Feature Preview</h1>
+        <p>Exports a crisp 2x Retina PNG of the active chart with the user's username and website name in small letters at the top.</p>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:#94A3B8">
+        <span>Test Username:</span>
+        <input type="text" id="usernameInput" class="user-input" value="Rahul Nag N" oninput="renderExportPreview()" />
+      </div>
+    </div>
+
+    <!-- Live Chart Card with Save Chart Button -->
+    <div class="card">
+      <div class="toolbar">
+        <div class="sym-info">
+          <span class="sym-name">TRENT</span>
+          <span class="sym-tf">NSE · DAILY (1D)</span>
+          <span class="sym-ltp">₹6,482.50 (+2.84%)</span>
+        </div>
+        <div class="actions">
+          <button class="btn-save" onclick="renderExportPreview()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+            <span>Save Chart (Preview)</span>
+          </button>
+          <button class="btn-dl" onclick="downloadHighResPng()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            <span>Download PNG</span>
+          </button>
+        </div>
+      </div>
+      <div id="liveChartBox"></div>
+    </div>
+
+    <!-- Output Preview of the Saved High-Quality Image -->
+    <div class="card">
+      <div class="preview-label">
+        <span>Saved Image Output Preview (2x Retina High-DPI PNG)</span>
+        <span id="imgMetaInfo" style="color:#22D3EE">Resolution: 2240 × 940 px</span>
+      </div>
+      <div class="exported-img-wrap">
+        <img id="exportedPreviewImg" alt="Saved Chart Preview" />
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Generate realistic sample candles for preview
+    const candles = [];
+    let price = 5200;
+    const start = new Date('2026-06-01T00:00:00Z');
+    for (let i = 0; i < 95; i++) {
+      const d = new Date(start.getTime() + i * 86400000);
+      if (d.getUTCDay() === 0 || d.getUTCDay() === 6) continue;
+      const dt = d.toISOString().slice(0, 10);
+      const drift = (i > 40 ? 18 : 6) + (Math.sin(i * 0.25) * 45);
+      const open = price;
+      const close = Math.max(4600, open + drift + (Math.cos(i * 0.7) * 55));
+      const high = Math.max(open, close) + Math.abs(Math.sin(i) * 48);
+      const low = Math.min(open, close) - Math.abs(Math.cos(i) * 42);
+      candles.push({ time: dt, open: +open.toFixed(2), high: +high.toFixed(2), low: +low.toFixed(2), close: +close.toFixed(2) });
+      price = close;
+    }
+
+    const box = document.getElementById('liveChartBox');
+    const chart = LightweightCharts.createChart(box, {
+      width: box.clientWidth || 1100,
+      height: 420,
+      layout: { background: { color: '#070B13' }, textColor: '#CBD5E1', fontFamily: 'Inter, sans-serif' },
+      grid: { vertLines: { color: 'rgba(255,255,255,0.04)' }, horzLines: { color: 'rgba(255,255,255,0.04)' } },
+      rightPriceScale: { borderColor: 'rgba(255,255,255,0.1)' },
+      timeScale: { borderColor: 'rgba(255,255,255,0.1)' }
+    });
+
+    const cs = chart.addCandlestickSeries({
+      upColor: '#10B981', downColor: '#F43F5E',
+      borderUpColor: '#10B981', borderDownColor: '#F43F5E',
+      wickUpColor: '#10B981', wickDownColor: '#F43F5E'
+    });
+    cs.setData(candles);
+
+    const hpsLine = chart.addLineSeries({ color: '#06B6D4', lineWidth: 2, title: 'HPS Alpha' });
+    let ema = candles[0].close;
+    const k = 2 / 64;
+    hpsLine.setData(candles.map((c, idx) => {
+      ema = idx === 0 ? c.close : (c.close * k + ema * (1 - k));
+      return { time: c.time, value: +ema.toFixed(2) };
+    }));
+    chart.timeScale().fitContent();
+
+    let lastDataUrl = '';
+
+    function renderExportPreview() {
+      // LightweightCharts built-in high-DPI canvas snapshot
+      const chartCanvas = chart.takeScreenshot();
+      const dpr = 2;
+      const headerH = 44 * dpr;
+      const outW = chartCanvas.width;
+      const outH = chartCanvas.height + headerH;
+
+      const out = document.createElement('canvas');
+      out.width = outW;
+      out.height = outH;
+      const ctx = out.getContext('2d');
+
+      // 1. Dark background
+      ctx.fillStyle = '#070B13';
+      ctx.fillRect(0, 0, outW, outH);
+
+      // 2. Top Header Bar
+      ctx.fillStyle = '#0B101B';
+      ctx.fillRect(0, 0, outW, headerH);
+      ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+      ctx.lineWidth = dpr;
+      ctx.beginPath();
+      ctx.moveTo(0, headerH);
+      ctx.lineTo(outW, headerH);
+      ctx.stroke();
+
+      // Left: Symbol + Timeframe + Sector + RS Value
+      ctx.fillStyle = '#F8FAFC';
+      ctx.font = `700 ${15 * dpr}px Inter, sans-serif`;
+      ctx.textBaseline = 'middle';
+      ctx.fillText('TRENT', 18 * dpr, headerH / 2);
+
+      ctx.fillStyle = '#94A3B8';
+      ctx.font = `600 ${11 * dpr}px "JetBrains Mono", monospace`;
+      ctx.fillText('NSE · 1D · Retail', 82 * dpr, headerH / 2);
+
+      // RS Value Pill
+      const rsText = 'RS 94';
+      const rsX = 212 * dpr;
+      const pillW = 48 * dpr;
+      const pillH = 20 * dpr;
+      ctx.fillStyle = 'rgba(16, 185, 129, 0.16)';
+      ctx.strokeStyle = 'rgba(52, 211, 153, 0.35)';
+      ctx.lineWidth = dpr;
+      ctx.beginPath();
+      ctx.roundRect(rsX, (headerH - pillH) / 2, pillW, pillH, 5 * dpr);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = '#34D399';
+      ctx.font = `700 ${10.5 * dpr}px "JetBrains Mono", monospace`;
+      ctx.textAlign = 'center';
+      ctx.fillText(rsText, rsX + pillW / 2, headerH / 2);
+      ctx.textAlign = 'left';
+
+      // Right: Small-letter Username + Website Name
+      const uname = (document.getElementById('usernameInput').value || 'user').trim();
+      const rightTag = `${uname.toLowerCase()}  ·  alphaquanttechnology.com`;
+      ctx.fillStyle = '#94A3B8';
+      ctx.font = `500 ${10.5 * dpr}px "JetBrains Mono", monospace`;
+      ctx.textAlign = 'right';
+      ctx.fillText(rightTag, outW - 18 * dpr, headerH / 2);
+      ctx.textAlign = 'left';
+
+      // 3. Draw the high-DPI chart snapshot below header
+      ctx.drawImage(chartCanvas, 0, headerH);
+
+      lastDataUrl = out.toDataURL('image/png', 1.0);
+      document.getElementById('exportedPreviewImg').src = lastDataUrl;
+      document.getElementById('imgMetaInfo').textContent = `Resolution: ${outW} × ${outH} px (PNG)`;
+    }
+
+    function downloadHighResPng() {
+      renderExportPreview();
+      const a = document.createElement('a');
+      a.href = lastDataUrl;
+      a.download = 'TRENT_1D_alphaquant.png';
+      a.click();
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      setTimeout(renderExportPreview, 250);
+    });
+  </script>
+</body>
+</html>
+

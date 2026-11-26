@@ -345,3 +345,136 @@ def get_audit_logs(
             "timestamp": l.timestamp.strftime("%d %b %Y, %I:%M:%S %p") if l.timestamp else ""
         } for l in logs
     ]
+
+
+from pydantic import BaseModel
+from typing import Optional
+from app.models.entities import UserActivitySession
+from datetime import datetime, timezone
+
+class HeartbeatRequest(BaseModel):
+    active_tab: Optional[str] = "screener"
+    elapsed_seconds: Optional[int] = 30
+
+_ONLINE_USERS_CACHE = {}
+
+@router.post("/activity/heartbeat")
+def record_heartbeat(
+    req: HeartbeatRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    now = datetime.now(timezone.utc)
+    now_ts = now.timestamp()
+    today_str = now.strftime("%Y-%m-%d")
+
+    elapsed = max(10, min(req.elapsed_seconds or 30, 90))
+    
+    cached = _ONLINE_USERS_CACHE.get(current_user.id)
+    if cached and cached.get("date") == today_str:
+        today_secs = cached.get("today_seconds", 0) + elapsed
+    else:
+        today_secs = elapsed
+
+    _ONLINE_USERS_CACHE[current_user.id] = {
+        "username": current_user.username,
+        "email": current_user.email,
+        "role": current_user.role,
+        "last_seen": now_ts,
+        "active_tab": req.active_tab or "screener",
+        "date": today_str,
+        "today_seconds": today_secs
+    }
+
+    session_rec = db.query(UserActivitySession).filter(
+        UserActivitySession.user_id == current_user.id,
+        UserActivitySession.session_date == today_str
+    ).first()
+
+    if session_rec:
+        session_rec.active_seconds = (session_rec.active_seconds or 0) + elapsed
+        session_rec.last_heartbeat = now.replace(tzinfo=None)
+        session_rec.last_active_tab = req.active_tab or "screener"
+        db.commit()
+    else:
+        new_rec = UserActivitySession(
+            user_id=current_user.id,
+            username=current_user.username,
+            session_date=today_str,
+            active_seconds=elapsed,
+            last_heartbeat=now.replace(tzinfo=None),
+            last_active_tab=req.active_tab or "screener"
+        )
+        db.add(new_rec)
+        try:
+            db.commit()
+        except Exception:
+            db.rollback()
+
+    return {"status": "ok", "recorded_seconds": elapsed}
+
+
+@router.get("/activity/stats")
+def get_activity_stats(
+    admin: User = Depends(require_admin),
+    db: Session = Depends(get_db)
+):
+    now = datetime.now(timezone.utc)
+    now_ts = now.timestamp()
+    today_str = now.strftime("%Y-%m-%d")
+
+    online_list = []
+    for uid, data in list(_ONLINE_USERS_CACHE.items()):
+        if (now_ts - data["last_seen"]) <= 90:
+            online_list.append({
+                "user_id": uid,
+                "username": data["username"],
+                "role": data.get("role", "viewer"),
+                "active_tab": data["active_tab"],
+                "seconds_ago": int(now_ts - data["last_seen"])
+            })
+
+    today_sessions = db.query(UserActivitySession).filter(
+        UserActivitySession.session_date == today_str
+    ).order_by(UserActivitySession.active_seconds.desc()).all()
+
+    all_time_totals = {}
+    all_records = db.query(UserActivitySession).all()
+    for r in all_records:
+        all_time_totals[r.user_id] = all_time_totals.get(r.user_id, 0) + (r.active_seconds or 0)
+
+    users_stats = []
+    all_users = db.query(User).all()
+    for u in all_users:
+        today_sec = next((s.active_seconds for s in today_sessions if s.user_id == u.id), 0)
+        last_s = next((s for s in today_sessions if s.user_id == u.id), None)
+        is_online = any(o["user_id"] == u.id for o in online_list)
+        
+        users_stats.append({
+            "user_id": u.id,
+            "username": u.username,
+            "email": u.email,
+            "role": u.role,
+            "is_online": is_online,
+            "active_tab": last_s.last_active_tab if last_s else ("Online" if is_online else "—"),
+            "today_seconds": today_sec,
+            "today_formatted": f"{today_sec // 3600}h {(today_sec % 3600) // 60}m" if today_sec >= 3600 else f"{today_sec // 60}m {today_sec % 60}s",
+            "all_time_seconds": all_time_totals.get(u.id, 0),
+            "all_time_formatted": f"{all_time_totals.get(u.id, 0) // 3600}h {(all_time_totals.get(u.id, 0) % 3600) // 60}m",
+            "last_active": last_s.last_heartbeat.strftime("%d %b %I:%M %p") if last_s and last_s.last_heartbeat else "Never"
+        })
+
+    users_stats.sort(key=lambda x: (not x["is_online"], -x["today_seconds"]))
+
+    total_today_seconds = sum(s.active_seconds for s in today_sessions)
+    total_hours_today = round(total_today_seconds / 3600.0, 1)
+
+    return {
+        "status": "success",
+        "date": today_str,
+        "online_count": len(online_list),
+        "online_users": online_list,
+        "total_active_users_today": len([s for s in today_sessions if s.active_seconds > 0]),
+        "total_hours_spent_today": total_hours_today,
+        "users": users_stats
+    }

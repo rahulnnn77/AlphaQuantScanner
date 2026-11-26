@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>AlphaQuant - Dashboard, Sidebar & Module Animation System Preview</title>
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <style>
+    /* =========================================================================
+       Apple-Inspired Motion Design & Fluid Interaction System
+       ========================================================================= */
+
+    :root {
+      --apple-ease: cubic-bezier(0.16, 1, 0.3, 1);
+      --apple-ease-out: cubic-bezier(0, 0, 0.2, 1);
+      --apple-ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* 1. Dashboard Staggered Entry Animation */
+    @keyframes appleFadeSlideUp {
+      from {
+        opacity: 0;
+        transform: translate3d(0, 16px, 0);
+      }
+      to {
+        opacity: 1;
+        transform: translate3d(0, 0, 0);
+      }
+    }
+
+    .anim-fade-up {
+      animation: appleFadeSlideUp 0.55s var(--apple-ease) forwards;
+    }
+
+    .stagger-1 { animation-delay: 0.05s; }
+    .stagger-2 { animation-delay: 0.12s; }
+    .stagger-3 { animation-delay: 0.18s; }
+    .stagger-4 { animation-delay: 0.25s; }
+    .stagger-5 { animation-delay: 0.32s; }
+
+    /* 2. Chart Progressive Stroke Animation */
+    @keyframes chartDrawProgressive {
+      from { stroke-dashoffset: 400; }
+      to { stroke-dashoffset: 0; }
+    }
+
+    .anim-chart-line {
+      stroke-dasharray: 400;
+      stroke-dashoffset: 400;
+      animation: chartDrawProgressive 1.2s var(--apple-ease) forwards;
+    }
+
+    /* 3. Gliding Sidebar Active Indicator */
+    .sidebar-pill-active {
+      background: rgba(255, 255, 255, 0.08);
+      color: #FFFFFF;
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+    }
+
+    /* 4. Glass Cards with refined micro-elevation */
+    .aq-card {
+      background: rgba(14, 21, 36, 0.7);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.07);
+      transition: border-color 0.3s var(--apple-ease), box-shadow 0.3s var(--apple-ease), transform 0.25s var(--apple-ease);
+    }
+    .aq-card:hover {
+      border-color: rgba(56, 189, 248, 0.3);
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4), 0 0 15px rgba(56, 189, 248, 0.06);
+    }
+
+    /* 5. Row Stagger Reveal */
+    @keyframes rowSlideIn {
+      from {
+        opacity: 0;
+        transform: translate3d(-8px, 0, 0);
+      }
+      to {
+        opacity: 1;
+        transform: translate3d(0, 0, 0);
+      }
+    }
+    .anim-row {
+      animation: rowSlideIn 0.45s var(--apple-ease) forwards;
+    }
+
+    /* 6. Level Pill Pulse */
+    @keyframes pulseSoft {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.05); opacity: 0.85; }
+    }
+    .anim-pulse-soft {
+      animation: pulseSoft 2s ease-in-out infinite;
+    }
+  </style>
+</head>
+<body class="bg-[#070A10] text-slate-100 min-h-screen flex flex-col p-4 select-none font-sans">
+
+  <!-- Top Controller Bar -->
+  <header class="w-full max-w-7xl mx-auto flex flex-wrap items-center justify-between border-b border-white/[0.08] pb-3 text-xs font-mono gap-3 mb-4">
+    <div class="flex items-center space-x-3">
+      <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+      <span class="text-white font-semibold tracking-wider uppercase">AlphaQuant Animation System Preview</span>
+      <span class="text-slate-500">| Apple-Grade Motion Architecture</span>
+    </div>
+    <div class="flex items-center space-x-2">
+      <button onclick="replayDashboardEntry()" class="px-3.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-semibold transition-all shadow-md shadow-blue-600/20 flex items-center space-x-1.5">
+        <span>▶ Replay Entry Sequence</span>
+      </button>
+      <span id="fpsMonitor" class="px-2.5 py-1 rounded-md bg-white/[0.04] text-emerald-400 border border-white/[0.08]">
+        60 FPS · Smooth
+      </span>
+    </div>
+  </header>
+
+  <!-- Interactive Terminal Frame Mockup -->
+  <main class="w-full max-w-7xl mx-auto flex-1 flex flex-col md:flex-row overflow-hidden rounded-3xl border border-white/[0.08] bg-[#0A0E17] shadow-2xl min-h-[720px]">
+
+    <!-- 1. LEFT SIDEBAR (Gliding Active Indicator & Micro-Transitions) -->
+    <aside class="w-full md:w-64 bg-[#080C14] border-r border-white/[0.06] flex flex-col justify-between shrink-0 p-3 select-none">
+      <div>
+        <!-- Brand Header -->
+        <div class="px-3 py-4 border-b border-white/[0.06] flex items-center justify-between mb-3">
+          <div class="flex items-center space-x-2.5">
+            <svg viewBox="0 0 64 64" fill="none" class="w-7 h-7 shrink-0">
+              <line x1="8" y1="52" x2="56" y2="52" stroke="#1E293B" stroke-width="1.2" stroke-dasharray="2 3" />
+              <line x1="14" y1="52" x2="14" y2="18" stroke="#38BDF8" stroke-width="4.5" stroke-linecap="round" />
+              <polygon points="14,18 38,32 14,46" fill="#3B82F6" fill-opacity="0.25" stroke="#1D4ED8" stroke-width="1.2" />
+              <line x1="38" y1="32" x2="56" y2="14" stroke="#10B981" stroke-width="4.5" stroke-linecap="round" />
+            </svg>
+            <div class="leading-none">
+              <span class="font-semibold text-sm text-white">Alpha</span>
+              <span class="text-slate-400 text-sm">Quant</span>
+              <div class="text-[9px] font-mono text-sky-400 font-semibold tracking-wider uppercase mt-0.5">Terminal</div>
+            </div>
+          </div>
+          <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">LIVE</span>
+        </div>
+
+        <!-- Gliding Nav Menu -->
+        <nav id="sidebarNav" class="relative space-y-1 text-xs font-medium">
+          <!-- Fluid Sliding Background Pill (Glides between items) -->
+          <div id="glidingPill" class="absolute left-0 w-full h-[38px] rounded-xl bg-white/[0.08] border border-white/[0.1] shadow-sm pointer-events-none transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]"></div>
+
+          <button onclick="switchTab('breadth', 0)" class="relative z-10 w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl transition-colors text-white font-medium">
+            <div class="flex items-center space-x-2.5">
+              <span class="text-slate-400">📊</span>
+              <span>Market Breadth</span>
+            </div>
+            <span class="text-[10px] font-mono text-emerald-400">+1.09%</span>
+          </button>
+
+          <button onclick="switchTab('screener', 1)" class="relative z-10 w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl transition-colors text-slate-400 hover:text-white font-medium">
+            <div class="flex items-center space-x-2.5">
+              <span class="text-slate-400">🔍</span>
+              <span>Screener Tools</span>
+            </div>
+            <span class="text-[10px] font-mono text-slate-500">8 Setups</span>
+          </button>
+
+          <button onclick="switchTab('hps', 2)" class="relative z-10 w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl transition-colors text-slate-400 hover:text-white font-medium">
+            <div class="flex items-center space-x-2.5">
+              <span class="text-slate-400">📈</span>
+              <span>HPS Stocks</span>
+            </div>
+            <span class="px-1.5 py-0.5 rounded text-[9px] font-mono bg-sky-500/20 text-sky-300">4H/Daily</span>
+          </button>
+
+          <button onclick="switchTab('hps_selected', 3)" class="relative z-10 w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl transition-colors text-slate-400 hover:text-white font-medium">
+            <div class="flex items-center space-x-2.5">
+              <span class="text-slate-400">⚡</span>
+              <span>HPS Selected</span>
+            </div>
+            <span class="text-[10px] font-mono text-sky-400">Top 10</span>
+          </button>
+
+          <button onclick="switchTab('hps_mean_reversion', 4)" class="relative z-10 w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl transition-colors text-slate-400 hover:text-white font-medium">
+            <div class="flex items-center space-x-2.5">
+              <span class="text-slate-400">🎯</span>
+              <span>HPS Mean Reversion</span>
+            </div>
+            <span class="text-[10px] font-mono text-emerald-400">L1/L2/L3</span>
+          </button>
+
+          <button onclick="switchTab('weekly_position', 5)" class="relative z-10 w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl transition-colors text-slate-400 hover:text-white font-medium">
+            <div class="flex items-center space-x-2.5">
+              <span class="text-slate-400">📅</span>
+              <span>Weekly Position</span>
+            </div>
+            <span class="text-[10px] font-mono text-slate-500">Tuesday</span>
+          </button>
+
+          <button onclick="switchTab('watchlist', 6)" class="relative z-10 w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl transition-colors text-slate-400 hover:text-white font-medium">
+            <div class="flex items-center space-x-2.5">
+              <span class="text-slate-400">⭐</span>
+              <span>Watchlist</span>
+            </div>
+            <span class="text-[10px] font-mono text-slate-500">Isolated</span>
+          </button>
+        </nav>
+      </div>
+
+      <!-- User Profile Lockup -->
+      <div class="p-3 border-t border-white/[0.06] flex items-center justify-between text-xs">
+        <div class="truncate">
+          <p class="font-medium text-slate-200">Rahul Sharma</p>
+          <p class="text-[10px] text-slate-500 font-mono">Approved Quantitative User</p>
+        </div>
+        <span class="text-slate-500 hover:text-white cursor-pointer">⇥</span>
+      </div>
+    </aside>
+
+    <!-- 2. MAIN VIEWPORT (Sequential Stagger & Module-Specific Animations) -->
+    <section class="flex-1 overflow-y-auto p-5 md:p-8 space-y-6 bg-[#0A0E17]" id="mainViewport">
+
+      <!-- Running Constituents Ticker (Continuous Smooth Hardware-Accelerated Animation) -->
+      <div class="py-2 px-3 rounded-xl bg-[#080C14] border border-white/[0.06] overflow-hidden select-none text-[11px] font-mono text-slate-400 flex items-center space-x-4">
+        <span class="text-emerald-400 font-bold uppercase tracking-wider text-[10px] shrink-0">NIFTY 50 TICKER</span>
+        <div class="overflow-hidden flex-1 flex whitespace-nowrap space-x-6">
+          <span class="text-white">RELIANCE <span class="text-emerald-400">+0.48%</span></span>
+          <span class="text-white">TCS <span class="text-emerald-400">+0.61%</span></span>
+          <span class="text-white">HDFCBANK <span class="text-rose-400">-0.51%</span></span>
+          <span class="text-white">INFY <span class="text-rose-400">-0.68%</span></span>
+          <span class="text-white">ICICIBANK <span class="text-emerald-400">+1.52%</span></span>
+        </div>
+      </div>
+
+      <!-- MODULE CONTENT VIEW CONTAINER -->
+      <div id="moduleContent" class="space-y-6">
+
+        <!-- A. MODULE 1: MARKET BREADTH (Default Active) -->
+        <div id="view-breadth" class="space-y-6">
+          <!-- Header Area -->
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 anim-fade-up stagger-1">
+            <div>
+              <span className="text-xs font-mono uppercase tracking-widest text-sky-400 font-semibold">Institutional Participation</span>
+              <h1 class="text-2xl sm:text-3xl font-semibold text-white tracking-tight">Market Breadth Analyser</h1>
+            </div>
+            <div class="flex items-center space-x-2 text-xs font-mono text-slate-400">
+              <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+              <span>Live NSE Advance/Decline</span>
+            </div>
+          </div>
+
+          <!-- Staggered Metric Cards with Count-up Transitions -->
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <!-- Metric 1 -->
+            <div class="aq-card p-5 rounded-2xl anim-fade-up stagger-2 space-y-2">
+              <div class="text-[11px] font-mono text-slate-400 uppercase tracking-wider">Advancing Ratio</div>
+              <div class="text-3xl font-bold font-mono text-emerald-400 flex items-baseline space-x-1">
+                <span id="counterAdvRatio">68</span><span>%</span>
+              </div>
+              <div class="text-xs text-slate-400 font-mono">34 Advancing / 16 Declining</div>
+            </div>
+
+            <!-- Metric 2 -->
+            <div class="aq-card p-5 rounded-2xl anim-fade-up stagger-3 space-y-2">
+              <div class="text-[11px] font-mono text-slate-400 uppercase tracking-wider">NIFTY 50 Close</div>
+              <div class="text-3xl font-bold font-mono text-white flex items-baseline space-x-1">
+                <span>₹</span><span id="counterNifty">24,803.3</span>
+              </div>
+              <div class="text-xs text-emerald-400 font-mono">+1.09% Net Expansion</div>
+            </div>
+
+            <!-- Metric 3 -->
+            <div class="aq-card p-5 rounded-2xl anim-fade-up stagger-4 space-y-2">
+              <div class="text-[11px] font-mono text-slate-400 uppercase tracking-wider">Top Sector Inflow</div>
+              <div class="text-3xl font-bold font-mono text-sky-400">PVT BANK</div>
+              <div class="text-xs text-emerald-400 font-mono">+2.13% Institutional Accumulation</div>
+            </div>
+          </div>
+
+          <!-- Progressive Ratio Bar with smooth width expansion -->
+          <div class="aq-card p-5 rounded-2xl anim-fade-up stagger-4 space-y-3">
+            <div class="flex justify-between items-center text-xs font-mono">
+              <span class="text-slate-400 uppercase">NIFTY 50 Advance / Decline Ratio</span>
+              <span class="text-emerald-400 font-bold">68% ADVANCING</span>
+            </div>
+            <div class="h-3 w-full bg-slate-800 rounded-full overflow-hidden flex">
+              <div id="ratioBarAdv" class="bg-emerald-500 h-full rounded-l-full transition-all duration-1000 ease-out" style="width: 0%;"></div>
+              <div id="ratioBarDec" class="bg-rose-500 h-full rounded-r-full transition-all duration-1000 ease-out" style="width: 0%;"></div>
+            </div>
+          </div>
+
+          <!-- Progressive Vector Breadth Wave Chart -->
+          <div class="aq-card p-6 rounded-2xl anim-fade-up stagger-5 space-y-3">
+            <div class="flex items-center justify-between text-xs font-mono">
+              <span class="text-slate-300 font-semibold uppercase">Cumulative Breadth Momentum Chart</span>
+              <span class="text-sky-400 font-mono text-[11px]">Progressive Stroke Animation</span>
+            </div>
+            <div class="h-44 w-full flex items-center justify-center pt-2">
+              <svg viewBox="0 0 600 120" fill="none" class="w-full h-full overflow-visible">
+                <!-- Baseline -->
+                <line x1="0" y1="100" x2="600" y2="100" stroke="#1E293B" stroke-width="1.2" stroke-dasharray="3 3" />
+                <line x1="0" y1="60" x2="600" y2="60" stroke="#1E293B" stroke-width="1.2" stroke-dasharray="3 3" />
+                <!-- Area Fill Gradient -->
+                <defs>
+                  <linearGradient id="chartAreaGrad" x1="0" y1="0" x2="0" y2="120" gradientUnits="userSpaceOnUse">
+                    <stop offset="0%" stop-color="#10B981" stop-opacity="0.3" />
+                    <stop offset="100%" stop-color="#10B981" stop-opacity="0.0" />
+                  </linearGradient>
+                </defs>
+                <path d="M 0 100 Q 80 85, 160 50 T 320 65 T 480 30 L 600 20 L 600 120 L 0 120 Z" fill="url(#chartAreaGrad)" />
+                <!-- Progressive Chart Stroke Line -->
+                <path id="progressiveChartLine" class="anim-chart-line" d="M 0 100 Q 80 85, 160 50 T 320 65 T 480 30 L 600 20" stroke="#10B981" stroke-width="3" stroke-linecap="round" />
+                <circle cx="600" cy="20" r="4.5" fill="#34D399" class="animate-pulse" />
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <!-- B. MODULE 2: SCREENER TOOLS -->
+        <div id="view-screener" class="space-y-6 hidden">
+          <div class="flex items-center justify-between anim-fade-up stagger-1">
+            <div>
+              <span class="text-xs font-mono uppercase tracking-widest text-sky-400 font-semibold">Quantitative Filters</span>
+              <h2 class="text-2xl font-semibold text-white">Screener Filter Engine</h2>
+            </div>
+            <button onclick="toggleFilters()" class="px-3.5 py-1.5 rounded-lg bg-white/[0.06] hover:bg-white/[0.1] text-xs font-mono text-slate-300 transition-all border border-white/[0.08]">
+              ⚙ Smooth Filter Drawer
+            </button>
+          </div>
+
+          <!-- Expandable / Collapsible Smooth Filter Drawer -->
+          <div id="screenerDrawer" class="aq-card rounded-2xl overflow-hidden transition-all duration-400 ease-out max-h-48 p-5 space-y-3">
+            <div class="text-xs font-mono text-slate-400 uppercase tracking-wider">Active Preset Conditions</div>
+            <div class="flex flex-wrap gap-2 text-xs font-mono">
+              <span class="px-3 py-1 rounded-lg bg-sky-500/20 text-sky-300 border border-sky-500/30">Volume Surge > 2.0x</span>
+              <span class="px-3 py-1 rounded-lg bg-white/[0.04] text-slate-300 border border-white/[0.06]">RSI (14) between 55 - 70</span>
+              <span class="px-3 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">Price > 20 EMA</span>
+              <span class="px-3 py-1 rounded-lg bg-white/[0.04] text-slate-300 border border-white/[0.06]">Universe: NIFTY 500</span>
+            </div>
+          </div>
+
+          <!-- Staggered Table Rows -->
+          <div class="aq-card rounded-2xl overflow-hidden p-4 space-y-2">
+            <div class="flex items-center justify-between pb-2 border-b border-white/[0.06] text-[10px] font-mono text-slate-400 uppercase">
+              <span>Symbol</span>
+              <span>LTP</span>
+              <span>Volume Surge</span>
+              <span>Verification</span>
+            </div>
+            <div class="space-y-2 font-mono text-xs">
+              <div class="anim-row p-3 rounded-xl bg-white/[0.02] border border-white/[0.04] flex items-center justify-between" style="animation-delay: 0.1s;">
+                <span class="font-bold text-white">TRENT</span>
+                <span class="text-slate-300">₹7,140.00</span>
+                <span class="text-sky-400 font-semibold">2.4x Volume</span>
+                <span class="text-emerald-400">Above SMA20 + Surge</span>
+              </div>
+              <div class="anim-row p-3 rounded-xl bg-white/[0.02] border border-white/[0.04] flex items-center justify-between" style="animation-delay: 0.2s;">
+                <span class="font-bold text-white">DIXON</span>
+                <span class="text-slate-300">₹14,890.50</span>
+                <span class="text-sky-400 font-semibold">1.9x Volume</span>
+                <span class="text-emerald-400">RSI Momentum Setup</span>
+              </div>
+              <div class="anim-row p-3 rounded-xl bg-white/[0.02] border border-white/[0.04] flex items-center justify-between" style="animation-delay: 0.3s;">
+                <span class="font-bold text-white">BEL</span>
+                <span class="text-slate-300">₹312.40</span>
+                <span class="text-sky-400 font-semibold">2.1x Volume</span>
+                <span class="text-emerald-400">EMA Cross Inflow</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- C. MODULE 3: HPS STOCKS -->
+        <div id="view-hps" class="space-y-6 hidden">
+          <div class="flex items-center justify-between anim-fade-up stagger-1">
+            <div>
+              <span class="text-xs font-mono uppercase tracking-widest text-sky-400 font-semibold">Multi-Timeframe Scanning</span>
+              <h2 class="text-2xl font-semibold text-white">HPS Breakout & Breakdown Levels</h2>
+            </div>
+            <div class="flex items-center space-x-1.5 p-1 rounded-xl bg-[#080C14] border border-white/[0.08] text-xs font-mono">
+              <button onclick="switchHpsTf('4h')" id="tf-4h" class="px-2.5 py-1 rounded-lg bg-sky-600 text-white font-semibold transition-all">4-Hour</button>
+              <button onclick="switchHpsTf('daily')" id="tf-daily" class="px-2.5 py-1 rounded-lg text-slate-400 hover:text-white transition-all">Daily</button>
+              <button onclick="switchHpsTf('weekly')" id="tf-weekly" class="px-2.5 py-1 rounded-lg text-slate-400 hover:text-white transition-all">Weekly</button>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <!-- Breakout Card -->
+            <div class="aq-card p-6 rounded-2xl space-y-4 anim-fade-up stagger-2 border-emerald-500/20">
+              <div class="flex justify-between items-center text-xs font-mono">
+                <span class="px-2.5 py-1 rounded bg-emerald-500/20 text-emerald-300 font-bold uppercase tracking-wide">Bullish Breakout</span>
+                <span class="text-slate-400">NIFTY F&O</span>
+              </div>
+              <div class="flex justify-between items-baseline">
+                <span class="text-xl font-bold text-white font-mono">RELIANCE</span>
+                <span class="text-emerald-400 font-mono font-bold">LTP ₹2,980.50 (+1.48%)</span>
+              </div>
+              <!-- Progressive Breakout Level Vector -->
+              <div class="h-24 w-full pt-2">
+                <svg viewBox="0 0 300 60" fill="none" class="w-full h-full">
+                  <line x1="0" y1="40" x2="300" y2="40" stroke="#1E293B" stroke-width="1.2" stroke-dasharray="2 3" />
+                  <line x1="0" y1="20" x2="300" y2="20" stroke="#38BDF8" stroke-width="1.5" stroke-dasharray="4 4" />
+                  <!-- Breakout Candle Vector -->
+                  <path class="anim-chart-line" d="M 0 45 L 80 42 L 160 38 L 220 22 L 280 12" stroke="#10B981" stroke-width="3" stroke-linecap="round" />
+                  <circle cx="280" cy="12" r="4" fill="#34D399" class="animate-ping" />
+                </svg>
+              </div>
+              <div class="flex justify-between text-xs font-mono text-slate-400 border-t border-white/[0.06] pt-2">
+                <span>Trigger: ₹2,960.00</span>
+                <span class="text-emerald-400 font-semibold">Target: ₹3,080.00</span>
+              </div>
+            </div>
+
+            <!-- Breakdown Card -->
+            <div class="aq-card p-6 rounded-2xl space-y-4 anim-fade-up stagger-3 border-rose-500/20">
+              <div class="flex justify-between items-center text-xs font-mono">
+                <span class="px-2.5 py-1 rounded bg-rose-500/20 text-rose-300 font-bold uppercase tracking-wide">Bearish Breakdown</span>
+                <span class="text-slate-400">NIFTY 500</span>
+              </div>
+              <div class="flex justify-between items-baseline">
+                <span class="text-xl font-bold text-white font-mono">INDUSINDBK</span>
+                <span class="text-rose-400 font-mono font-bold">LTP ₹1,085.00 (-1.95%)</span>
+              </div>
+              <!-- Progressive Breakdown Level Vector -->
+              <div class="h-24 w-full pt-2">
+                <svg viewBox="0 0 300 60" fill="none" class="w-full h-full">
+                  <line x1="0" y1="20" x2="300" y2="20" stroke="#1E293B" stroke-width="1.2" stroke-dasharray="2 3" />
+                  <line x1="0" y1="40" x2="300" y2="40" stroke="#F43F5E" stroke-width="1.5" stroke-dasharray="4 4" />
+                  <path class="anim-chart-line" d="M 0 15 L 80 18 L 160 25 L 220 42 L 280 52" stroke="#F43F5E" stroke-width="3" stroke-linecap="round" />
+                  <circle cx="280" cy="52" r="4" fill="#FB7185" class="animate-ping" />
+                </svg>
+              </div>
+              <div class="flex justify-between text-xs font-mono text-slate-400 border-t border-white/[0.06] pt-2">
+                <span>Invalidation: ₹1,120.00</span>
+                <span class="text-rose-400 font-semibold">Support: ₹1,040.00</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- D. MODULE 4: HPS SELECTED (Top 10 Rank Transitions) -->
+        <div id="view-hps_selected" class="space-y-6 hidden">
+          <div class="flex items-center justify-between anim-fade-up stagger-1">
+            <div>
+              <span class="text-xs font-mono uppercase tracking-widest text-sky-400 font-semibold">Trend Power Ranking</span>
+              <h2 class="text-2xl font-semibold text-white">HPS Selected Top 10 Hierarchy</h2>
+            </div>
+            <span class="text-xs font-mono text-sky-400 bg-sky-500/10 border border-sky-500/20 px-3 py-1 rounded-lg">ADX Ordering</span>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div class="aq-card p-5 rounded-2xl anim-fade-up stagger-2 border-sky-500/30 space-y-2">
+              <div class="flex justify-between items-center text-xs font-mono">
+                <span class="px-2 py-0.5 rounded bg-sky-500 text-slate-950 font-bold">#1 RANK</span>
+                <span class="text-emerald-400 font-bold">ADX 48.2</span>
+              </div>
+              <div class="text-xl font-bold text-white font-mono">BHARTIARTL</div>
+              <div class="text-xs text-slate-400 font-mono">₹1,425.80 · Robust Expansion</div>
+            </div>
+
+            <div class="aq-card p-5 rounded-2xl anim-fade-up stagger-3 space-y-2">
+              <div class="flex justify-between items-center text-xs font-mono">
+                <span class="px-2 py-0.5 rounded bg-white/[0.08] text-white font-bold">#2 RANK</span>
+                <span class="text-emerald-400 font-bold">ADX 44.6</span>
+              </div>
+              <div class="text-xl font-bold text-white font-mono">ICICIBANK</div>
+              <div class="text-xs text-slate-400 font-mono">₹1,210.40 · Trend Continuation</div>
+            </div>
+
+            <div class="aq-card p-5 rounded-2xl anim-fade-up stagger-4 space-y-2">
+              <div class="flex justify-between items-center text-xs font-mono">
+                <span class="px-2 py-0.5 rounded bg-white/[0.08] text-white font-bold">#3 RANK</span>
+                <span class="text-emerald-400 font-bold">ADX 41.8</span>
+              </div>
+              <div class="text-xl font-bold text-white font-mono">LT</div>
+              <div class="text-xs text-slate-400 font-mono">₹3,680.00 · Momentum Pivot</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- E. MODULE 5: HPS MEAN REVERSION (Level-1/2/3 Support Spectrum) -->
+        <div id="view-hps_mean_reversion" class="space-y-6 hidden">
+          <div class="flex items-center justify-between anim-fade-up stagger-1">
+            <div>
+              <span class="text-xs font-mono uppercase tracking-widest text-sky-400 font-semibold">Statistical Equilibrium</span>
+              <h2 class="text-2xl font-semibold text-white">Mean Reversion Support Spectrum</h2>
+            </div>
+            <div class="flex items-center space-x-1.5 text-xs font-mono">
+              <span class="px-2.5 py-1 rounded bg-emerald-500/20 text-emerald-300 font-semibold anim-pulse-soft">Level-1</span>
+              <span class="px-2.5 py-1 rounded bg-cyan-500/20 text-cyan-300 font-semibold">Level-2</span>
+              <span class="px-2.5 py-1 rounded bg-amber-500/20 text-amber-300 font-semibold">Level-3</span>
+            </div>
+          </div>
+
+          <div class="aq-card p-6 rounded-2xl anim-fade-up stagger-2 space-y-4">
+            <div class="flex justify-between items-center text-xs font-mono border-b border-white/[0.06] pb-3">
+              <span class="text-white font-semibold">HDFCBANK · Testing Dynamic Mean Baseline</span>
+              <span class="text-emerald-400 font-bold">Spread: 0.28%</span>
+            </div>
+            <div class="h-32 w-full pt-2">
+              <svg viewBox="0 0 400 80" fill="none" class="w-full h-full">
+                <!-- Mean Support Baseline -->
+                <line x1="0" y1="50" x2="400" y2="50" stroke="#10B981" stroke-width="2" stroke-dasharray="4 4" />
+                <!-- Price Deviation Curve -->
+                <path class="anim-chart-line" d="M 0 20 Q 100 10, 200 45 T 400 49" stroke="#38BDF8" stroke-width="3" stroke-linecap="round" />
+                <circle cx="400" cy="49" r="4.5" fill="#10B981" class="animate-ping" />
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <!-- F. MODULE 6: WEEKLY POSITION -->
+        <div id="view-weekly_position" class="space-y-6 hidden">
+          <div class="anim-fade-up stagger-1">
+            <span class="text-xs font-mono uppercase tracking-widest text-sky-400 font-semibold">Positional Framework</span>
+            <h2 class="text-2xl font-semibold text-white">Tuesday Anchor Cycle Tracking</h2>
+          </div>
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 font-mono text-xs">
+            <div class="aq-card p-4 rounded-xl anim-fade-up stagger-2">
+              <span class="text-slate-400 text-[10px]">Anchor Close</span>
+              <p class="text-base font-bold text-white mt-1">₹24,850</p>
+            </div>
+            <div class="aq-card p-4 rounded-xl anim-fade-up stagger-3">
+              <span class="text-slate-400 text-[10px]">Trigger Level</span>
+              <p class="text-base font-bold text-sky-400 mt-1">₹24,980</p>
+            </div>
+            <div class="aq-card p-4 rounded-xl anim-fade-up stagger-4">
+              <span class="text-slate-400 text-[10px]">Target 1</span>
+              <p class="text-base font-bold text-emerald-400 mt-1">₹25,320</p>
+            </div>
+            <div class="aq-card p-4 rounded-xl anim-fade-up stagger-5">
+              <span class="text-slate-400 text-[10px]">Invalidation</span>
+              <p class="text-base font-bold text-rose-400 mt-1">₹24,710</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- G. MODULE 7: WATCHLIST -->
+        <div id="view-watchlist" class="space-y-6 hidden">
+          <div class="flex items-center justify-between anim-fade-up stagger-1">
+            <div>
+              <span class="text-xs font-mono uppercase tracking-widest text-sky-400 font-semibold">Isolated Private Tracking</span>
+              <h2 class="text-2xl font-semibold text-white">Personal Stock Watchlist</h2>
+            </div>
+            <span class="text-xs font-mono text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 rounded-lg">Private Vault</span>
+          </div>
+
+          <div class="aq-card rounded-2xl p-4 space-y-3 font-mono text-xs">
+            <div class="anim-row p-3 rounded-xl bg-white/[0.02] border border-white/[0.04] flex items-center justify-between" style="animation-delay: 0.1s;">
+              <div>
+                <span class="font-bold text-white">RELIANCE</span>
+                <span class="text-[11px] text-slate-400 ml-2">Energy · vs Sector (+1.2%)</span>
+              </div>
+              <div class="text-right">
+                <span class="font-bold text-white">₹2,980.50</span>
+                <span class="text-emerald-400 ml-2">+1.48%</span>
+              </div>
+            </div>
+
+            <div class="anim-row p-3 rounded-xl bg-white/[0.02] border border-white/[0.04] flex items-center justify-between" style="animation-delay: 0.2s;">
+              <div>
+                <span class="font-bold text-white">TCS</span>
+                <span class="text-[11px] text-slate-400 ml-2">IT Services · vs NIFTY 50 (+0.4%)</span>
+              </div>
+              <div class="text-right">
+                <span class="font-bold text-white">₹4,150.00</span>
+                <span class="text-emerald-400 ml-2">+0.85%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- Interactive Controls Guide -->
+  <footer class="w-full max-w-7xl mx-auto bg-[#0C121E] border border-white/[0.08] rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between text-xs gap-3 mt-4">
+    <div class="flex items-center space-x-3 font-mono text-[11px] text-slate-300">
+      <span class="px-2 py-0.5 rounded bg-blue-500/20 text-sky-300 font-semibold">1. Gliding Active Sidebar</span>
+      <span>·</span>
+      <span class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-semibold">2. Progressive Chart Drawing</span>
+      <span>·</span>
+      <span class="px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 font-semibold">3. Staggered Row Micro-Reveals</span>
+    </div>
+    <div class="text-[11px] font-mono text-slate-400">
+      Click any sidebar tab above to preview module transitions
+    </div>
+  </footer>
+
+  <script>
+    // Tab Switching with Fluid Gliding Active Sidebar Pill
+    const navItemHeight = 42; // approx button height + spacing
+    const navKeys = ['breadth', 'screener', 'hps', 'hps_selected', 'hps_mean_reversion', 'weekly_position', 'watchlist'];
+
+    function switchTab(key, index) {
+      // 1. Move gliding pill
+      const pill = document.getElementById('glidingPill');
+      if (pill) {
+        pill.style.transform = `translate3d(0, ${index * (38 + 4)}px, 0)`;
+      }
+
+      // 2. Hide all module views
+      navKeys.forEach(k => {
+        const v = document.getElementById('view-' + k);
+        if (v) v.classList.add('hidden');
+      });
+
+      // 3. Show target view with smooth fade-up entry
+      const target = document.getElementById('view-' + key);
+      if (target) {
+        target.classList.remove('hidden');
+        // Trigger CSS animation reflow
+        target.classList.remove('anim-fade-up');
+        void target.offsetWidth;
+        target.classList.add('anim-fade-up');
+      }
+
+      // If Breadth, trigger chart draw & ratio expansion
+      if (key === 'breadth') {
+        animateBreadthMetrics();
+      }
+    }
+
+    // Numerical Count-up & Ratio Bar Animation
+    function animateBreadthMetrics() {
+      const advBar = document.getElementById('ratioBarAdv');
+      const decBar = document.getElementById('ratioBarDec');
+      if (advBar) advBar.style.width = '0%';
+      if (decBar) decBar.style.width = '0%';
+
+      setTimeout(() => {
+        if (advBar) advBar.style.width = '68%';
+        if (decBar) decBar.style.width = '32%';
+      }, 150);
+
+      // Re-trigger stroke animation for progressive chart line
+      const line = document.getElementById('progressiveChartLine');
+      if (line) {
+        line.classList.remove('anim-chart-line');
+        void line.offsetWidth;
+        line.classList.add('anim-chart-line');
+      }
+    }
+
+    // Toggle Screener Filter Drawer smoothly
+    let drawerOpen = true;
+    function toggleFilters() {
+      const drawer = document.getElementById('screenerDrawer');
+      if (!drawer) return;
+      drawerOpen = !drawerOpen;
+      if (drawerOpen) {
+        drawer.style.maxHeight = '200px';
+        drawer.style.opacity = '1';
+        drawer.style.padding = '1.25rem';
+      } else {
+        drawer.style.maxHeight = '0px';
+        drawer.style.opacity = '0';
+        drawer.style.padding = '0rem 1.25rem';
+      }
+    }
+
+    // Switch HPS Timeframes with smooth button feedback
+    function switchHpsTf(tf) {
+      ['4h', 'daily', 'weekly'].forEach(t => {
+        const btn = document.getElementById('tf-' + t);
+        if (btn) {
+          if (t === tf) {
+            btn.className = 'px-2.5 py-1 rounded-lg bg-sky-600 text-white font-semibold transition-all';
+          } else {
+            btn.className = 'px-2.5 py-1 rounded-lg text-slate-400 hover:text-white transition-all';
+          }
+        }
+      });
+    }
+
+    // Replay Full Dashboard Entry Sequence
+    function replayDashboardEntry() {
+      const viewport = document.getElementById('mainViewport');
+      if (!viewport) return;
+      viewport.classList.remove('anim-fade-up');
+      void viewport.offsetWidth;
+      viewport.classList.add('anim-fade-up');
+      switchTab('breadth', 0);
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      animateBreadthMetrics();
+    });
+  </script>
+</body>
+</html>

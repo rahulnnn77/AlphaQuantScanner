@@ -1203,15 +1203,93 @@ def get_stock_chart_history(
         "YTD": ("ytd", "1d"),
         "1Y": ("1y", "1d"),
         "5Y": ("5y", "1wk"),
+        "4H": ("60d", "1h"),
+        "D": ("1y", "1d"),
+        "W": ("2y", "1wk"),
     }
     yf_range, yf_interval = period_map.get(p_norm, ("1mo", "1d"))
-    yf_suffix = ".BO" if exch == "BSE" else ".NS"
-    yf_ticker = f"{sym}{yf_suffix}"
+
+    # Direct mapping for index tickers
+    INDEX_TICKER_MAP = {
+        "NIFTY": "^NSEI",
+        "NIFTY_50": "^NSEI",
+        "CNX500": "^CRSLDX",
+        "NIFTY_500": "^CRSLDX",
+        "BANKNIFTY": "^NSEBANK",
+        "NIFTY_BANK": "^NSEBANK",
+        "CNXFINANCE": "NIFTY_FIN_SERVICE.NS",
+        "NIFTY_FIN_SERVICE": "NIFTY_FIN_SERVICE.NS",
+        "CNXIT": "^CNXIT",
+        "NIFTY_IT": "^CNXIT",
+        "AUTOBEES": "^CNXAUTO",
+        "NIFTY_AUTO": "^CNXAUTO",
+        "PHARMABEES": "^CNXPHARMA",
+        "NIFTY_PHARMA": "^CNXPHARMA",
+        "FMCGIETF": "^CNXFMCG",
+        "NIFTY_FMCG": "^CNXFMCG",
+        "METALIETF": "^CNXMETAL",
+        "NIFTY_METAL": "^CNXMETAL",
+        "CNXENERGY": "^CNXENERGY",
+        "NIFTY_ENERGY": "^CNXENERGY",
+        "INFRABEES": "^CNXINFRA",
+        "NIFTY_INFRA": "^CNXINFRA",
+        "MOREALTY": "^CNXREALTY",
+        "NIFTY_REALTY": "^CNXREALTY",
+        "PSUBNKBEES": "^CNXPSUBANK",
+        "NIFTY_PSU_BANK": "^CNXPSUBANK",
+        "PVTBANIETF": "PVTBANIETF.NS",
+        "NIFTY_PVT_BANK": "PVTBANIETF.NS",
+        "CONSUMBEES": "^CNXCONSUM",
+        "NIFTY_CONSUMPTION": "^CNXCONSUM",
+        "CPSEETF": "^CNXPSE",
+        "NIFTY_PSE": "^CNXPSE",
+        "MODEFENCE": "MODEFENCE.NS",
+        "NIFTY_DEFENCE": "MODEFENCE.NS",
+        "OILIETF": "OILIETF.NS",
+        "NIFTY_OIL_GAS": "OILIETF.NS",
+        "HEALTHY": "HEALTHY.NS",
+        "NIFTY_HEALTHCARE": "HEALTHY.NS",
+        "JUNIORBEES": "^NSMIDCP",
+        "CNXMIDCAP": "^NSEMDCP50",
+        "NIFTY_MIDCAP": "^NSEMDCP50",
+        "HDFCSML250": "HDFCSML250.NS",
+        "MNC": "^CNXMNC",
+        "NIFTY_MNC": "^CNXMNC",
+        "EVINDIA": "EVINDIA.NS",
+        "MAKEINDIA": "MAKEINDIA.NS",
+        "COMMOIETF": "COMMOIETF.NS",
+        "NIFTY_COMMODITIES": "COMMOIETF.NS",
+        "NIFTY_MEDIA": "CONSUMBEES.NS",
+    }
+
+    CUSTOM_SECTOR_BASKETS = {
+        "SEC_CHEMICALS": ["SOLARINDS.NS", "PIDILITIND.NS", "SRF.NS", "LINDEINDIA.NS", "COROMANDEL.NS"],
+        "SEC_CEMENT": ["ULTRACEMCO.NS", "GRASIM.NS", "AMBUJACEM.NS", "SHREECEM.NS", "JKCEMENT.NS"],
+        "SEC_CAPGOODS": ["BHEL.NS", "ABB.NS", "CGPOWER.NS", "CUMMINSIND.NS", "SIEMENS.NS"],
+        "SEC_RETAIL": ["DMART.NS", "TRENT.NS", "NAUKRI.NS", "TITAN.NS"],
+        "SEC_TELECOM": ["BHARTIARTL.NS", "INDUSTOWER.NS", "TATACOMM.NS", "IDEA.NS"],
+        "SEC_AVIATION": ["ADANIPORTS.NS", "INDIGO.NS", "GMRAIRPORT.NS", "CONCOR.NS"],
+        "SEC_INTECH": ["NAUKRI.NS", "IRCTC.NS", "AFFLE.NS", "ZOMATO.NS"],
+        "SEC_TEXTILES": ["PAGEIND.NS", "KPRMILL.NS", "WELSPUNLIV.NS", "TRIDENT.NS"],
+        "SEC_HOTELS": ["INDHOTEL.NS", "EIHOTEL.NS", "LEMONTREE.NS", "CHALET.NS"],
+        "SEC_MEDIA": ["SUNTV.NS", "PVRINOX.NS", "ZEEL.NS", "PFOCUS.NS"],
+        "SEC_LOGISTICS": ["CONCOR.NS", "BLUEDART.NS", "DELHIVERY.NS"],
+        "SEC_QSR": ["JUBLFOOD.NS", "DEVYANI.NS", "WESTLIFE.NS"],
+        "SEC_DIVERSIFIED": ["GODREJIND.NS", "ADANIENT.NS", "RELIANCE.NS"],
+    }
+
+    if sym in INDEX_TICKER_MAP:
+        yf_ticker = INDEX_TICKER_MAP[sym]
+    elif sym.startswith("^") or sym.endswith(".NS") or sym.endswith(".BO"):
+        yf_ticker = sym
+    else:
+        yf_suffix = ".BO" if exch == "BSE" else ".NS"
+        yf_ticker = f"{sym}{yf_suffix}"
 
     cache_key = f"{exch}:{sym}:{p_norm}"
     now_ts = time_mod.time()
     cached = _HISTORY_CACHE.get(cache_key)
-    if cached and (now_ts - cached["ts"] < 60.0):
+    if cached and (now_ts - cached["ts"] < (15.0 if ScreenerEngine.is_market_open() else 60.0)):
         return cached["payload"]
 
     quote_map = _fetch_batch_quotes_and_benchmarks([f"{exch}:{sym}"])
@@ -1223,6 +1301,67 @@ def get_stock_chart_history(
     n500_quote = quote_map.get(MARKET_BENCHMARK_TICKERS["NIFTY_500"], {})
 
     candles = []
+    if sym in CUSTOM_SECTOR_BASKETS:
+        try:
+            from concurrent.futures import ThreadPoolExecutor
+            import pytz
+            ist = pytz.timezone("Asia/Kolkata")
+            headers = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"}
+            def _fetch_one(tk):
+                try:
+                    rr = requests.get(
+                        f"https://query1.finance.yahoo.com/v8/finance/chart/{tk}",
+                        params={"range": yf_range, "interval": yf_interval, "includePrePost": "false"},
+                        headers=headers, timeout=5
+                    )
+                    if rr.status_code == 200:
+                        rl = rr.json().get("chart", {}).get("result", [])
+                        if rl:
+                            r0 = rl[0]
+                            ts_list = r0.get("timestamp", []) or []
+                            ind = (r0.get("indicators", {}).get("quote", [{}]) or [{}])[0]
+                            op, hi, lo, cl, vl = ind.get("open", []), ind.get("high", []), ind.get("low", []), ind.get("close", []), ind.get("volume", [])
+                            pts = {}
+                            base_c = None
+                            for i, t in enumerate(ts_list):
+                                c_v = cl[i] if i < len(cl) else None
+                                if c_v is None or c_v <= 0:
+                                    continue
+                                if base_c is None:
+                                    base_c = float(c_v)
+                                o_v = float(op[i] or c_v) if i < len(op) else float(c_v)
+                                h_v = float(hi[i] or c_v) if i < len(hi) else float(c_v)
+                                l_v = float(lo[i] or c_v) if i < len(lo) else float(c_v)
+                                v_v = int(vl[i] or 0) if i < len(vl) and vl[i] is not None else 0
+                                pts[t] = (1000.0 * o_v / base_c, 1000.0 * h_v / base_c, 1000.0 * l_v / base_c, 1000.0 * float(c_v) / base_c, v_v)
+                            return pts
+                except Exception:
+                    pass
+                return {}
+            b_tickers = CUSTOM_SECTOR_BASKETS[sym]
+            with ThreadPoolExecutor(max_workers=5) as ex:
+                maps = [m for m in ex.map(_fetch_one, b_tickers) if m]
+            if maps:
+                # Use timestamps from the most complete series
+                ref_ts = sorted(max(maps, key=lambda x: len(x)).keys())
+                for ts in ref_ts:
+                    vals = [m[ts] for m in maps if ts in m]
+                    if not vals:
+                        continue
+                    n_v = len(vals)
+                    o_avg = round(sum(x[0] for x in vals) / n_v, 2)
+                    h_avg = round(sum(x[1] for x in vals) / n_v, 2)
+                    l_avg = round(sum(x[2] for x in vals) / n_v, 2)
+                    c_avg = round(sum(x[3] for x in vals) / n_v, 2)
+                    v_sum = sum(x[4] for x in vals)
+                    dt = datetime.fromtimestamp(ts, ist)
+                    lbl = dt.strftime("%I:%M %p") if p_norm == "1D" else dt.strftime("%d %b %I:%M %p") if p_norm == "1W" else dt.strftime("%b %Y") if p_norm == "5Y" else dt.strftime("%d %b %Y")
+                    candles.append({
+                        "timestamp": ts, "label": lbl,
+                        "open": o_avg, "high": max(h_avg, o_avg, c_avg), "low": min(l_avg, o_avg, c_avg), "close": c_avg, "volume": v_sum
+                    })
+        except Exception as e:
+            logger.warning(f"Custom sector basket fetch failed for {sym}: {e}")
     try:
         url = f"https://query1.finance.yahoo.com/v8/finance/chart/{yf_ticker}"
         headers = {
@@ -1233,7 +1372,7 @@ def get_stock_chart_history(
             params={"range": yf_range, "interval": yf_interval, "includePrePost": "false"},
             headers=headers,
             timeout=6,
-        )
+        ) if not candles else type("Dummy", (), {"status_code": 0})()
         if r.status_code == 200:
             res_list = r.json().get("chart", {}).get("result", [])
             if res_list:
@@ -1315,3 +1454,116 @@ def get_stock_chart_history(
     }
     _HISTORY_CACHE[cache_key] = {"ts": now_ts, "payload": payload}
     return payload
+
+
+# ----------------- LIVE SCREENER SNAPSHOT (single batched TradingView call, cached) ----------------- #
+from pydantic import BaseModel as _LiveBM
+
+class _LiveReq(_LiveBM):
+    symbols: List[str]
+
+_LIVE_SCREENER_CACHE: Dict[str, Any] = {"ts": 0.0, "key": "", "data": {}}
+
+@router.post("/screener-live")
+def get_screener_live(req: _LiveReq, current_user: User = Depends(get_current_user)):
+    syms = sorted({s.strip().upper() for s in (req.symbols or []) if s and s.strip()})[:800]
+    key = ",".join(syms)
+    now_ts = time_mod.time()
+    ttl = 30.0 if ScreenerEngine.is_market_open() else 300.0
+    c = _LIVE_SCREENER_CACHE
+    if c["key"] == key and (now_ts - c["ts"]) < ttl and c["data"]:
+        return {"status": "success", "market_open": ScreenerEngine.is_market_open(), "ts": c["ts"], "data": c["data"]}
+    out: Dict[str, Any] = {}
+    cols = ["close", "change", "High.All", "price_52_week_high", "price_52_week_low",
+            "EMA20", "EMA50", "EMA200", "RSI", "relative_volume_10d_calc",
+            "Perf.1M", "Perf.3M", "Perf.6M", "Perf.Y"]
+    try:
+        resp = requests.post(
+            "https://scanner.tradingview.com/india/scan",
+            json={"symbols": {"tickers": [f"NSE:{s}" for s in syms], "query": {"types": []}}, "columns": cols},
+            timeout=10,
+        )
+        if resp.status_code == 200:
+            for row in resp.json().get("data", []):
+                sym = row.get("s", "").split(":")[-1]
+                d = row.get("d", [])
+                if not sym or len(d) < len(cols):
+                    continue
+                f = lambda v: round(float(v), 2) if v is not None else None
+                out[sym] = {
+                    "ltp": f(d[0]), "change_pct": f(d[1]), "ath": f(d[2]), "h52": f(d[3]), "l52": f(d[4]),
+                    "e21": f(d[5]), "e50": f(d[6]), "e200": f(d[7]), "rsi": f(d[8]), "vol_x": f(d[9]),
+                    "p1m": f(d[10]), "p3m": f(d[11]), "p6m": f(d[12]), "p12m": f(d[13]),
+                }
+    except Exception as e:
+        logger.warning(f"Live screener fetch failed: {e}")
+    if out:
+        _LIVE_SCREENER_CACHE.update({"ts": now_ts, "key": key, "data": out})
+    else:
+        out = c["data"]
+    return {"status": "success", "market_open": ScreenerEngine.is_market_open(), "ts": now_ts, "data": out}
+
+
+# ----------------- PER-USER CHART DRAWINGS PERSISTENCE ----------------- #
+class ChartDrawingsPayload(BaseModel):
+    symbol: str
+    drawings: List[Dict[str, Any]] = []
+
+
+def _ensure_drawings_table(db: Session):
+    from sqlalchemy import text
+    db.execute(text("""
+        CREATE TABLE IF NOT EXISTS chart_drawings (
+            user_id INTEGER NOT NULL,
+            symbol TEXT NOT NULL,
+            data TEXT NOT NULL,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (user_id, symbol)
+        )
+    """))
+    db.commit()
+
+
+@router.get("/drawings")
+def get_chart_drawings(
+    symbol: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    from sqlalchemy import text
+    import json
+    _ensure_drawings_table(db)
+    sym = symbol.strip().upper()
+    row = db.execute(
+        text("SELECT data FROM chart_drawings WHERE user_id = :uid AND symbol = :sym"),
+        {"uid": current_user.id, "sym": sym},
+    ).fetchone()
+    if not row or not row[0]:
+        return {"symbol": sym, "drawings": []}
+    try:
+        return {"symbol": sym, "drawings": json.loads(row[0])}
+    except Exception:
+        return {"symbol": sym, "drawings": []}
+
+
+@router.put("/drawings")
+def save_chart_drawings(
+    payload: ChartDrawingsPayload,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    from sqlalchemy import text
+    import json
+    _ensure_drawings_table(db)
+    sym = payload.symbol.strip().upper()
+    data_str = json.dumps(payload.drawings or [])
+    db.execute(
+        text("""
+            INSERT INTO chart_drawings (user_id, symbol, data, updated_at)
+            VALUES (:uid, :sym, :data, CURRENT_TIMESTAMP)
+            ON CONFLICT(user_id, symbol) DO UPDATE SET data = :data, updated_at = CURRENT_TIMESTAMP
+        """),
+        {"uid": current_user.id, "sym": sym, "data": data_str},
+    )
+    db.commit()
+    return {"status": "saved", "symbol": sym, "count": len(payload.drawings or [])}

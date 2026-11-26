@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BananaPatterns Chart Look — With Highest Volume (HVE / HVY / HVQ) Preview</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js"></script>
+  <style>
+    body {
+      background: #0e1116;
+      color: #e8eaed;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      -webkit-font-smoothing: antialiased;
+    }
+    .num {
+      font-variant-numeric: tabular-nums;
+      font-feature-settings: "tnum";
+      font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    }
+  </style>
+</head>
+<body>
+  <div class="max-w-7xl mx-auto space-y-5">
+    <!-- Top Header & Controls -->
+    <div class="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-[#272d36]">
+      <div>
+        <h1 class="text-lg font-bold tracking-tight text-white">BananaPatterns Chart Look — With Highest Volume Badges (<code class="text-[#a78bfa]">HVE</code> · <code class="text-[#2dd4bf]">HVY</code> · <code class="text-[#94a3b8]">HVQ</code>)</h1>
+        <p class="text-xs text-[#9aa3ad] mt-0.5">
+          Exact BananaPatterns volume pane markers: <strong class="text-[#a78bfa]">HVE</strong> (Highest Volume Ever), <strong class="text-[#2dd4bf]">HVY</strong> (Highest Volume in 1 Year), <strong class="text-[#94a3b8]">HVQ</strong> (Highest Volume in Quarter) + Volume &amp; RVol callouts (<code class="text-slate-300">2.4M · ₹378 Cr (3.1×)</code>).
+        </p>
+      </div>
+      <div class="flex flex-wrap items-center gap-3 text-xs">
+        <div class="flex items-center gap-1 bg-[#161a20] p-1 rounded-lg border border-[#272d36]">
+          <button onclick="setTheme('dark')" id="theme-dark" class="px-2.5 py-1 rounded font-semibold bg-[#16243c] text-[#8fbcfb] border border-[#5b9bf8]/40">BP Dark (#161a20)</button>
+          <button onclick="setTheme('light')" id="theme-light" class="px-2.5 py-1 rounded font-semibold text-[#9aa3ad] hover:text-white border border-transparent">BP Light Paper (#ffffff)</button>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <span class="text-[#9aa3ad]">Stock:</span>
+          <button onclick="setStock('DIXON')" id="btn-DIXON" class="px-2.5 py-1 rounded-md font-semibold bg-[#16243c] text-[#8fbcfb] border border-[#5b9bf8]/40">DIXON</button>
+          <button onclick="setStock('TRENT')" id="btn-TRENT" class="px-2.5 py-1 rounded-md font-semibold bg-[#161a20] text-[#9aa3ad] border border-[#272d36] hover:text-white">TRENT</button>
+          <button onclick="setStock('HAL')" id="btn-HAL" class="px-2.5 py-1 rounded-md font-semibold bg-[#161a20] text-[#9aa3ad] border border-[#272d36] hover:text-white">HAL</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Side-by-Side Comparison: Option A (Pure Clean + HVE/HVY/HVQ Volume Badges) vs Option B (With Base Boxes Toggle + HVE/HVY/HVQ) -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      
+      <!-- OPTION A: PURE CLEAN BANANAPATTERNS LOOK + HVE/HVY/HVQ ON VOLUME BARS -->
+      <div id="card-a" class="rounded-xl border border-[#272d36] bg-[#161a20] overflow-hidden shadow-2xl flex flex-col">
+        <div id="hdr-a" class="px-4 py-2.5 bg-[#1d2229] border-b border-[#272d36] flex items-center justify-between text-xs">
+          <div class="flex items-center gap-2">
+            <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-blue-500/15 text-blue-300 border border-blue-500/30">Option A · Clean Chart + HVE/HVY/HVQ Volume</span>
+            <span id="title-a" class="font-semibold">DIXON · Daily</span>
+          </div>
+          <div class="flex items-center gap-1.5 text-[10px] num">
+            <span class="px-1.5 py-0.5 rounded bg-purple-500/20 text-[#a78bfa] border border-purple-500/30 font-bold">HVE</span>
+            <span class="px-1.5 py-0.5 rounded bg-teal-500/20 text-[#2dd4bf] border border-teal-500/30 font-bold">HVY</span>
+            <span class="px-1.5 py-0.5 rounded bg-slate-500/20 text-[#94a3b8] border border-slate-500/30 font-bold">HVQ</span>
+          </div>
+        </div>
+
+        <div class="relative h-[470px] w-full" id="wrap-a">
+          <!-- Floating Top-Left BananaPatterns Legend -->
+          <div class="absolute top-2.5 left-3 z-20 pointer-events-none space-y-0.5 text-[12px] select-none">
+            <div id="ohlc-a" class="num font-medium"></div>
+            <div id="ma-a" class="flex items-center gap-3 text-[11px] num font-medium"></div>
+          </div>
+          <div id="chart-a" class="w-full h-full"></div>
+          <canvas id="overlay-a" class="absolute inset-0 pointer-events-none z-10"></canvas>
+        </div>
+
+        <div id="ftr-a" class="px-4 py-2 bg-[#1d2229] border-t border-[#272d36] flex flex-wrap items-center justify-between gap-2 text-[11px] text-[#8b95a1]">
+          <div class="flex items-center gap-3">
+            <span><strong class="text-[#a78bfa]">HVE</strong> Highest Vol Ever</span>
+            <span><strong class="text-[#2dd4bf]">HVY</strong> Highest Vol 1Y</span>
+            <span><strong class="text-[#94a3b8]">HVQ</strong> Highest Vol Quarter</span>
+          </div>
+          <span class="num font-semibold text-emerald-400">No Base Boxes</span>
+        </div>
+      </div>
+
+      <!-- OPTION B: CLEAN + HVE/HVY/HVQ VOLUME + TOGGLEABLE BASE BOXES -->
+      <div id="card-b" class="rounded-xl border border-[#272d36] bg-[#161a20] overflow-hidden shadow-2xl flex flex-col">
+        <div id="hdr-b" class="px-4 py-2.5 bg-[#1d2229] border-b border-[#272d36] flex items-center justify-between text-xs">
+          <div class="flex items-center gap-2">
+            <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">Option B · HVE/HVY/HVQ + "Bases" Toggle</span>
+            <span id="title-b" class="font-semibold">DIXON · Daily</span>
+          </div>
+          <div class="flex items-center gap-1.5 text-[10px] num">
+            <button onclick="toggleBoxes()" id="btn-boxes" class="px-2 py-0.5 rounded font-semibold transition-all border bg-[#12301f] text-[#3ecf7d] border-[#3ecf7d]/50 shadow-[0_0_8px_rgba(62,207,125,0.25)] cursor-pointer">
+              Bases: ON (Click to Hide)
+            </button>
+            <span class="px-1.5 py-0.5 rounded bg-purple-500/20 text-[#a78bfa] border border-purple-500/30 font-bold">HVE</span>
+            <span class="px-1.5 py-0.5 rounded bg-teal-500/20 text-[#2dd4bf] border border-teal-500/30 font-bold">HVY</span>
+            <span class="px-1.5 py-0.5 rounded bg-slate-500/20 text-[#94a3b8] border border-slate-500/30 font-bold">HVQ</span>
+          </div>
+        </div>
+
+        <div class="relative h-[470px] w-full" id="wrap-b">
+          <!-- Floating Top-Left BananaPatterns Legend -->
+          <div class="absolute top-2.5 left-3 z-20 pointer-events-none space-y-0.5 text-[12px] select-none">
+            <div id="ohlc-b" class="num font-medium"></div>
+            <div id="ma-b" class="flex items-center gap-3 text-[11px] num font-medium"></div>
+          </div>
+          <div id="chart-b" class="w-full h-full"></div>
+          <canvas id="overlay-b" class="absolute inset-0 pointer-events-none z-10"></canvas>
+        </div>
+
+        <div id="ftr-b" class="px-4 py-2 bg-[#1d2229] border-t border-[#272d36] flex flex-wrap items-center justify-between gap-2 text-[11px] text-[#8b95a1]">
+          <div class="flex items-center gap-3">
+            <span><strong class="text-[#a78bfa]">HVE</strong> Highest Vol Ever</span>
+            <span><strong class="text-[#2dd4bf]">HVY</strong> Highest Vol 1Y</span>
+            <span><strong class="text-[#94a3b8]">HVQ</strong> Highest Vol Quarter</span>
+          </div>
+          <span class="num font-semibold text-cyan-400">HVE/HVY/HVQ + Base Boxes</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    let currentStock = 'DIXON';
+    let currentTheme = 'dark';
+    let showBoxesOnB = true;
+    let chartA = null, chartB = null;
+
+    function fmtVol(v) {
+      if (v >= 1e7) return (v / 1e7).toFixed(2) + 'Cr';
+      if (v >= 1e6) return (v / 1e6).toFixed(2) + 'M';
+      if (v >= 1e5) return (v / 1e5).toFixed(1) + 'L';
+      if (v >= 1e3) return (v / 1e3).toFixed(0) + 'K';
+      return String(v);
+    }
+
+    function calcEma(vals, p) {
+      const k = 2 / (p + 1);
+      let prev = vals[0];
+      return vals.map((v, i) => (prev = i === 0 ? v : +(v * k + prev * (1 - k)).toFixed(2)));
+    }
+
+    function generatePatternCandles(seedStr, basePrice, numBars = 135) {
+      let seed = 0;
+      for (let i = 0; i < seedStr.length; i++) seed = (seed * 31 + seedStr.charCodeAt(i)) % 100000;
+      const rand = () => { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; };
+
+      const candles = [];
+      let p = basePrice * 0.72;
+      const startTs = Math.floor(Date.now() / 1000) - numBars * 86400;
+
+      for (let i = 0; i < numBars; i++) {
+        const t = startTs + i * 86400;
+        let drift = 0, volMult = 1.0, rangePct = 0.022;
+
+        if (i === 18) { drift = 0.042; rangePct = 0.030; volMult = 3.1; } // Early Quarter Volume Spike (HVQ)
+        else if (i < 35) { drift = 0.0065; rangePct = 0.022; }
+        else if (i < 50) { drift = -0.0065; rangePct = 0.020; volMult = 0.75; }
+        else if (i < 68) { drift = 0.0055; rangePct = 0.014; volMult = 0.65; }
+        else if (i === 68) { drift = 0.038; rangePct = 0.028; volMult = 3.85; } // Breakout 1 -> HVY (Highest Volume 1Y)
+        else if (i < 88) { drift = 0.007; rangePct = 0.020; volMult = 1.15; }
+        else if (i === 94) { drift = 0.024; rangePct = 0.022; volMult = 2.65; } // Pocket Pivot inside base -> HVQ
+        else if (i < 100) { drift = -0.0085; rangePct = 0.022; volMult = 0.8; }
+        else if (i < 110) { drift = 0.0075; rangePct = 0.016; volMult = 0.7; }
+        else if (i < 118) { drift = -0.0045; rangePct = 0.012; volMult = 0.55; }
+        else if (i < 128) { drift = 0.0042; rangePct = 0.008; volMult = 0.42; } // Volume Dry Up (VDU)
+        else if (i === 129) { drift = 0.045; rangePct = 0.028; volMult = 4.65; } // Massive Breakout 2 -> HVE (Highest Volume Ever!)
+        else { drift = 0.004; rangePct = 0.015; volMult = 1.3; }
+
+        const noise = (rand() - 0.48) * rangePct;
+        const chg = drift + noise;
+        const open = p;
+        const close = +(open * (1 + chg)).toFixed(2);
+        const hiExtra = rand() * rangePct * 0.65;
+        const loExtra = rand() * rangePct * 0.65;
+        const high = +(Math.max(open, close) * (1 + hiExtra)).toFixed(2);
+        const low = +(Math.min(open, close) * (1 - loExtra)).toFixed(2);
+        const volume = Math.round((450000 + rand() * 280000) * volMult);
+
+        candles.push({ time: t, open, high, low, close, volume });
+        p = close;
+      }
+
+      // Compute 20D Volume Average for RVol (e.g., 3.4x)
+      const vols = candles.map(c => c.volume);
+      const v20 = calcEma(vols, 20);
+
+      // Automatically detect Highest Volume Ever (HVE), Highest Volume Year (HVY), and Highest Volume Quarter (HVQ - 63 bars)
+      const hvMarks = [];
+      let maxAllIdx = 0;
+      for (let i = 0; i < candles.length; i++) {
+        if (candles[i].volume > candles[maxAllIdx].volume) maxAllIdx = i;
+      }
+
+      // Find second major peak for HVY (outside 15 bars of HVE)
+      let maxYearIdx = -1;
+      for (let i = 0; i < candles.length; i++) {
+        if (Math.abs(i - maxAllIdx) > 15) {
+          if (maxYearIdx === -1 || candles[i].volume > candles[maxYearIdx].volume) maxYearIdx = i;
+        }
+      }
+
+      // Find HVQ (63-bar quarter peaks outside 12 bars of HVE and HVY)
+      const quarterPeaks = [];
+      for (let qStart = 0; qStart < candles.length; qStart += 45) {
+        let qMax = -1;
+        for (let i = qStart; i < Math.min(candles.length, qStart + 45); i++) {
+          if (Math.abs(i - maxAllIdx) > 12 && Math.abs(i - maxYearIdx) > 12) {
+            if (qMax === -1 || candles[i].volume > candles[qMax].volume) qMax = i;
+          }
+        }
+        if (qMax !== -1 && candles[qMax].volume > v20[qMax] * 1.6) {
+          quarterPeaks.push(qMax);
+        }
+      }
+
+      const addHv = (idx, kind) => {
+        if (idx < 0 || idx >= candles.length) return;
+        const c = candles[idx];
+        const rvol = (c.volume / Math.max(1, v20[idx])).toFixed(1);
+        const turnoverCr = Math.round((c.volume * c.close) / 1e7);
+        hvMarks.push({
+          i: idx,
+          kind, // 'HVE', 'HVY', 'HVQ'
+          vol: c.volume,
+          rvol,
+          txt: `${fmtVol(c.volume)} · ₹${turnoverCr}Cr (${rvol}×)`
+        });
+      };
+
+      addHv(maxAllIdx, 'HVE');
+      if (maxYearIdx !== -1) addHv(maxYearIdx, 'HVY');
+      quarterPeaks.forEach(qIdx => addHv(qIdx, 'HVQ'));
+
+      const b1Slice = candles.slice(34, 68);
+      const b1Hi = Math.max(...b1Slice.map(c => c.high));
+      const b1Lo = Math.min(...b1Slice.map(c => c.low));
+      const b1Depth = (((b1Lo - b1Hi) / b1Hi) * 100).toFixed(1);
+
+      const b2Slice = candles.slice(87, 129);
+      const b2Hi = Math.max(...b2Slice.map(c => c.high));
+      const b2Lo = Math.min(...b2Slice.map(c => c.low));
+      const b2Depth = (((b2Lo - b2Hi) / b2Hi) * 100).toFixed(1);
+
+      const bases = [
+        { i0: 34, i1: 67, hi: b1Hi, lo: b1Lo, label: `34d · ${b1Depth}%`, isPrior: true },
+        { i0: 87, i1: 128, hi: b2Hi, lo: b2Lo, label: `41d VCP Base · ${b2Depth}%`, isPrior: false, pivot: b2Hi }
+      ];
+      const marks = [
+        { i: 68, price: candles[68].high, kind: 'bo' },
+        { i: 124, price: candles[124].high, kind: 'squat' },
+        { i: 126, price: candles[126].high, kind: 'squat' },
+        { i: 129, price: candles[129].high, kind: 'bo' }
+      ];
+      return { candles, bases, marks, hvMarks };
+    }
+
+    function buildBpChart(containerId, overlayId, ohlcId, maId, theme, stockName, dataObj, withBoxes) {
+      const el = document.getElementById(containerId);
+      const canvas = document.getElementById(overlayId);
+      el.innerHTML = '';
+
+      const isDark = theme === 'dark';
+      // Exact BananaPatterns CSS variables for HVE, HVY, HVQ and chart colors
+      const palette = isDark ? {
+        bg: '#161a20',
+        text: '#8b95a1',
+        ink: '#e8eaed',
+        grid: '#222831',
+        axis: '#39414d',
+        up: '#3ecf7d',
+        down: '#ff6b5e',
+        wick: '#8b95a1',
+        volUp: 'rgba(62, 207, 125, 0.45)',
+        volDown: 'rgba(255, 107, 94, 0.45)',
+        volPeakUp: '#3ecf7d',
+        volPeakDown: '#ff6b5e',
+        dma50: '#5aa9e6',
+        dma200: '#e8b23a',
+        hps63: '#06B6D4',
+        baseStroke: '#3ecf7d',
+        baseFill: 'rgba(62, 207, 125, 0.08)',
+        priorStroke: '#8894a6',
+        priorFill: 'rgba(136, 148, 166, 0.06)',
+        squat: '#eab308',
+        HVE: '#a78bfa', // --mk-hve dark
+        HVY: '#2dd4bf', // --mk-hvy dark
+        HVQ: '#94a3b8', // --mk-hvq dark
+        hvSubText: '#cbd5e1'
+      } : {
+        bg: '#ffffff',
+        text: '#6b7480',
+        ink: '#1a1a17',
+        grid: '#eef1f4',
+        axis: '#d7dce1',
+        up: '#1a8a4a',
+        down: '#d2392f',
+        wick: '#6b7480',
+        volUp: 'rgba(26, 138, 74, 0.38)',
+        volDown: 'rgba(210, 57, 47, 0.38)',
+        volPeakUp: '#1a8a4a',
+        volPeakDown: '#d2392f',
+        dma50: '#3b82c4',
+        dma200: '#d99200',
+        hps63: '#0d9488',
+        baseStroke: '#1a8a4a',
+        baseFill: 'rgba(26, 138, 74, 0.07)',
+        priorStroke: '#64748b',
+        priorFill: 'rgba(100, 116, 139, 0.06)',
+        squat: '#b8860b',
+        HVE: '#7c3aed', // --mk-hve light
+        HVY: '#0f766e', // --mk-hvy light
+        HVQ: '#64748b', // --mk-hvq light
+        hvSubText: '#475569'
+      };
+
+      const chart = LightweightCharts.createChart(el, {
+        width: el.clientWidth,
+        height: el.clientHeight,
+        layout: {
+          background: { color: palette.bg },
+          textColor: palette.text,
+          fontSize: 11,
+          fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+        },
+        grid: {
+          vertLines: { color: palette.grid, style: LightweightCharts.LineStyle.SparseDotted },
+          horzLines: { color: palette.grid, style: LightweightCharts.LineStyle.SparseDotted }
+        },
+        rightPriceScale: {
+          borderColor: palette.axis,
+          scaleMargins: { top: 0.10, bottom: 0.27 }
+        },
+        timeScale: {
+          borderColor: palette.axis,
+          rightOffset: 4,
+          barSpacing: 7
+        },
+        crosshair: { mode: 0 }
+      });
+
+      const candleSeries = chart.addCandlestickSeries({
+        upColor: palette.up,
+        downColor: palette.down,
+        borderUpColor: palette.up,
+        borderDownColor: palette.down,
+        wickUpColor: palette.wick,
+        wickDownColor: palette.wick
+      });
+
+      const volSeries = chart.addHistogramSeries({
+        priceScaleId: '',
+        priceFormat: { type: 'volume' }
+      });
+      volSeries.priceScale().applyOptions({ scaleMargins: { top: 0.78, bottom: 0 } });
+
+      const volMaSeries = chart.addLineSeries({
+        priceScaleId: '',
+        color: isDark ? 'rgba(139, 149, 161, 0.70)' : 'rgba(107, 116, 128, 0.70)',
+        lineWidth: 1,
+        lineStyle: LightweightCharts.LineStyle.Dashed,
+        priceLineVisible: false,
+        lastValueVisible: false
+      });
+
+      const dma50Series = chart.addLineSeries({
+        color: palette.dma50,
+        lineWidth: 1.5,
+        priceLineVisible: false,
+        lastValueVisible: false
+      });
+      const dma200Series = chart.addLineSeries({
+        color: palette.dma200,
+        lineWidth: 1.5,
+        priceLineVisible: false,
+        lastValueVisible: false
+      });
+      const hpsSeries = chart.addLineSeries({
+        color: palette.hps63,
+        lineWidth: 1.5,
+        lineStyle: LightweightCharts.LineStyle.Solid,
+        priceLineVisible: false,
+        lastValueVisible: false
+      });
+
+      const { candles, bases, marks, hvMarks } = dataObj;
+      const hvIdxSet = new Set(hvMarks.map(m => m.i));
+
+      candleSeries.setData(candles);
+      // Highlight HVE / HVY / HVQ volume bars with full opacity so they pop visually
+      volSeries.setData(candles.map((c, idx) => {
+        const isUp = c.close >= c.open;
+        const isHv = hvIdxSet.has(idx);
+        return {
+          time: c.time,
+          value: c.volume,
+          color: isHv ? (isUp ? palette.volPeakUp : palette.volPeakDown) : (isUp ? palette.volUp : palette.volDown)
+        };
+      }));
+
+      const closes = candles.map(c => c.close);
+      const vols = candles.map(c => c.volume);
+      const e50 = calcEma(closes, 50);
+      const e200 = calcEma(closes, 120);
+      const e63 = calcEma(closes, 63);
+      const v20 = calcEma(vols, 20);
+
+      dma50Series.setData(candles.map((c, i) => ({ time: c.time, value: e50[i] })));
+      dma200Series.setData(candles.map((c, i) => ({ time: c.time, value: e200[i] })));
+      hpsSeries.setData(candles.map((c, i) => ({ time: c.time, value: e63[i] })));
+      volMaSeries.setData(candles.map((c, i) => ({ time: c.time, value: v20[i] })));
+
+      const lastC = candles[candles.length - 1];
+      const lastChg = (((lastC.close - lastC.open) / lastC.open) * 100).toFixed(2);
+      const lastClr = lastC.close >= lastC.open ? palette.up : palette.down;
+      document.getElementById(ohlcId).style.color = palette.ink;
+      document.getElementById(ohlcId).innerHTML =
+        `${stockName} · 1D &nbsp; O ${lastC.open.toLocaleString('en-IN')} &nbsp; H ${lastC.high.toLocaleString('en-IN')} &nbsp; L ${lastC.low.toLocaleString('en-IN')} &nbsp; C ${lastC.close.toLocaleString('en-IN')} &nbsp;<span style="color:${lastClr}">${lastChg > 0 ? '+' : ''}${lastChg}%</span>`;
+
+      document.getElementById(maId).innerHTML =
+        `<span style="color:${palette.dma50}">50 DMA ${e50[e50.length - 1].toLocaleString('en-IN')}</span>` +
+        `<span style="color:${palette.dma200}">200 DMA ${e200[e200.length - 1].toLocaleString('en-IN')}</span>` +
+        `<span style="color:${palette.hps63}">HPS 63 EMA ${e63[e63.length - 1].toLocaleString('en-IN')}</span>` +
+        `<span style="color:${palette.HVE}">Vol 20D Avg ${fmtVol(Math.round(v20[v20.length - 1]))}</span>`;
+
+      function drawBpDecoOverlay() {
+        if (!canvas) return;
+        const dpr = window.devicePixelRatio || 1;
+        const w = el.clientWidth;
+        const h = el.clientHeight;
+        canvas.width = w * dpr;
+        canvas.height = h * dpr;
+        canvas.style.width = w + 'px';
+        canvas.style.height = h + 'px';
+
+        const ctx = canvas.getContext('2d');
+        ctx.scale(dpr, dpr);
+        ctx.clearRect(0, 0, w, h);
+
+        const ts = chart.timeScale();
+
+        // 1. ALWAYS DRAW HIGHEST VOLUME BADGES (HVE / HVY / HVQ) ON TOP OF VOLUME BARS
+        hvMarks.forEach(hv => {
+          const x = ts.timeToCoordinate(candles[hv.i].time);
+          const yVolTop = volSeries.priceToCoordinate(hv.vol);
+          if (x == null || yVolTop == null || x < 20 || x > w - 60) return;
+
+          const badgeColor = palette[hv.kind] || palette.HVE;
+          const pillW = 24;
+          const pillH = 12;
+          const pillX = x - pillW / 2;
+          const pillY = yVolTop - pillH - 3;
+
+          ctx.save();
+          // Rounded pill badge for HVE / HVY / HVQ (exact BananaPatterns 800 9px style)
+          ctx.fillStyle = badgeColor;
+          ctx.beginPath();
+          if (ctx.roundRect) ctx.roundRect(pillX, pillY, pillW, pillH, 3);
+          else ctx.rect(pillX, pillY, pillW, pillH);
+          ctx.fill();
+
+          ctx.fillStyle = '#ffffff';
+          ctx.font = '800 8.5px -apple-system, BlinkMacSystemFont, system-ui, sans-serif';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(hv.kind, x, pillY + pillH / 2 + 0.5);
+
+          // Callout text above the badge: e.g. "2.45M · ₹378Cr (4.6×)"
+          ctx.font = '600 8.5px ui-monospace, "SF Mono", Menlo, monospace';
+          const tw = ctx.measureText(hv.txt).width;
+          const tx = Math.max(4, Math.min(w - tw - 70, x - tw / 2));
+          ctx.fillStyle = badgeColor;
+          ctx.textAlign = 'left';
+          ctx.fillText(hv.txt, tx, pillY - 6);
+          ctx.restore();
+        });
+
+        // 2. DRAW BASE BOXES & BREAKOUT MARKERS IF ENABLED
+        if (!withBoxes()) return;
+
+        bases.forEach(b => {
+          const x1 = ts.timeToCoordinate(candles[b.i0].time);
+          const x2 = ts.timeToCoordinate(candles[b.i1].time);
+          const yHi = candleSeries.priceToCoordinate(b.hi);
+          const yLo = candleSeries.priceToCoordinate(b.lo);
+          if (x1 == null || x2 == null || yHi == null || yLo == null) return;
+
+          const boxX = Math.min(x1, x2) - 3;
+          const boxW = Math.abs(x2 - x1) + 6;
+          const boxY = Math.min(yHi, yLo);
+          const boxH = Math.abs(yLo - yHi);
+
+          ctx.save();
+          ctx.fillStyle = b.isPrior ? palette.priorFill : palette.baseFill;
+          ctx.fillRect(boxX, boxY, boxW, boxH);
+
+          ctx.strokeStyle = b.isPrior ? palette.priorStroke : palette.baseStroke;
+          ctx.lineWidth = b.isPrior ? 1 : 1.3;
+          ctx.setLineDash(b.isPrior ? [4, 3] : []);
+          ctx.strokeRect(boxX, boxY, boxW, boxH);
+          ctx.setLineDash([]);
+
+          ctx.font = '600 10.5px -apple-system, BlinkMacSystemFont, sans-serif';
+          ctx.fillStyle = b.isPrior ? palette.priorStroke : palette.baseStroke;
+          ctx.fillText(b.label, boxX + 2, boxY - 5);
+
+          if (!b.isPrior) {
+            const lastX = ts.timeToCoordinate(candles[candles.length - 1].time) || (w - 65);
+            ctx.strokeStyle = palette.baseStroke;
+            ctx.lineWidth = 1.2;
+            ctx.setLineDash([5, 4]);
+            ctx.beginPath();
+            ctx.moveTo(boxX + boxW, boxY);
+            ctx.lineTo(lastX + 18, boxY);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            const pivText = `Pivot ₹${b.hi.toLocaleString('en-IN')}`;
+            const tw = ctx.measureText(pivText).width + 10;
+            ctx.fillStyle = palette.baseStroke;
+            ctx.fillRect(lastX - tw + 18, boxY - 16, tw, 14);
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '600 9.5px ui-monospace, monospace';
+            ctx.fillText(pivText, lastX - tw + 23, boxY - 5.5);
+          }
+          ctx.restore();
+        });
+
+        marks.forEach(m => {
+          const x = ts.timeToCoordinate(candles[m.i].time);
+          const y = candleSeries.priceToCoordinate(m.price);
+          if (x == null || y == null) return;
+
+          ctx.save();
+          if (m.kind === 'bo') {
+            ctx.fillStyle = palette.baseStroke;
+            ctx.beginPath();
+            ctx.moveTo(x, y - 14);
+            ctx.lineTo(x + 4.5, y - 6);
+            ctx.lineTo(x - 4.5, y - 6);
+            ctx.closePath();
+            ctx.fill();
+          } else if (m.kind === 'squat') {
+            ctx.strokeStyle = palette.squat;
+            ctx.lineWidth = 1.4;
+            ctx.beginPath();
+            ctx.arc(x, y - 9, 3, 0, Math.PI * 2);
+            ctx.stroke();
+          }
+          ctx.restore();
+        });
+      }
+
+      chart.timeScale().fitContent();
+      setTimeout(drawBpDecoOverlay, 60);
+      chart.timeScale().subscribeVisibleTimeRangeChange(drawBpDecoOverlay);
+      chart.subscribeCrosshairMove(param => {
+        drawBpDecoOverlay();
+        const d = param && param.seriesData && param.seriesData.get(candleSeries);
+        if (d) {
+          const chgPct = (((d.close - d.open) / d.open) * 100).toFixed(2);
+          const clr = d.close >= d.open ? palette.up : palette.down;
+          document.getElementById(ohlcId).innerHTML =
+            `${stockName} · 1D &nbsp; O ${d.open.toLocaleString('en-IN')} &nbsp; H ${d.high.toLocaleString('en-IN')} &nbsp; L ${d.low.toLocaleString('en-IN')} &nbsp; C ${d.close.toLocaleString('en-IN')} &nbsp;<span style="color:${clr}">${chgPct > 0 ? '+' : ''}${chgPct}%</span>`;
+        }
+      });
+
+      return { chart, redraw: drawBpDecoOverlay };
+    }
+
+    const STOCK_CONFIGS = {
+      DIXON: { price: 15400 },
+      TRENT: { price: 7450 },
+      HAL: { price: 4820 }
+    };
+
+    function applyCardTheme() {
+      const isDark = currentTheme === 'dark';
+      ['a', 'b'].forEach(k => {
+        const card = document.getElementById('card-' + k);
+        const hdr = document.getElementById('hdr-' + k);
+        const ftr = document.getElementById('ftr-' + k);
+        const wrap = document.getElementById('wrap-' + k);
+        card.className = `rounded-xl border overflow-hidden shadow-2xl flex flex-col ${isDark ? 'border-[#272d36] bg-[#161a20] text-[#e8eaed]' : 'border-[#dfe3e8] bg-[#ffffff] text-[#1a1a17]'}`;
+        hdr.className = `px-4 py-2.5 border-b flex items-center justify-between text-xs ${isDark ? 'bg-[#1d2229] border-[#272d36]' : 'bg-[#f7f8fa] border-[#e9ecef]'}`;
+        ftr.className = `px-4 py-2 border-t flex flex-wrap items-center justify-between gap-2 text-[11px] ${isDark ? 'bg-[#1d2229] border-[#272d36] text-[#8b95a1]' : 'bg-[#f7f8fa] border-[#e9ecef] text-[#6b7480]'}`;
+        wrap.className = `relative h-[470px] w-full ${isDark ? 'bg-[#161a20]' : 'bg-[#ffffff]'}`;
+      });
+    }
+
+    function renderAll() {
+      applyCardTheme();
+      const cfg = STOCK_CONFIGS[currentStock];
+      document.getElementById('title-a').textContent = currentStock + ' · Daily';
+      document.getElementById('title-b').textContent = currentStock + ' · Daily';
+      const dataObj = generatePatternCandles(currentStock, cfg.price);
+      chartA = buildBpChart('chart-a', 'overlay-a', 'ohlc-a', 'ma-a', currentTheme, currentStock, dataObj, () => false);
+      chartB = buildBpChart('chart-b', 'overlay-b', 'ohlc-b', 'ma-b', currentTheme, currentStock, dataObj, () => showBoxesOnB);
+    }
+
+    function toggleBoxes() {
+      showBoxesOnB = !showBoxesOnB;
+      const btn = document.getElementById('btn-boxes');
+      if (showBoxesOnB) {
+        btn.textContent = 'Bases: ON (Click to Hide)';
+        btn.className = 'px-2 py-0.5 rounded font-semibold transition-all border bg-[#12301f] text-[#3ecf7d] border-[#3ecf7d]/50 shadow-[0_0_8px_rgba(62,207,125,0.25)] cursor-pointer';
+      } else {
+        btn.textContent = 'Bases: OFF (Click to Show)';
+        btn.className = 'px-2 py-0.5 rounded font-semibold transition-all border bg-[#161a20] text-[#8b95a1] border-[#39414d] cursor-pointer';
+      }
+      if (chartB) chartB.redraw();
+    }
+
+    function setTheme(t) {
+      currentTheme = t;
+      document.getElementById('theme-dark').className = t === 'dark'
+        ? 'px-2.5 py-1 rounded font-semibold bg-[#16243c] text-[#8fbcfb] border border-[#5b9bf8]/40'
+        : 'px-2.5 py-1 rounded font-semibold text-[#9aa3ad] hover:text-white border border-transparent';
+      document.getElementById('theme-light').className = t === 'light'
+        ? 'px-2.5 py-1 rounded font-semibold bg-[#16243c] text-[#8fbcfb] border border-[#5b9bf8]/40'
+        : 'px-2.5 py-1 rounded font-semibold text-[#9aa3ad] hover:text-white border border-transparent';
+      renderAll();
+    }
+
+    function setStock(sym) {
+      currentStock = sym;
+      ['DIXON', 'TRENT', 'HAL'].forEach(s => {
+        const b = document.getElementById('btn-' + s);
+        b.className = s === sym
+          ? 'px-2.5 py-1 rounded-md font-semibold bg-[#16243c] text-[#8fbcfb] border border-[#5b9bf8]/40'
+          : 'px-2.5 py-1 rounded-md font-semibold bg-[#161a20] text-[#9aa3ad] border border-[#272d36] hover:text-white';
+      });
+      renderAll();
+    }
+
+    window.addEventListener('DOMContentLoaded', renderAll);
+    window.addEventListener('resize', () => {
+      if (chartA) chartA.redraw();
+      if (chartB) chartB.redraw();
+    });
+  </script>
+</body>
+</html>

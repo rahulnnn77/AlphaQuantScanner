@@ -475,4 +475,9 @@ if __name__ == "__main__":
     run_hps_breakout_scan()
     run_mean_reversion_scan()
     broadcast_scan_summary_to_telegram()
+    try:
+        from update_fo_backtest_cache import update_fo_backtest_eod_cache
+        update_fo_backtest_eod_cache(force=False)
+    except Exception as e:
+        logger.warning(f"EOD FO backtest cache check returned: {e}")
     logger.info(f"Full scanner update finished in {round(time.time() - t0, 1)}s")

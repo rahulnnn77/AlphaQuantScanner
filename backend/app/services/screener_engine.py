@@ -1231,9 +1231,29 @@ class ScreenerEngine:
         else:
             df.index = df.index.tz_convert(ist)
 
-        # Find all Tuesdays in the 60d dataset
+        # Known NSE market holidays (so live Monday sessions know in advance if tomorrow Tuesday is a holiday)
+        from datetime import date
+        NSE_HOLIDAYS = {
+            date(2026, 1, 26), date(2026, 3, 3), date(2026, 3, 26), date(2026, 3, 31),
+            date(2026, 4, 3), date(2026, 4, 14), date(2026, 5, 1), date(2026, 5, 28),
+            date(2026, 6, 26), date(2026, 9, 14), date(2026, 10, 2), date(2026, 10, 20),
+            date(2026, 11, 10), date(2026, 11, 24), date(2026, 12, 25),
+        }
+
+        # Find all Tuesdays in the 60d dataset; if a Tuesday is a market holiday, fall back to Monday
         all_dates = sorted(list({ts.date() for ts in df.index}))
-        tuesdays = [d for d in all_dates if d.weekday() == 1]
+        all_dates_set = set(all_dates)
+        tuesdays = []
+        if all_dates:
+            cur_d = all_dates[0]
+            end_d = all_dates[-1] + timedelta(days=1)
+            while cur_d <= end_d:
+                if cur_d.weekday() == 1:
+                    if cur_d in all_dates_set:
+                        tuesdays.append(cur_d)
+                    elif (cur_d <= all_dates[-1] or cur_d in NSE_HOLIDAYS) and (cur_d - timedelta(days=1)) in all_dates_set:
+                        tuesdays.append(cur_d - timedelta(days=1))
+                cur_d += timedelta(days=1)
 
         def fmt_ts(ts_obj):
             return ts_obj.strftime("%a, %d %b %Y • %I:%M %p")

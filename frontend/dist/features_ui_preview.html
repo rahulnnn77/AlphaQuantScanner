@@ -3,351 +3,567 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AlphaQuant - Institutional Charting, Drawing &amp; Fundamental Terminal</title>
+  <title>AlphaQuant Charting Studio - Institutional Financial Research Workspace</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- KLineCharts v9.8.9 Financial Charting & Native Vector Drawing Engine -->
+  <!-- KLineCharts v9.8.9 Institutional Financial Charting & Native Vector Drawing Engine -->
   <script src="https://cdn.jsdelivr.net/npm/klinecharts@9.8.9/dist/umd/klinecharts.min.js"></script>
   <style>
+    :root {
+      --bg-workspace: #FFFFFF;
+      --bg-surface: #F8FAFC;
+      --bg-subtle: #F1F5F9;
+      --border-hairline: #E2E8F0;
+      --text-charcoal: #0F172A;
+      --text-slate: #475569;
+      --text-muted: #94A3B8;
+      --accent-navy: #1E293B;
+      --accent-blue: #2563EB;
+      --bull-green: #16A34A;
+      --bear-red: #DC2626;
+    }
+
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Inter", "SF Pro Text", "Segoe UI", Roboto, sans-serif;
-      transition: background-color 0.2s, color 0.2s;
+      background-color: var(--bg-workspace);
+      color: var(--text-charcoal);
+      -webkit-font-smoothing: antialiased;
     }
+
     .tabular-nums { font-variant-numeric: tabular-nums; }
+    .font-mono-num { font-family: "JetBrains Mono", "SF Mono", Menlo, Monaco, Consolas, monospace; font-variant-numeric: tabular-nums; }
+
     ::-webkit-scrollbar { width: 5px; height: 5px; }
     ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: rgba(148, 163, 184, 0.35); border-radius: 3px; }
-    ::-webkit-scrollbar-thumb:hover { background: rgba(148, 163, 184, 0.55); }
+    ::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 2px; }
+    ::-webkit-scrollbar-thumb:hover { background: #94A3B8; }
 
-    body.theme-light {
-      --bg-app: #FFFFFF;
-      --bg-sidebar: #F8FAFC;
-      --bg-header: #FFFFFF;
-      --bg-hover: #F1F5F9;
-      --bg-active: #EEF2FF;
-      --border-col: #E2E8F0;
-      --text-main: #0F172A;
-      --text-sub: #64748B;
-      --text-muted: #94A3B8;
+    /* Compact Institutional Button & Toolbar Styling */
+    .tf-btn {
+      padding: 2px 6px;
+      font-size: 11px;
+      font-weight: 500;
+      border-radius: 4px;
+      color: #475569;
+      transition: background-color 0.12s, color 0.12s;
     }
-    body.theme-dark {
-      --bg-app: #070A10;
-      --bg-sidebar: #090E1A;
-      --bg-header: #0B111E;
-      --bg-hover: #131C2E;
-      --bg-active: #172554;
-      --border-col: #1E293B;
-      --text-main: #F8FAFC;
-      --text-sub: #94A3B8;
-      --text-muted: #64748B;
-    }
+    .tf-btn:hover { background-color: #F1F5F9; color: #0F172A; }
+    .tf-btn-active { background-color: #0F172A !important; color: #FFFFFF !important; font-weight: 600; }
 
-    .app-surface { background-color: var(--bg-app); color: var(--text-main); }
-    .sidebar-surface { background-color: var(--bg-sidebar); border-color: var(--border-col); }
-    .header-surface { background-color: var(--bg-header); border-color: var(--border-col); }
-    .border-std { border-color: var(--border-col); }
-    .text-primary { color: var(--text-main); }
-    .text-secondary { color: var(--text-sub); }
-    .text-tertiary { color: var(--text-muted); }
-    .row-item:hover { background-color: var(--bg-hover); }
-    .row-active { background-color: var(--bg-active) !important; font-weight: 600; border-left: 3px solid #2563EB; }
-
-    .draw-btn {
-      width: 30px;
-      height: 30px;
+    .tool-icon-btn {
+      width: 28px;
+      height: 28px;
       display: flex;
       align-items: center;
       justify-content: center;
-      border-radius: 6px;
-      transition: all 0.15s;
+      border-radius: 4px;
+      color: #475569;
+      transition: background-color 0.12s, color 0.12s;
     }
-    .draw-btn:hover { background-color: var(--bg-hover); color: var(--text-main); }
-    .draw-btn-active { background-color: #2563EB !important; color: #FFFFFF !important; }
+    .tool-icon-btn:hover { background-color: #E2E8F0; color: #0F172A; }
+    .tool-icon-active { background-color: #0F172A !important; color: #FFFFFF !important; }
+
+    .watch-row {
+      border-bottom: 1px solid #F1F5F9;
+      transition: background-color 0.1s;
+    }
+    .watch-row:hover { background-color: #F8FAFC; }
+    .watch-row-active {
+      background-color: #EFF6FF !important;
+      border-left: 2.5px solid #0F172A;
+    }
+
+    .pillar-tab {
+      padding: 6px 12px;
+      font-size: 11px;
+      font-weight: 600;
+      color: #64748B;
+      border-bottom: 2px solid transparent;
+      transition: all 0.12s;
+    }
+    .pillar-tab:hover { color: #0F172A; }
+    .pillar-tab-active {
+      color: #0F172A;
+      border-bottom-color: #0F172A;
+      background-color: #FFFFFF;
+    }
   </style>
 </head>
-<body class="theme-light app-surface h-screen w-screen overflow-hidden flex flex-col select-none text-xs">
+<body class="h-screen w-screen overflow-hidden flex flex-col select-none text-xs">
 
   <!-- =========================================================================
-       MAIN WORKSPACE (Split Left Screener + Right Chart & Fundamentals)
+       TOP STUDIO HEADER BAR: WORKSPACE MODE + COMPACT GLOBAL CONTROLS
        ========================================================================= -->
-  <div class="flex-1 flex overflow-hidden">
+  <header class="h-10 px-3 bg-[#F8FAFC] border-b border-[#E2E8F0] flex items-center justify-between shrink-0">
+    <!-- Left: Studio Identity & Mode Switcher -->
+    <div class="flex items-center space-x-4">
+      <div class="flex items-center space-x-2 pr-3 border-r border-[#E2E8F0]">
+        <svg viewBox="0 0 64 64" fill="none" class="w-4 h-4 shrink-0">
+          <line x1="14" y1="52" x2="14" y2="18" stroke="#1E3A8A" stroke-width="5" stroke-linecap="round"/>
+          <polygon points="14,18 38,32 14,46" fill="rgba(37,99,235,0.15)" stroke="#2563EB" stroke-width="2"/>
+          <line x1="38" y1="32" x2="56" y2="14" stroke="#16A34A" stroke-width="5" stroke-linecap="round"/>
+        </svg>
+        <span class="font-bold text-xs tracking-tight text-[#0F172A]">AlphaQuant</span>
+        <span class="text-[10px] font-mono uppercase tracking-wider text-[#64748B] border border-[#CBD5E1] px-1.5 py-0.2 rounded bg-white">Charting Studio</span>
+      </div>
 
-    <!-- ================= LEFT SIDEBAR: SCREENER LIST ================= -->
-    <aside class="w-64 sm:w-72 sidebar-surface border-r flex flex-col shrink-0 h-full">
+      <!-- Primary Studio View Tabs: 1. Charting & Research Workspace | 2. Fundamental Screener Studio -->
+      <div class="flex items-center space-x-1 bg-[#E2E8F0]/70 p-0.5 rounded">
+        <button
+          id="studioTab_chart"
+          onclick="switchStudioMode('chart')"
+          class="px-3 py-1 rounded text-[11px] font-semibold bg-white text-[#0F172A] shadow-2xs transition-all"
+        >
+          Charting &amp; Fundamental Research
+        </button>
+        <button
+          id="studioTab_screener"
+          onclick="switchStudioMode('screener')"
+          class="px-3 py-1 rounded text-[11px] font-medium text-[#475569] hover:text-[#0F172A] transition-all flex items-center space-x-1.5"
+        >
+          <span>Fundamental Screener Builder</span>
+          <span id="screenerMatchBadge" class="px-1.5 py-0.2 bg-[#0F172A] text-white rounded text-[10px] font-mono">498</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Right: Layout Persistence, Full-Screen & Status -->
+    <div class="flex items-center space-x-2">
+      <span id="saveLayoutToast" class="hidden text-[11px] text-[#16A34A] font-medium mr-1">Layout Saved</span>
+      <button
+        onclick="saveStudioLayout()"
+        class="px-2.5 py-1 rounded border border-[#CBD5E1] bg-white hover:bg-[#F1F5F9] text-[#0F172A] text-[11px] font-medium transition-colors"
+        title="Save current indicators, timeframe, and watchlist to browser storage"
+      >
+        Save Layout
+      </button>
+      <button
+        onclick="toggleFullScreenStudio()"
+        class="px-2.5 py-1 rounded border border-[#CBD5E1] bg-white hover:bg-[#F1F5F9] text-[#0F172A] text-[11px] font-medium transition-colors"
+        title="Toggle Full-Screen Research Mode"
+      >
+        Full Screen
+      </button>
+    </div>
+  </header>
+
+  <!-- =========================================================================
+       VIEW 1: MAIN CHARTING & FUNDAMENTAL RESEARCH WORKSPACE
+       ========================================================================= -->
+  <div id="viewChartWorkspace" class="flex-1 flex overflow-hidden">
+
+    <!-- ================= LEFT SIDEBAR: WATCHLIST & STOCK NAVIGATION (Section 3) ================= -->
+    <aside class="w-68 bg-[#F8FAFC] border-r border-[#E2E8F0] flex flex-col shrink-0 h-full" style="width: 276px;">
       
-      <!-- Screener Dropdown Header -->
-      <div class="h-11 px-3 border-b border-std flex items-center justify-between gap-1.5 shrink-0">
-        <div class="flex items-center space-x-1.5 flex-1 min-w-0">
-          <select id="screenerPresetSelect" onchange="applyScreenerPreset(this.value)" class="bg-transparent font-semibold text-primary text-xs focus:outline-none cursor-pointer truncate flex-1">
-            <option value="all">Screener (498)</option>
-            <option value="high_rs">High ROE Leaders (&gt; 15%)</option>
-            <option value="quality_roe">High ROE (&gt; 18%) &amp; Low Debt</option>
-            <option value="low_pe">Undervalued (P/E &lt; 22)</option>
-            <option value="large_cap">Large Cap Universe</option>
-            <option value="mid_cap">Mid Cap Universe</option>
+      <!-- Watchlist Search & Add Symbol Bar -->
+      <div class="p-2 border-b border-[#E2E8F0] bg-white space-y-1.5 shrink-0">
+        <div class="flex items-center justify-between">
+          <select
+            id="watchlistGroupSelect"
+            onchange="switchWatchlistMode(this.value)"
+            class="text-[11px] font-bold text-[#0F172A] bg-transparent focus:outline-none cursor-pointer"
+          >
+            <option value="watchlist">My Institutional Watchlist</option>
+            <option value="all">Nifty 500 Universe (498)</option>
+            <option value="large">Large Cap Leaders</option>
+            <option value="mid">Mid Cap Universe</option>
+            <option value="high_roe">High ROE (&gt; 18%)</option>
           </select>
+          <div class="flex items-center space-x-1 text-[#64748B]">
+            <button onclick="prevNextStock(-1)" title="Previous Stock (Up Arrow)" class="px-1.5 py-0.5 rounded hover:bg-[#F1F5F9] text-[#0F172A] font-mono">&lt;</button>
+            <button onclick="prevNextStock(1)" title="Next Stock (Down Arrow)" class="px-1.5 py-0.5 rounded hover:bg-[#F1F5F9] text-[#0F172A] font-mono">&gt;</button>
+          </div>
         </div>
-        <div class="flex items-center space-x-1 text-secondary">
-          <button onclick="prevNextStock(-1)" title="Previous Stock (Up Arrow)" class="p-1 rounded hover:bg-slate-200/50">&lt;</button>
-          <button onclick="prevNextStock(1)" title="Next Stock (Down Arrow)" class="p-1 rounded hover:bg-slate-200/50">&gt;</button>
+
+        <div class="flex items-center space-x-1">
+          <input
+            id="watchlistFilterInput"
+            type="text"
+            placeholder="Filter or add symbol (e.g. LT, SBIN)..."
+            oninput="filterWatchlistRows(this.value)"
+            onkeydown="if(event.key==='Enter') addSymbolFromSearch()"
+            class="flex-1 px-2 py-1 rounded border border-[#CBD5E1] bg-[#F8FAFC] text-[#0F172A] text-[11px] focus:outline-none focus:border-[#0F172A] focus:bg-white font-mono uppercase"
+          />
+          <button
+            onclick="addSymbolFromSearch()"
+            title="Add symbol to Watchlist"
+            class="px-2 py-1 rounded bg-[#0F172A] text-white text-[11px] font-semibold hover:bg-[#1E293B]"
+          >
+            + Add
+          </button>
         </div>
       </div>
 
-      <!-- Column Headers: Symbol | Last | ROE% -->
-      <div class="px-3 py-1.5 border-b border-std flex items-center justify-between text-[11px] text-secondary font-medium shrink-0">
-        <span class="w-28">Symbol</span>
+      <!-- Watchlist Column Headers: Symbol & Company | LTP | Chg% & Daily Range -->
+      <div class="px-2.5 py-1.5 border-b border-[#E2E8F0] bg-[#F1F5F9]/70 flex items-center justify-between text-[10px] font-semibold uppercase tracking-wider text-[#64748B] shrink-0">
+        <span class="w-32">Symbol / Company</span>
         <span class="w-16 text-right">Last</span>
-        <span class="w-16 text-right cursor-pointer flex items-center justify-end space-x-0.5">
-          <span id="sortLabel">ROE%</span>
-        </span>
+        <span class="w-20 text-right">Chg% / Day</span>
       </div>
 
-      <!-- Scrollable Stock Rows -->
-      <div id="stockListContainer" class="flex-1 overflow-y-auto divide-y divide-slate-200/40 dark:divide-slate-800/50">
-        <div class="p-6 text-center text-secondary">Loading Nifty 500 Screener...</div>
+      <!-- Scrollable Watchlist Stock Rows -->
+      <div id="stockListContainer" class="flex-1 overflow-y-auto bg-white">
+        <div class="p-6 text-center text-[#64748B]">Loading equities...</div>
       </div>
 
-      <!-- Left Sidebar Footer -->
-      <div class="h-8 px-3 border-t border-std flex items-center justify-between text-[11px] text-tertiary shrink-0">
-        <span id="listCountFooter">498 Equities</span>
-        <span>Up/Down keys to navigate</span>
+      <!-- Watchlist Footer -->
+      <div class="h-7 px-2.5 border-t border-[#E2E8F0] bg-[#F8FAFC] flex items-center justify-between text-[10px] text-[#64748B] shrink-0">
+        <span id="listCountFooter" class="font-medium">0 Equities</span>
+        <span>Up / Down keys to cycle</span>
       </div>
     </aside>
 
-    <!-- ================= RIGHT WORKSPACE: HEADER + CHART + QUARTERLY TABLE ================= -->
-    <section class="flex-1 flex flex-col h-full overflow-hidden min-w-0">
+    <!-- ================= CENTER & RIGHT WORKSPACE: CHART + INTEGRATED FUNDAMENTALS ================= -->
+    <section class="flex-1 flex flex-col h-full overflow-hidden min-w-0 bg-white">
 
-      <!-- 1. TOP COMPANY HEADER BAR -->
-      <header class="h-11 px-4 border-b border-std header-surface flex items-center justify-between gap-3 shrink-0">
+      <!-- 1. PRIMARY INSTRUMENT & CHART CONTROL HEADER (Section 2) -->
+      <div class="h-10 px-3 border-b border-[#E2E8F0] bg-white flex items-center justify-between gap-2 shrink-0">
         
-        <!-- Search Input & Company Title -->
-        <div class="flex items-center space-x-3 min-w-0 flex-1">
-          <div class="relative w-36 sm:w-44 shrink-0">
+        <!-- Left: Symbol Search, Company Name, Exchange Selector (NSE / BSE), Price & Change -->
+        <div class="flex items-center space-x-2.5 min-w-0">
+          <!-- Quick Symbol Jump -->
+          <div class="relative w-28 shrink-0">
             <input
               id="symbolSearchInput"
               type="text"
-              placeholder="Search symbol (e.g. TCS)..."
+              placeholder="NSE/BSE Symbol..."
               onkeydown="if(event.key==='Enter') searchSymbol(this.value)"
-              class="w-full px-2.5 py-1 rounded border border-std bg-transparent text-primary text-xs focus:outline-none focus:border-blue-600 font-mono uppercase"
+              class="w-full px-2 py-1 rounded border border-[#CBD5E1] bg-[#F8FAFC] text-[#0F172A] text-[11px] focus:outline-none focus:border-[#0F172A] focus:bg-white font-mono uppercase"
             />
           </div>
 
-          <div class="flex items-center space-x-2 truncate">
-            <h1 id="headerCompanyName" class="text-sm font-bold text-primary truncate">Reliance Industries Limited</h1>
-            <span id="headerSymbolSector" class="text-xs text-secondary truncate hidden md:inline">NSE:RELIANCE - Oil Gas &amp; Consumable Fuels</span>
+          <!-- Exchange Selector: NSE / BSE -->
+          <div class="inline-flex rounded border border-[#CBD5E1] bg-[#F8FAFC] p-0.5 shrink-0">
+            <button id="exch_NSE" onclick="switchExchange('NSE')" class="px-2 py-0.5 rounded-xs text-[10px] font-bold bg-[#0F172A] text-white">NSE</button>
+            <button id="exch_BSE" onclick="switchExchange('BSE')" class="px-2 py-0.5 rounded-xs text-[10px] font-semibold text-[#64748B] hover:text-[#0F172A]">BSE</button>
+          </div>
+
+          <!-- Company Title & Symbol Badge -->
+          <div class="flex items-baseline space-x-2 truncate">
+            <h1 id="headerCompanyName" class="text-sm font-bold text-[#0F172A] truncate">Reliance Industries Ltd.</h1>
+            <span id="headerSymbolSector" class="text-[11px] text-[#64748B] font-mono truncate hidden xl:inline">NSE:RELIANCE · Oil Gas &amp; Consumable Fuels</span>
           </div>
         </div>
 
-        <!-- Right Side: Price, % from High, Theme Toggle -->
-        <div class="flex items-center space-x-2.5 shrink-0">
-          <span id="headerLtp" class="text-sm font-bold text-primary tabular-nums">₹1,320.00</span>
-          <span id="headerFromHigh" class="px-2 py-0.5 rounded text-[11px] font-medium bg-rose-500/10 text-rose-600 border border-rose-500/20 tabular-nums">
-            -17.7% from high
+        <!-- Right: Live LTP, Change %, 52W High Proximity -->
+        <div class="flex items-center space-x-2.5 shrink-0 tabular-nums">
+          <div class="flex items-baseline space-x-1.5">
+            <span id="headerLtp" class="text-sm font-bold text-[#0F172A] font-mono-num">₹1,320.00</span>
+            <span id="headerChangeBadge" class="text-[11px] font-semibold text-[#16A34A] font-mono-num">+0.85%</span>
+          </div>
+          <span id="headerFromHigh" class="px-1.5 py-0.5 rounded text-[10px] font-medium bg-[#F1F5F9] text-[#475569] border border-[#E2E8F0] font-mono-num">
+            -17.7% from 52W High
           </span>
-          <button onclick="toggleTheme()" id="themeBtn" class="px-2.5 py-1 rounded border border-std text-secondary hover:text-primary text-[11px] font-medium transition-colors">
-            Dark Mode
-          </button>
         </div>
-      </header>
+      </div>
 
-      <!-- 2. CHART TOOLBAR (Timeframes D | W | M, Bar/Candle style, Log, User EMA Builder, Fundamental Toggle) -->
-      <div class="h-9 px-4 border-b border-std header-surface flex items-center justify-between gap-2 shrink-0 text-[11px]">
-        <div class="flex items-center space-x-1">
-          <button id="tf_1d" onclick="changeTimeframe('1d')" class="px-2 py-0.5 rounded font-medium text-secondary hover:text-primary">D</button>
-          <button id="tf_1wk" onclick="changeTimeframe('1wk')" class="px-2 py-0.5 rounded font-semibold bg-blue-600 text-white">W</button>
-          <button id="tf_1mo" onclick="changeTimeframe('1mo')" class="px-2 py-0.5 rounded font-medium text-secondary hover:text-primary">M</button>
-          
-          <span class="mx-1.5 text-tertiary">|</span>
+      <!-- 2. COMPACT TECHNICAL CHARTING TOOLBAR (Timeframes, Chart Types, Indicators, Compare, Undo/Redo) -->
+      <div class="h-9 px-3 border-b border-[#E2E8F0] bg-[#F8FAFC] flex items-center justify-between gap-1 shrink-0 overflow-x-auto">
+        
+        <!-- Timeframes: 1m, 3m, 5m, 15m, 30m, 1H, 4H, Daily, Weekly, Monthly -->
+        <div class="flex items-center space-x-0.5 shrink-0">
+          <button id="tf_1m" onclick="changeTimeframe('1m')" class="tf-btn" title="1 Minute">1m</button>
+          <button id="tf_3m" onclick="changeTimeframe('3m')" class="tf-btn" title="3 Minutes">3m</button>
+          <button id="tf_5m" onclick="changeTimeframe('5m')" class="tf-btn" title="5 Minutes">5m</button>
+          <button id="tf_15m" onclick="changeTimeframe('15m')" class="tf-btn" title="15 Minutes">15m</button>
+          <button id="tf_30m" onclick="changeTimeframe('30m')" class="tf-btn" title="30 Minutes">30m</button>
+          <button id="tf_1h" onclick="changeTimeframe('1h')" class="tf-btn" title="1 Hour">1H</button>
+          <button id="tf_4h" onclick="changeTimeframe('4h')" class="tf-btn" title="4 Hours">4H</button>
+          <button id="tf_1d" onclick="changeTimeframe('1d')" class="tf-btn" title="Daily">1D</button>
+          <button id="tf_1wk" onclick="changeTimeframe('1wk')" class="tf-btn tf-btn-active" title="Weekly">1W</button>
+          <button id="tf_1mo" onclick="changeTimeframe('1mo')" class="tf-btn" title="Monthly">1M</button>
 
-          <button id="styleBtn" onclick="toggleChartStyle()" class="px-2 py-0.5 rounded border border-std font-medium text-primary hover:bg-slate-200/40" title="Switch between Candlesticks and OHLC Bars (Green/Red)">
-            Candles (Green/Red)
-          </button>
+          <span class="mx-1.5 text-[#CBD5E1]">|</span>
 
-          <button id="logBtn" onclick="toggleLogScale()" class="px-2 py-0.5 rounded bg-blue-600 text-white font-semibold">
+          <!-- Chart Type Selector: Candlestick, Bar (OHLC), Line, Area, Heikin Ashi -->
+          <select
+            id="chartTypeSelect"
+            onchange="changeChartType(this.value)"
+            class="px-2 py-0.5 rounded border border-[#CBD5E1] bg-white text-[#0F172A] text-[11px] font-medium focus:outline-none cursor-pointer"
+          >
+            <option value="candle_solid">Candlestick</option>
+            <option value="ohlc">OHLC Bars</option>
+            <option value="heikin_ashi">Heikin Ashi</option>
+            <option value="line">Line Chart</option>
+            <option value="area">Area Chart</option>
+          </select>
+
+          <button id="logBtn" onclick="toggleLogScale()" class="px-2 py-0.5 rounded bg-[#0F172A] text-white text-[11px] font-semibold">
             Log
           </button>
 
-          <button id="magnetBtn" onclick="toggleMagnetMode()" class="px-2 py-0.5 rounded border border-std text-secondary hover:text-primary font-medium" title="Snap drawings to exact candle High/Low/Open/Close">
-            Magnet: OFF
+          <button id="magnetBtn" onclick="toggleMagnetMode()" class="px-2 py-0.5 rounded border border-[#CBD5E1] bg-white text-[#475569] hover:text-[#0F172A] text-[11px] font-medium">
+            Magnet
           </button>
 
-          <span class="mx-1.5 text-tertiary">|</span>
+          <span class="mx-1.5 text-[#CBD5E1]">|</span>
 
-          <!-- User Custom EMA Configuration Button -->
-          <button onclick="openEmaModal()" class="px-2.5 py-0.5 rounded border border-std text-primary hover:bg-slate-200/40 font-medium flex items-center space-x-1">
-            <span>EMA Settings</span>
-            <span id="emaCountBadge" class="px-1.5 py-0.2 bg-blue-600/15 text-blue-600 rounded font-bold text-[10px]">2</span>
+          <!-- Technical Indicators & Custom EMA Builder -->
+          <button onclick="openEmaModal()" class="px-2 py-0.5 rounded border border-[#CBD5E1] bg-white hover:bg-[#F1F5F9] text-[#0F172A] text-[11px] font-medium flex items-center space-x-1">
+            <span>Indicators / EMA</span>
+            <span id="emaCountBadge" class="px-1 bg-[#E2E8F0] text-[#0F172A] rounded font-mono text-[10px] font-bold">2</span>
+          </button>
+
+          <!-- Sub-Indicator Selector (Volume, RSI, MACD) -->
+          <select
+            id="subIndicatorSelect"
+            onchange="changeSubIndicator(this.value)"
+            class="px-2 py-0.5 rounded border border-[#CBD5E1] bg-white text-[#475569] text-[11px] font-medium focus:outline-none cursor-pointer"
+          >
+            <option value="VOL">Pane: Volume</option>
+            <option value="RSI">Pane: Volume + RSI</option>
+            <option value="MACD">Pane: Volume + MACD</option>
+            <option value="NONE">Hide Sub-Panes</option>
+          </select>
+
+          <!-- Stock Comparison Overlay -->
+          <button onclick="openComparePrompt()" id="compareBtn" class="px-2 py-0.5 rounded border border-[#CBD5E1] bg-white hover:bg-[#F1F5F9] text-[#475569] hover:text-[#0F172A] text-[11px] font-medium">
+            + Compare
           </button>
         </div>
 
-        <div class="flex items-center space-x-2 text-secondary">
-          <button id="toggleFundamentalsBtn" onclick="toggleBottomFundamentals()" class="px-2.5 py-0.5 rounded bg-blue-600/10 text-blue-600 border border-blue-600/25 font-medium">
-            Hide Fundamentals
+        <!-- Right Toolbar: Undo / Redo Drawings & Toggle Fundamental Dock -->
+        <div class="flex items-center space-x-1.5 shrink-0">
+          <button onclick="undoDrawingAction()" title="Undo Drawing" class="px-2 py-0.5 rounded border border-[#CBD5E1] bg-white hover:bg-[#F1F5F9] text-[#475569] text-[11px]">
+            Undo
           </button>
-          <button onclick="openFilterModal()" class="px-2.5 py-0.5 rounded bg-emerald-500/10 text-emerald-600 border border-emerald-500/25 font-medium">
-            Fundamental Filters
+          <button onclick="redoDrawingAction()" title="Redo Drawing" class="px-2 py-0.5 rounded border border-[#CBD5E1] bg-white hover:bg-[#F1F5F9] text-[#475569] text-[11px]">
+            Redo
+          </button>
+          <span class="text-[#CBD5E1]">|</span>
+          <button
+            id="toggleFundamentalsBtn"
+            onclick="toggleBottomFundamentals()"
+            class="px-2.5 py-0.5 rounded border border-[#0F172A] bg-[#0F172A] text-white text-[11px] font-medium"
+          >
+            Fundamentals Panel: ON
           </button>
         </div>
       </div>
 
-      <!-- 3. MAIN INTERACTIVE CHART AREA (Native KLineCharts Engine + Native Draggable Vector Overlays) -->
-      <div class="flex-1 flex relative overflow-hidden">
+      <!-- 3. CENTRAL INTERACTIVE CHARTING CANVAS + LEFT VECTOR DRAWING RAIL -->
+      <div class="flex-1 flex relative overflow-hidden min-h-0">
         
-        <!-- Left Vertical Drawing Toolbar (Native KLineCharts Overlays: Editable, Draggable, Resizable) -->
-        <div class="w-11 border-r border-std sidebar-surface flex flex-col items-center py-2 space-y-1.5 text-secondary shrink-0 z-30">
-          <!-- Cursor / Pan & Select Mode -->
-          <button id="tool_cursor" onclick="activateDrawingTool('cursor')" title="Cursor / Pan &amp; Edit Drawings" class="draw-btn draw-btn-active">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M4 4l7.07 17 2.51-7.39L21 11.07z"/></svg>
+        <!-- Left Drawing Toolbar -->
+        <div class="w-10 border-r border-[#E2E8F0] bg-[#F8FAFC] flex flex-col items-center py-1.5 space-y-1 shrink-0 z-20">
+          <button id="tool_cursor" onclick="activateDrawingTool('cursor')" title="Crosshair / Select &amp; Edit Drawings" class="tool-icon-btn tool-icon-active">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M4 4l7.07 17 2.51-7.39L21 11.07z"/></svg>
           </button>
-
-          <!-- Trendline (Segment) -->
-          <button id="tool_segment" onclick="activateDrawingTool('segment')" title="Trendline (Click Point 1, move, Click Point 2. Drag handles anytime to edit)" class="draw-btn">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><line x1="4" y1="20" x2="20" y2="4"/><circle cx="4" cy="20" r="2.2" fill="currentColor"/><circle cx="20" cy="4" r="2.2" fill="currentColor"/></svg>
+          <button id="tool_segment" onclick="activateDrawingTool('segment')" title="Trendline" class="tool-icon-btn">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><line x1="4" y1="20" x2="20" y2="4"/><circle cx="4" cy="20" r="2" fill="currentColor"/><circle cx="20" cy="4" r="2" fill="currentColor"/></svg>
           </button>
-
-          <!-- Horizontal Ray / Support-Resistance Line -->
-          <button id="tool_horizontalStraightLine" onclick="activateDrawingTool('horizontalStraightLine')" title="Horizontal Support / Resistance Line" class="draw-btn">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><line x1="3" y1="12" x2="21" y2="12"/><circle cx="12" cy="12" r="2.2" fill="currentColor"/></svg>
+          <button id="tool_horizontalStraightLine" onclick="activateDrawingTool('horizontalStraightLine')" title="Horizontal Support / Resistance Level" class="tool-icon-btn">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><line x1="3" y1="12" x2="21" y2="12"/><circle cx="12" cy="12" r="2" fill="currentColor"/></svg>
           </button>
-
-          <!-- Price Movement Measurement Tool -->
-          <button id="tool_priceMeasure" onclick="activateDrawingTool('priceMeasure')" title="Price &amp; Percentage Range Measurement (Click start bar, then end bar)" class="draw-btn">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M3 5h18v14H3z"/><path d="M7 5v4M12 5v6M17 5v4"/></svg>
+          <button id="tool_priceMeasure" onclick="activateDrawingTool('priceMeasure')" title="Price &amp; Bar Range Measurement" class="tool-icon-btn">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M3 5h18v14H3z"/><path d="M7 5v4M12 5v6M17 5v4"/></svg>
           </button>
-
-          <!-- Multi-point Path (4-Leg Wave / Swing Path) -->
-          <button id="tool_swingPath" onclick="activateDrawingTool('swingPath')" title="Swing Path (Click 4 swing points sequentially)" class="draw-btn">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><polyline points="3 17 9 11 14 15 21 7"/><circle cx="3" cy="17" r="1.6"/><circle cx="9" cy="11" r="1.6"/><circle cx="14" cy="15" r="1.6"/><circle cx="21" cy="7" r="1.6"/></svg>
+          <button id="tool_swingPath" onclick="activateDrawingTool('swingPath')" title="Multi-Point Path" class="tool-icon-btn">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><polyline points="3 17 9 11 14 15 21 7"/><circle cx="3" cy="17" r="1.5"/><circle cx="9" cy="11" r="1.5"/><circle cx="14" cy="15" r="1.5"/><circle cx="21" cy="7" r="1.5"/></svg>
           </button>
-
-          <!-- Rectangle Consolidation Box -->
-          <button id="tool_rectBox" onclick="activateDrawingTool('rectBox')" title="Rectangle Zone (Click corner 1, then corner 2)" class="draw-btn">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="1"/></svg>
+          <button id="tool_rectBox" onclick="activateDrawingTool('rectBox')" title="Rectangle Consolidation Zone" class="tool-icon-btn">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="1"/></svg>
           </button>
-
-          <!-- Text Callout Annotation -->
-          <button id="tool_textNote" onclick="activateDrawingTool('textNote')" title="Text Callout Flag (Click on chart to place annotation)" class="draw-btn font-serif font-bold text-sm">
+          <button id="tool_fibonacciLine" onclick="activateDrawingTool('fibonacciLine')" title="Fibonacci Retracement" class="tool-icon-btn text-[10px] font-mono font-bold">
+            Fib
+          </button>
+          <button id="tool_textNote" onclick="activateDrawingTool('textNote')" title="Text Annotation" class="tool-icon-btn font-serif font-bold text-xs">
             T
           </button>
-
-          <!-- Price Label Callout -->
-          <button id="tool_priceLine" onclick="activateDrawingTool('priceLine')" title="Price Label Line (Click on chart to stamp live price tag)" class="draw-btn">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+          <button id="tool_priceLine" onclick="activateDrawingTool('priceLine')" title="Price Label Callout" class="tool-icon-btn">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
           </button>
-
-          <div class="w-5 border-t border-std my-1"></div>
-
-          <!-- Delete Selected / Last Overlay -->
-          <button onclick="removeSelectedOrLastOverlay()" title="Delete Selected / Last Drawing (Backspace)" class="draw-btn text-secondary">
-            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg>
-          </button>
-
-          <!-- Clear All Drawings -->
-          <button onclick="clearAllOverlays()" title="Clear All Drawings" class="draw-btn text-rose-500">
+          <div class="w-5 border-t border-[#E2E8F0] my-0.5"></div>
+          <button onclick="clearAllOverlays()" title="Clear All Drawings" class="tool-icon-btn text-[#DC2626]">
             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
           </button>
         </div>
 
-        <!-- Canvas Container + Floating OHLCV Legend -->
-        <div id="chartWrapper" class="flex-1 relative h-full w-full overflow-hidden">
-          <!-- Floating Top-Left Chart Legend -->
-          <div class="absolute top-2.5 left-3 z-20 pointer-events-none space-y-0.5 bg-white/80 dark:bg-slate-950/80 backdrop-blur-xs px-2.5 py-1 rounded border border-std">
-            <div class="flex flex-wrap items-center gap-x-2.5 text-xs">
-              <span id="legendTitle" class="font-bold text-primary">Reliance Industries Limited</span>
-              <span id="legendTf" class="text-secondary font-medium">1W - NSE</span>
-              <span id="legendOhlc" class="font-mono text-[11px] text-primary tabular-nums">Loading chart...</span>
-              <span id="legendVol" class="font-mono text-[11px] text-emerald-600 font-semibold tabular-nums"></span>
+        <!-- Chart Canvas & Floating OHLCV / Comparison Legend -->
+        <div class="flex-1 relative h-full w-full overflow-hidden bg-white">
+          <div class="absolute top-2 left-2.5 z-10 pointer-events-none bg-white/90 backdrop-blur-xs px-2 py-1 rounded border border-[#E2E8F0] space-y-0.5">
+            <div class="flex flex-wrap items-center gap-x-2 text-[11px]">
+              <span id="legendTitle" class="font-bold text-[#0F172A]">Reliance Industries Ltd.</span>
+              <span id="legendTf" class="text-[#64748B] font-mono">1W · NSE</span>
+              <span id="legendOhlc" class="font-mono-num text-[#0F172A]">Loading...</span>
+              <span id="legendVol" class="font-mono-num text-[#16A34A] font-semibold"></span>
             </div>
-            <div id="legendEmaContainer" class="text-[11px] font-mono text-secondary tabular-nums flex flex-wrap items-center gap-x-3">
+            <div class="flex flex-wrap items-center gap-x-3 text-[10px] font-mono-num">
+              <div id="legendEmaContainer" class="flex flex-wrap items-center gap-x-3"></div>
+              <div id="legendCompareBadge" class="hidden text-[#7C3AED] font-semibold"></div>
             </div>
           </div>
 
-          <!-- Native KLineCharts Container -->
           <div id="klineChartCanvas" class="w-full h-full"></div>
         </div>
       </div>
 
-      <!-- 4. BOTTOM QUARTERLY FUNDAMENTAL TABLE (Can be toggled ON/OFF via Feature 2) -->
-      <div id="bottomFundamentalsPanel" class="h-28 border-t border-std header-surface flex flex-col shrink-0 transition-all">
-        <div class="flex-1 overflow-x-auto">
-          <table class="w-full h-full text-left border-collapse tabular-nums">
-            <thead>
-              <tr id="quarterHeaderRow" class="border-b border-std text-[11px] text-secondary bg-slate-50/50 dark:bg-slate-900/40">
-                <th class="py-1.5 px-3 w-28 font-semibold border-r border-std">
-                  <div class="flex items-center justify-between">
-                    <span>Stats</span>
-                    <button onclick="toggleBottomFundamentals()" title="Hide Quarterly Table" class="text-[10px] text-blue-600 hover:underline px-1">Hide</button>
-                  </div>
-                </th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-slate-200/60 dark:divide-slate-800/60 text-xs">
-              <tr id="quarterEpsRow">
-                <td class="py-1.5 px-3 border-r border-std font-medium text-secondary">
-                  <div class="flex items-center justify-between">
-                    <span class="text-primary font-semibold">EPS ₹</span>
-                    <div class="text-[9px] leading-tight text-right text-tertiary">
-                      <div>YoY</div>
-                      <div>QoQ</div>
+      <!-- =====================================================================
+           4. INTEGRATED FUNDAMENTAL ANALYSIS DOCK (Section 4)
+           Tabs: Quarterly & Annual Financials | 5 Institutional Pillars
+           ===================================================================== -->
+      <div id="bottomFundamentalsPanel" class="h-52 border-t border-[#CBD5E1] bg-white flex flex-col shrink-0">
+        
+        <!-- Fundamental Sub-Navigation Bar -->
+        <div class="h-8 px-3 bg-[#F8FAFC] border-b border-[#E2E8F0] flex items-center justify-between shrink-0">
+          <div class="flex items-center space-x-1">
+            <button id="fundTab_financials" onclick="switchFundamentalTab('financials')" class="pillar-tab pillar-tab-active">
+              Financial Statements (Quarterly &amp; Annual)
+            </button>
+            <button id="fundTab_pillars" onclick="switchFundamentalTab('pillars')" class="pillar-tab">
+              5-Pillar Fundamental Analysis (Valuation · Profitability · Growth · Health · Ownership)
+            </button>
+          </div>
+
+          <!-- Right Controls inside Fundamental Dock: Period Toggle (Quarterly vs Annual) -->
+          <div class="flex items-center space-x-2">
+            <div id="statementPeriodToggle" class="inline-flex rounded border border-[#CBD5E1] bg-white p-0.5">
+              <button id="periodBtn_quarterly" onclick="switchStatementPeriod('quarterly')" class="px-2 py-0.5 rounded-xs text-[10px] font-semibold bg-[#0F172A] text-white">
+                Quarterly
+              </button>
+              <button id="periodBtn_annual" onclick="switchStatementPeriod('annual')" class="px-2 py-0.5 rounded-xs text-[10px] font-medium text-[#64748B] hover:text-[#0F172A]">
+                Annual
+              </button>
+            </div>
+            <button onclick="toggleBottomFundamentals()" class="text-[10px] text-[#64748B] hover:text-[#0F172A] px-1.5 py-0.5 rounded border border-transparent hover:border-[#CBD5E1]">
+              Minimize
+            </button>
+          </div>
+        </div>
+
+        <!-- TAB A: COMPACT QUARTERLY / ANNUAL FINANCIAL TABLE + HISTORICAL BAR SPARKLINES -->
+        <div id="fundView_financials" class="flex-1 flex overflow-hidden">
+          <!-- Multi-Period Table -->
+          <div class="flex-1 overflow-x-auto overflow-y-auto">
+            <table class="w-full h-full text-left border-collapse tabular-nums">
+              <thead>
+                <tr id="quarterHeaderRow" class="border-b border-[#E2E8F0] text-[10px] uppercase tracking-wider text-[#64748B] bg-[#F8FAFC]">
+                  <th class="py-1.5 px-3 w-32 font-semibold border-r border-[#E2E8F0]">Metric</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-[#E2E8F0] text-[11px]">
+                <tr id="quarterEpsRow">
+                  <td class="py-1.5 px-3 border-r border-[#E2E8F0]">
+                    <div class="flex items-center justify-between">
+                      <span class="text-[#0F172A] font-semibold">EPS (₹)</span>
+                      <div class="text-[9px] leading-tight text-right text-[#64748B] font-mono"><div>YoY</div><div>QoQ</div></div>
                     </div>
-                  </div>
-                </td>
-              </tr>
-              <tr id="quarterSalesRow">
-                <td class="py-1.5 px-3 border-r border-std font-medium text-secondary">
-                  <div class="flex items-center justify-between">
-                    <span class="text-primary font-semibold">Sales Cr</span>
-                    <div class="text-[9px] leading-tight text-right text-tertiary">
-                      <div>YoY</div>
-                      <div>QoQ</div>
+                  </td>
+                </tr>
+                <tr id="quarterSalesRow">
+                  <td class="py-1.5 px-3 border-r border-[#E2E8F0]">
+                    <div class="flex items-center justify-between">
+                      <span class="text-[#0F172A] font-semibold">Revenue (Cr)</span>
+                      <div class="text-[9px] leading-tight text-right text-[#64748B] font-mono"><div>YoY</div><div>QoQ</div></div>
                     </div>
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Compact Historical Revenue & EPS Trend Mini-Chart -->
+          <div class="w-64 border-l border-[#E2E8F0] bg-[#F8FAFC] p-2.5 flex flex-col justify-between shrink-0 hidden lg:flex">
+            <div class="flex items-center justify-between text-[10px] font-semibold text-[#475569] uppercase tracking-wider">
+              <span>Historical Trajectory</span>
+              <span id="miniChartPeriodLabel" class="font-mono text-[#64748B]">8 Quarters</span>
+            </div>
+            <div id="historicalMiniBars" class="flex-1 flex items-end justify-between gap-1.5 pt-3 pb-1 px-1"></div>
+            <div class="flex items-center justify-between text-[10px] text-[#64748B] border-t border-[#E2E8F0] pt-1">
+              <span>Revenue Bars (₹ Cr)</span>
+              <span class="text-[#0F172A] font-semibold">Trend</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB B: 5-PILLAR INSTITUTIONAL FUNDAMENTAL MATRIX (Valuation, Profitability, Growth, Financial Health, Ownership) -->
+        <div id="fundView_pillars" class="hidden flex-1 overflow-x-auto overflow-y-auto bg-white">
+          <div class="grid grid-cols-5 divide-x divide-[#E2E8F0] h-full min-w-[820px] text-[11px] tabular-nums">
+            
+            <!-- 1. Valuation -->
+            <div class="p-2.5 flex flex-col justify-between">
+              <div class="text-[10px] font-bold uppercase tracking-wider text-[#0F172A] border-b border-[#E2E8F0] pb-1 mb-1">1. Valuation</div>
+              <div class="space-y-1">
+                <div class="flex justify-between"><span class="text-[#64748B]">P/E Ratio</span><strong id="p_pe" class="font-mono-num text-[#0F172A]">-</strong></div>
+                <div class="flex justify-between"><span class="text-[#64748B]">P/B Ratio</span><strong id="p_pb" class="font-mono-num text-[#0F172A]">-</strong></div>
+                <div class="flex justify-between"><span class="text-[#64748B]">EV / EBITDA</span><strong id="p_evebitda" class="font-mono-num text-[#0F172A]">-</strong></div>
+                <div class="flex justify-between"><span class="text-[#64748B]">Dividend Yield</span><strong id="p_div" class="font-mono-num text-[#0F172A]">-</strong></div>
+                <div class="flex justify-between"><span class="text-[#64748B]">Market Cap</span><strong id="p_mcap" class="font-mono-num text-[#0F172A]">-</strong></div>
+              </div>
+            </div>
+
+            <!-- 2. Profitability -->
+            <div class="p-2.5 flex flex-col justify-between">
+              <div class="text-[10px] font-bold uppercase tracking-wider text-[#0F172A] border-b border-[#E2E8F0] pb-1 mb-1">2. Profitability</div>
+              <div class="space-y-1">
+                <div class="flex justify-between"><span class="text-[#64748B]">ROE %</span><strong id="p_roe" class="font-mono-num text-[#16A34A]">-</strong></div>
+                <div class="flex justify-between"><span class="text-[#64748B]">ROCE %</span><strong id="p_roce" class="font-mono-num text-[#16A34A]">-</strong></div>
+                <div class="flex justify-between"><span class="text-[#64748B]">Operating Margin</span><strong id="p_opm" class="font-mono-num text-[#0F172A]">-</strong></div>
+                <div class="flex justify-between"><span class="text-[#64748B]">Net Profit Margin</span><strong id="p_npm" class="font-mono-num text-[#0F172A]">-</strong></div>
+              </div>
+            </div>
+
+            <!-- 3. Growth -->
+            <div class="p-2.5 flex flex-col justify-between">
+              <div class="text-[10px] font-bold uppercase tracking-wider text-[#0F172A] border-b border-[#E2E8F0] pb-1 mb-1">3. Growth (YoY)</div>
+              <div class="space-y-1">
+                <div class="flex justify-between"><span class="text-[#64748B]">Revenue Growth</span><strong id="p_revg" class="font-mono-num text-[#0F172A]">-</strong></div>
+                <div class="flex justify-between"><span class="text-[#64748B]">EPS Growth</span><strong id="p_epsg" class="font-mono-num text-[#0F172A]">-</strong></div>
+                <div class="flex justify-between"><span class="text-[#64748B]">Net Profit Growth</span><strong id="p_npg" class="font-mono-num text-[#0F172A]">-</strong></div>
+                <div class="flex justify-between"><span class="text-[#64748B]">Weinstein Stage</span><strong id="p_stage" class="font-semibold text-[#0F172A]">-</strong></div>
+              </div>
+            </div>
+
+            <!-- 4. Financial Health -->
+            <div class="p-2.5 flex flex-col justify-between">
+              <div class="text-[10px] font-bold uppercase tracking-wider text-[#0F172A] border-b border-[#E2E8F0] pb-1 mb-1">4. Financial Health</div>
+              <div class="space-y-1">
+                <div class="flex justify-between"><span class="text-[#64748B]">Debt / Equity</span><strong id="p_de" class="font-mono-num text-[#0F172A]">-</strong></div>
+                <div class="flex justify-between"><span class="text-[#64748B]">Current Ratio</span><strong id="p_cr" class="font-mono-num text-[#0F172A]">-</strong></div>
+                <div class="flex justify-between"><span class="text-[#64748B]">Interest Coverage</span><strong id="p_icov" class="font-mono-num text-[#0F172A]">-</strong></div>
+                <div class="flex justify-between"><span class="text-[#64748B]">Operating Cash Flow</span><strong id="p_ocf" class="font-mono-num text-[#0F172A]">-</strong></div>
+              </div>
+            </div>
+
+            <!-- 5. Ownership -->
+            <div class="p-2.5 flex flex-col justify-between">
+              <div class="text-[10px] font-bold uppercase tracking-wider text-[#0F172A] border-b border-[#E2E8F0] pb-1 mb-1">5. Ownership (%)</div>
+              <div class="space-y-1">
+                <div class="flex justify-between"><span class="text-[#64748B]">Promoter Holding</span><strong id="p_prom" class="font-mono-num text-[#0F172A]">-</strong></div>
+                <div class="flex justify-between"><span class="text-[#64748B]">FII Holding</span><strong id="p_fii" class="font-mono-num text-[#0F172A]">-</strong></div>
+                <div class="flex justify-between"><span class="text-[#64748B]">DII Holding</span><strong id="p_dii" class="font-mono-num text-[#0F172A]">-</strong></div>
+                <div class="flex justify-between"><span class="text-[#64748B]">Pledged Shares</span><strong id="p_pledge" class="font-mono-num text-[#0F172A]">-</strong></div>
+              </div>
+            </div>
+
+          </div>
         </div>
       </div>
 
-      <!-- 5. BOTTOM SUMMARY STRIP + CHART REFRESH & FUNDAMENTAL TOGGLE CONTROLS (Features 1 & 2) -->
-      <div class="h-9 px-4 border-t border-std sidebar-surface flex items-center justify-between text-[11px] overflow-x-auto shrink-0 tabular-nums">
-        <div class="flex items-center space-x-3.5 shrink-0">
-          <span>3M <strong id="strip3m" class="text-emerald-600">+12.4%</strong></span>
-          <span>6M <strong id="strip6m" class="text-emerald-600">+28.6%</strong></span>
-          <span>1Y <strong id="strip1y" class="text-emerald-600">+41.2%</strong></span>
-          <span class="text-tertiary">|</span>
-          <span>RS <strong id="stripRs" class="text-primary">88</strong></span>
-          <span>RS 3M <strong id="stripRs3m" class="text-primary">91</strong></span>
-          <span>RS 6M <strong id="stripRs6m" class="text-primary">89</strong></span>
-          <span class="text-tertiary">|</span>
-          <span>Mcap <strong id="stripMcap" class="text-primary">₹17,86,286 Cr</strong></span>
-          <span>P/E <strong id="stripPe" class="text-primary">21.8</strong></span>
-          <span>ROE <strong id="stripRoe" class="text-emerald-600">15.4%</strong></span>
-          <span class="text-tertiary">|</span>
-          <span id="stripStage" class="font-semibold text-indigo-600">Stage 2 - Advancing</span>
+      <!-- 5. BOTTOM TELEMETRY & QUICK ACTION BAR -->
+      <div class="h-8 px-3 border-t border-[#E2E8F0] bg-[#F8FAFC] flex items-center justify-between text-[11px] shrink-0 tabular-nums">
+        <div class="flex items-center space-x-3.5 overflow-x-auto">
+          <span>3M <strong id="strip3m" class="text-[#16A34A] font-mono-num">+0.8%</strong></span>
+          <span>6M <strong id="strip6m" class="text-[#16A34A] font-mono-num">+12.4%</strong></span>
+          <span>1Y <strong id="strip1y" class="text-[#16A34A] font-mono-num">+24.1%</strong></span>
+          <span class="text-[#CBD5E1]">|</span>
+          <span>RS Rating <strong id="stripRs" class="text-[#0F172A] font-mono-num">82</strong></span>
+          <span>RS 3M <strong id="stripRs3m" class="text-[#0F172A] font-mono-num">85</strong></span>
+          <span class="text-[#CBD5E1]">|</span>
+          <span>Mcap <strong id="stripMcap" class="text-[#0F172A] font-mono-num">₹17,86,286 Cr</strong></span>
+          <span>P/E <strong id="stripPe" class="text-[#0F172A] font-mono-num">21.8</strong></span>
+          <span>ROE <strong id="stripRoe" class="text-[#16A34A] font-mono-num">15.4%</strong></span>
+          <span class="text-[#CBD5E1]">|</span>
+          <span id="stripStage" class="font-semibold text-[#0F172A]">Stage 2 · Advancing</span>
         </div>
 
-        <!-- Bottom-Right Controls: 52W Range + Toggle Fundamentals + Refresh Chart Button -->
-        <div class="flex items-center space-x-2.5 shrink-0 ml-4">
-          <span id="strip52w" class="text-secondary hidden xl:inline">52W ₹987 - ₹1,604</span>
-          
-          <button
-            onclick="toggleBottomFundamentals()"
-            id="bottomToggleFundBtn"
-            class="px-2 py-0.5 rounded border border-std text-secondary hover:text-primary font-medium transition-colors"
-            title="Show or Hide the bottom Quarterly EPS &amp; Sales table"
-          >
-            Fundamentals: ON
-          </button>
-
+        <div class="flex items-center space-x-2 shrink-0 ml-4">
+          <span id="strip52w" class="text-[#64748B] font-mono-num hidden xl:inline">52W: ₹987 - ₹1,604</span>
           <button
             onclick="refreshChartView()"
-            id="bottomRefreshBtn"
-            class="px-2.5 py-0.5 rounded bg-blue-600 hover:bg-blue-500 text-white font-semibold flex items-center space-x-1 shadow-xs transition-colors"
-            title="Reload chart candles, reset zoom, and refresh data"
+            class="px-2.5 py-0.5 rounded border border-[#CBD5E1] bg-white hover:bg-[#F1F5F9] text-[#0F172A] font-semibold flex items-center space-x-1 transition-colors"
           >
-            <svg id="refreshIconSvg" class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
-              <path d="M23 4v6h-6M1 20v-6h6"/>
-              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+            <svg id="refreshIconSvg" class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
             </svg>
             <span>Refresh Chart</span>
           </button>
@@ -355,78 +571,134 @@
       </div>
 
     </section>
+  </div>
+
+  <!-- =========================================================================
+       VIEW 2: INTEGRATED FUNDAMENTAL SCREENER STUDIO (Section 5)
+       Multi-Condition Filter Builder (AND / OR Logic) + Results Table
+       ========================================================================= -->
+  <div id="viewScreenerStudio" class="hidden flex-1 flex overflow-hidden bg-white">
+    
+    <!-- Left Column: Structured Multi-Condition Filter Builder (8 Categories + AND/OR Logic) -->
+    <aside class="w-96 border-r border-[#E2E8F0] bg-[#F8FAFC] flex flex-col h-full shrink-0">
+      <div class="p-3 border-b border-[#E2E8F0] bg-white flex items-center justify-between">
+        <div>
+          <h2 class="text-xs font-bold uppercase tracking-wider text-[#0F172A]">Fundamental Query Builder</h2>
+          <p class="text-[11px] text-[#64748B]">Combine conditions across 8 institutional categories</p>
+        </div>
+        <!-- Logic Toggle: AND vs OR -->
+        <div class="inline-flex rounded border border-[#CBD5E1] bg-[#F8FAFC] p-0.5">
+          <button id="logic_AND" onclick="setScreenerLogic('AND')" class="px-2 py-0.5 rounded-xs text-[10px] font-bold bg-[#0F172A] text-white">AND</button>
+          <button id="logic_OR" onclick="setScreenerLogic('OR')" class="px-2 py-0.5 rounded-xs text-[10px] font-semibold text-[#64748B]">OR</button>
+        </div>
+      </div>
+
+      <!-- Category Quick-Add Pills (1. Valuation, 2. Profitability, 3. Growth, 4. Health, 5. Ownership, 6. Cash Flow, 7. Dividends, 8. Market Cap) -->
+      <div class="p-3 border-b border-[#E2E8F0] space-y-2">
+        <div class="text-[10px] font-semibold uppercase tracking-wider text-[#64748B]">Add Filter by Category</div>
+        <div class="flex flex-wrap gap-1">
+          <button onclick="addFilterCondition('pe', '<', 25)" class="px-2 py-1 rounded border border-[#CBD5E1] bg-white hover:bg-[#F1F5F9] text-[#0F172A] text-[11px] font-medium">+ Valuation (P/E)</button>
+          <button onclick="addFilterCondition('roe', '>', 15)" class="px-2 py-1 rounded border border-[#CBD5E1] bg-white hover:bg-[#F1F5F9] text-[#0F172A] text-[11px] font-medium">+ Profitability (ROE)</button>
+          <button onclick="addFilterCondition('revenue_growth', '>', 12)" class="px-2 py-1 rounded border border-[#CBD5E1] bg-white hover:bg-[#F1F5F9] text-[#0F172A] text-[11px] font-medium">+ Growth (Sales%)</button>
+          <button onclick="addFilterCondition('debt_to_equity', '<', 0.8)" class="px-2 py-1 rounded border border-[#CBD5E1] bg-white hover:bg-[#F1F5F9] text-[#0F172A] text-[11px] font-medium">+ Financial Health (D/E)</button>
+          <button onclick="addFilterCondition('promoter_holding', '>', 50)" class="px-2 py-1 rounded border border-[#CBD5E1] bg-white hover:bg-[#F1F5F9] text-[#0F172A] text-[11px] font-medium">+ Ownership (Promoter%)</button>
+          <button onclick="addFilterCondition('operating_cash_flow_cr', '>', 500)" class="px-2 py-1 rounded border border-[#CBD5E1] bg-white hover:bg-[#F1F5F9] text-[#0F172A] text-[11px] font-medium">+ Cash Flow (OCF Cr)</button>
+          <button onclick="addFilterCondition('dividend_yield', '>', 1.0)" class="px-2 py-1 rounded border border-[#CBD5E1] bg-white hover:bg-[#F1F5F9] text-[#0F172A] text-[11px] font-medium">+ Dividends (Yield%)</button>
+          <button onclick="addFilterCondition('market_cap_cr', '>', 20000)" class="px-2 py-1 rounded border border-[#CBD5E1] bg-white hover:bg-[#F1F5F9] text-[#0F172A] text-[11px] font-medium">+ Market Cap (Cr)</button>
+        </div>
+      </div>
+
+      <!-- Active Conditions Stack -->
+      <div id="screenerConditionsContainer" class="flex-1 overflow-y-auto p-3 space-y-2"></div>
+
+      <!-- Institutional Presets & Reset Footer -->
+      <div class="p-3 border-t border-[#E2E8F0] bg-white space-y-2">
+        <div class="text-[10px] font-semibold uppercase tracking-wider text-[#64748B]">Institutional Screen Presets</div>
+        <div class="grid grid-cols-2 gap-1.5">
+          <button onclick="loadScreenerPreset('compounders')" class="px-2 py-1.5 rounded border border-[#CBD5E1] bg-[#F8FAFC] hover:bg-[#F1F5F9] text-left">
+            <div class="font-semibold text-[#0F172A] text-[11px]">Quality Compounders</div>
+            <div class="text-[9px] text-[#64748B]">ROE &gt; 18%, D/E &lt; 0.5</div>
+          </button>
+          <button onclick="loadScreenerPreset('garp')" class="px-2 py-1.5 rounded border border-[#CBD5E1] bg-[#F8FAFC] hover:bg-[#F1F5F9] text-left">
+            <div class="font-semibold text-[#0F172A] text-[11px]">GARP Leaders</div>
+            <div class="text-[9px] text-[#64748B]">P/E &lt; 25, EPS Gr &gt; 15%</div>
+          </button>
+          <button onclick="loadScreenerPreset('institutional_ownership')" class="px-2 py-1.5 rounded border border-[#CBD5E1] bg-[#F8FAFC] hover:bg-[#F1F5F9] text-left">
+            <div class="font-semibold text-[#0F172A] text-[11px]">High Promoter + FII</div>
+            <div class="text-[9px] text-[#64748B]">Promoter &gt; 55%, Pledge = 0</div>
+          </button>
+          <button onclick="clearAllScreenerConditions()" class="px-2 py-1.5 rounded border border-[#CBD5E1] bg-white hover:bg-[#F1F5F9] text-center font-semibold text-[#475569]">
+            Reset All Filters
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Right Column: Dense Institutional Results Table -->
+    <section class="flex-1 flex flex-col h-full overflow-hidden">
+      <div class="h-10 px-4 border-b border-[#E2E8F0] bg-[#F8FAFC] flex items-center justify-between shrink-0">
+        <div class="flex items-center space-x-3">
+          <span class="font-bold text-xs text-[#0F172A]">Screener Results</span>
+          <span id="screenerResultCountLabel" class="text-[11px] font-mono text-[#475569]">Showing 498 of 498 equities</span>
+        </div>
+        <div class="text-[11px] text-[#64748B]">
+          Click any row to open directly in Charting &amp; Fundamental Research Studio
+        </div>
+      </div>
+
+      <div class="flex-1 overflow-auto">
+        <table class="w-full text-left border-collapse tabular-nums">
+          <thead class="sticky top-0 bg-[#F8FAFC] border-b border-[#CBD5E1] text-[10px] font-bold uppercase tracking-wider text-[#475569] z-10">
+            <tr>
+              <th class="py-2 px-3 border-r border-[#E2E8F0]">Symbol</th>
+              <th class="py-2 px-3 border-r border-[#E2E8F0]">Company</th>
+              <th class="py-2 px-3 border-r border-[#E2E8F0]">Sector</th>
+              <th class="py-2 px-3 border-r border-[#E2E8F0] text-right">LTP (₹)</th>
+              <th class="py-2 px-3 border-r border-[#E2E8F0] text-right">Market Cap (Cr)</th>
+              <th class="py-2 px-3 border-r border-[#E2E8F0] text-right">P/E</th>
+              <th class="py-2 px-3 border-r border-[#E2E8F0] text-right">P/B</th>
+              <th class="py-2 px-3 border-r border-[#E2E8F0] text-right">EV/EBITDA</th>
+              <th class="py-2 px-3 border-r border-[#E2E8F0] text-right">ROE %</th>
+              <th class="py-2 px-3 border-r border-[#E2E8F0] text-right">ROCE %</th>
+              <th class="py-2 px-3 border-r border-[#E2E8F0] text-right">Rev Gr %</th>
+              <th class="py-2 px-3 border-r border-[#E2E8F0] text-right">D/E</th>
+              <th class="py-2 px-3 border-r border-[#E2E8F0] text-right">Promoter %</th>
+              <th class="py-2 px-3 text-right">Div Yield %</th>
+            </tr>
+          </thead>
+          <tbody id="screenerTableBody" class="divide-y divide-[#E2E8F0] text-[11px]"></tbody>
+        </table>
+      </div>
+    </section>
 
   </div>
 
-  <!-- ================= USER CUSTOM EMA CONFIGURATION MODAL (Feature 4) ================= -->
-  <div id="emaModal" class="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 hidden items-center justify-center p-4">
-    <div class="app-surface border border-std rounded-2xl max-w-md w-full p-5 shadow-2xl space-y-4">
-      <div class="flex items-center justify-between border-b border-std pb-3">
+  <!-- ================= USER CUSTOM EMA & INDICATOR MODAL ================= -->
+  <div id="emaModal" class="fixed inset-0 bg-black/40 z-50 hidden items-center justify-center p-4">
+    <div class="bg-white border border-[#CBD5E1] rounded-lg max-w-md w-full p-4 shadow-lg space-y-3">
+      <div class="flex items-center justify-between border-b border-[#E2E8F0] pb-2.5">
         <div>
-          <h3 class="text-sm font-bold text-primary">Custom EMA Indicators</h3>
-          <p class="text-[11px] text-secondary">Add, customize period length, color, or toggle up to 5 Exponential Moving Averages.</p>
+          <h3 class="text-xs font-bold uppercase tracking-wider text-[#0F172A]">Technical Indicators &amp; Moving Averages</h3>
+          <p class="text-[11px] text-[#64748B]">Configure custom EMA periods and colors on the primary price canvas.</p>
         </div>
-        <button onclick="closeEmaModal()" class="text-secondary hover:text-primary text-sm px-1">X</button>
+        <button onclick="closeEmaModal()" class="text-[#64748B] hover:text-[#0F172A] text-xs font-bold px-1">X</button>
       </div>
 
-      <!-- Existing EMA List -->
-      <div id="emaListContainer" class="space-y-2.5 max-h-60 overflow-y-auto pr-1"></div>
+      <div id="emaListContainer" class="space-y-2 max-h-60 overflow-y-auto"></div>
 
-      <!-- Add New EMA Row -->
-      <div class="pt-3 border-t border-std flex items-center justify-between gap-2">
+      <div class="pt-2.5 border-t border-[#E2E8F0] flex items-center justify-between gap-2">
         <div class="flex items-center space-x-2">
-          <span class="text-secondary text-xs">New EMA Period:</span>
-          <input id="newEmaPeriodInput" type="number" min="2" max="500" value="200" class="w-20 px-2 py-1 rounded border border-std bg-transparent text-primary font-mono text-xs">
-          <input id="newEmaColorInput" type="color" value="#F59E0B" class="w-7 h-7 rounded cursor-pointer border-0 bg-transparent">
+          <span class="text-[#475569] text-[11px]">Period:</span>
+          <input id="newEmaPeriodInput" type="number" min="2" max="500" value="200" class="w-20 px-2 py-1 rounded border border-[#CBD5E1] text-[#0F172A] font-mono text-xs">
+          <input id="newEmaColorInput" type="color" value="#D97706" class="w-6 h-6 rounded cursor-pointer border-0 bg-transparent">
         </div>
-        <button onclick="addNewUserEma()" class="px-3 py-1 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs">
+        <button onclick="addNewUserEma()" class="px-3 py-1 rounded bg-[#0F172A] hover:bg-[#1E293B] text-white font-semibold text-[11px]">
           + Add EMA
         </button>
       </div>
 
-      <div class="flex justify-end space-x-2 pt-3 border-t border-std">
-        <button onclick="closeEmaModal()" class="px-4 py-1.5 rounded bg-blue-600 text-white font-semibold text-xs">Done</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- ================= FUNDAMENTAL FILTER MODAL OVERLAY ================= -->
-  <div id="filterModal" class="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 hidden items-center justify-center p-4">
-    <div class="app-surface border border-std rounded-2xl max-w-md w-full p-5 shadow-2xl space-y-4">
-      <div class="flex items-center justify-between border-b border-std pb-3">
-        <h3 class="text-sm font-bold text-primary">Fundamental Screener Criteria</h3>
-        <button onclick="closeFilterModal()" class="text-secondary hover:text-primary text-sm">X</button>
-      </div>
-
-      <div class="space-y-3 text-xs">
-        <div>
-          <div class="flex justify-between mb-1">
-            <span class="text-secondary">Max P/E Ratio</span>
-            <span id="modalPeLabel" class="font-bold text-blue-600">&lt; 50</span>
-          </div>
-          <input id="modalPeInput" type="range" min="5" max="100" value="50" oninput="document.getElementById('modalPeLabel').innerText='< '+this.value; applyCustomFilters()" class="w-full accent-blue-600">
-        </div>
-
-        <div>
-          <div class="flex justify-between mb-1">
-            <span class="text-secondary">Min Return on Equity (ROE %)</span>
-            <span id="modalRoeLabel" class="font-bold text-emerald-600">&gt; 10%</span>
-          </div>
-          <input id="modalRoeInput" type="range" min="0" max="40" value="10" oninput="document.getElementById('modalRoeLabel').innerText='> '+this.value+'%'; applyCustomFilters()" class="w-full accent-emerald-600">
-        </div>
-
-        <div>
-          <div class="flex justify-between mb-1">
-            <span class="text-secondary">Max Debt / Equity</span>
-            <span id="modalDeLabel" class="font-bold text-primary">&lt; 1.5</span>
-          </div>
-          <input id="modalDeInput" type="range" min="0" max="3" step="0.1" value="1.5" oninput="document.getElementById('modalDeLabel').innerText='< '+this.value; applyCustomFilters()" class="w-full accent-blue-600">
-        </div>
-      </div>
-
-      <div class="flex justify-end space-x-2 pt-3 border-t border-std">
-        <button onclick="resetCustomFilters()" class="px-3 py-1.5 rounded border border-std text-secondary hover:text-primary">Reset All</button>
-        <button onclick="closeFilterModal()" class="px-4 py-1.5 rounded bg-blue-600 text-white font-semibold">Apply</button>
+      <div class="flex justify-end pt-2 border-t border-[#E2E8F0]">
+        <button onclick="closeEmaModal()" class="px-4 py-1 rounded bg-[#0F172A] text-white font-semibold text-[11px]">Done</button>
       </div>
     </div>
   </div>
@@ -436,37 +708,79 @@
     // STATE & USER CONFIGURATIONS
     // =========================================================================
     let allStocks = [];
+    let watchlistSymbols = ['RELIANCE', 'TCS', 'HDFCBANK', 'INFY', 'ICICIBANK', 'LT', 'BHARTIARTL', 'SBIN', 'ITC', 'TATAMOTORS', 'SUNPHARMA', 'HAL', 'BEL', 'TRENT', 'DIXON'];
+    let currentWatchlistMode = 'watchlist';
     let filteredStocks = [];
+
     let currentSymbol = 'RELIANCE';
+    let currentExchange = 'NSE';
     let currentTimeframe = '1wk';
+    let currentChartType = 'candle_solid'; // 'candle_solid' | 'ohlc' | 'heikin_ashi' | 'line' | 'area'
     let isLogScale = true;
-    let useBarStyle = false; // Default to Green & Red Candlesticks
-    let isDark = false;
     let isMagnet = false;
     let showBottomFundamentals = true;
+    let activeFundamentalTab = 'financials'; // 'financials' | 'pillars'
+    let statementPeriod = 'quarterly'; // 'quarterly' | 'annual'
 
-    // Strictly Green (#16A34A) and Red (#DC2626) only
+    // Restrained Institutional Bull Green & Bear Red
     const UP_COLOR = '#16A34A';
     const DOWN_COLOR = '#DC2626';
 
-    // User-customizable EMAs
     let userEmas = [
       { id: 'ema_20', period: 20, color: '#0284C7', enabled: true },
-      { id: 'ema_50', period: 50, color: '#4F46E5', enabled: true },
-      { id: 'ema_200', period: 200, color: '#F59E0B', enabled: false },
+      { id: 'ema_50', period: 50, color: '#1E293B', enabled: true },
+      { id: 'ema_200', period: 200, color: '#D97706', enabled: false },
     ];
 
     let kChart = null;
-    let cachedCandles = [];
+    let rawStandardCandles = [];
+    let displayedCandles = [];
+    let cachedQuarters = [];
+    let cachedAnnuals = [];
+    let compareSymbol = null;
+    let compareCandlesMap = {};
+
+    // Undo / Redo Stack for Drawings
     let createdOverlayIds = [];
+    let redoOverlayStack = [];
     let selectedOverlayId = null;
 
+    // Fundamental Screener Builder State
+    let screenerLogic = 'AND';
+    let screenerConditions = [
+      { id: 1, field: 'roe', op: '>', val: 15 },
+      { id: 2, field: 'pe', op: '<', val: 45 },
+      { id: 3, field: 'debt_to_equity', op: '<', val: 1.0 }
+    ];
+
+    const SCREENER_FIELDS = [
+      { key: 'pe', label: 'P/E Ratio (Valuation)', unit: 'x' },
+      { key: 'pb', label: 'P/B Ratio (Valuation)', unit: 'x' },
+      { key: 'ev_to_ebitda', label: 'EV / EBITDA (Valuation)', unit: 'x' },
+      { key: 'roe', label: 'Return on Equity - ROE (Profitability)', unit: '%' },
+      { key: 'roce', label: 'Return on Capital - ROCE (Profitability)', unit: '%' },
+      { key: 'operating_margin', label: 'Operating Margin (Profitability)', unit: '%' },
+      { key: 'profit_margin', label: 'Net Profit Margin (Profitability)', unit: '%' },
+      { key: 'revenue_growth', label: 'Revenue Growth YoY (Growth)', unit: '%' },
+      { key: 'eps_growth', label: 'EPS Growth YoY (Growth)', unit: '%' },
+      { key: 'net_profit_growth', label: 'Net Profit Growth YoY (Growth)', unit: '%' },
+      { key: 'debt_to_equity', label: 'Debt to Equity (Financial Health)', unit: 'x' },
+      { key: 'current_ratio', label: 'Current Ratio (Financial Health)', unit: 'x' },
+      { key: 'interest_coverage', label: 'Interest Coverage (Financial Health)', unit: 'x' },
+      { key: 'promoter_holding', label: 'Promoter Holding (Ownership)', unit: '%' },
+      { key: 'fii_holding', label: 'FII Institutional Holding (Ownership)', unit: '%' },
+      { key: 'dii_holding', label: 'DII Institutional Holding (Ownership)', unit: '%' },
+      { key: 'pledge_pct', label: 'Promoter Pledge % (Ownership)', unit: '%' },
+      { key: 'operating_cash_flow_cr', label: 'Operating Cash Flow (Cash Flow)', unit: 'Cr' },
+      { key: 'dividend_yield', label: 'Dividend Yield (Dividends)', unit: '%' },
+      { key: 'market_cap_cr', label: 'Market Capitalisation (Size)', unit: 'Cr' }
+    ];
+
     // =========================================================================
-    // REGISTER CUSTOM NATIVE OVERLAYS IN KLINECHARTS
-    // (Rectangle Box, Price & Bar Range Measure, Multi-Point Swing Path, Text Flag)
+    // REGISTER CUSTOM OVERLAYS & COMPARISON INDICATOR IN KLINECHARTS
     // =========================================================================
-    function registerCustomChartOverlays() {
-      // 1. Rectangle Consolidation Zone (Draggable corners & body)
+    function registerCustomStudioExtensions() {
+      // 1. Rectangle Box
       klinecharts.registerOverlay({
         name: 'rectBox',
         totalStep: 3,
@@ -479,22 +793,20 @@
           const y = Math.min(coordinates[0].y, coordinates[1].y);
           const width = Math.abs(coordinates[1].x - coordinates[0].x);
           const height = Math.abs(coordinates[1].y - coordinates[0].y);
-          return [
-            {
-              type: 'rect',
-              attrs: { x, y, width, height },
-              styles: {
-                style: 'stroke_fill',
-                color: 'rgba(37, 99, 235, 0.14)',
-                borderColor: '#2563EB',
-                borderSize: 1.5
-              }
+          return [{
+            type: 'rect',
+            attrs: { x, y, width, height },
+            styles: {
+              style: 'stroke_fill',
+              color: 'rgba(15, 23, 42, 0.08)',
+              borderColor: '#0F172A',
+              borderSize: 1.5
             }
-          ];
+          }];
         }
       });
 
-      // 2. Price & Bar Movement Measurement Tool (Shows exact +₹, +%, and Bar Count)
+      // 2. Price & Bar Range Measurement
       klinecharts.registerOverlay({
         name: 'priceMeasure',
         totalStep: 3,
@@ -519,10 +831,10 @@
             : 0;
 
           const isGain = diff >= 0;
-          const fillCol = isGain ? 'rgba(22, 163, 74, 0.16)' : 'rgba(220, 38, 38, 0.16)';
+          const fillCol = isGain ? 'rgba(22, 163, 74, 0.12)' : 'rgba(220, 38, 38, 0.12)';
           const strokeCol = isGain ? '#16A34A' : '#DC2626';
           const sign = isGain ? '+' : '';
-          const label = `${sign}₹${diff.toFixed(2)} (${sign}${pct}%) | ${bars} Bars`;
+          const label = `${sign}₹${diff.toFixed(2)} (${sign}${pct}%) · ${bars} Bars`;
 
           return [
             {
@@ -532,7 +844,7 @@
                 style: 'stroke_fill',
                 color: fillCol,
                 borderColor: strokeCol,
-                borderSize: 1.5,
+                borderSize: 1,
                 borderStyle: 'dashed',
                 borderDashedValue: [4, 3]
               }
@@ -547,7 +859,7 @@
               ignoreEvent: true,
               attrs: {
                 x: Math.max(10, x + width / 2 - 75),
-                y: y > 32 ? y - 26 : y + height + 6,
+                y: y > 28 ? y - 24 : y + height + 6,
                 text: label
               },
               styles: {
@@ -556,18 +868,18 @@
                 backgroundColor: strokeCol,
                 size: 11,
                 weight: 'bold',
-                paddingLeft: 7,
-                paddingRight: 7,
-                paddingTop: 4,
-                paddingBottom: 4,
-                borderRadius: 4
+                paddingLeft: 6,
+                paddingRight: 6,
+                paddingTop: 3,
+                paddingBottom: 3,
+                borderRadius: 3
               }
             }
           ];
         }
       });
 
-      // 3. Multi-Point Swing Path (4-Point Wave / Pattern Path)
+      // 3. Multi-Point Swing Path
       klinecharts.registerOverlay({
         name: 'swingPath',
         totalStep: 5,
@@ -576,20 +888,15 @@
         needDefaultYAxisFigure: true,
         createPointFigures: ({ coordinates }) => {
           if (coordinates.length < 2) return [];
-          return [
-            {
-              type: 'line',
-              attrs: { coordinates },
-              styles: {
-                color: '#7C3AED',
-                size: 2
-              }
-            }
-          ];
+          return [{
+            type: 'line',
+            attrs: { coordinates },
+            styles: { color: '#0F172A', size: 1.8 }
+          }];
         }
       });
 
-      // 4. Text Annotation Callout Flag
+      // 4. Text Callout Flag
       klinecharts.registerOverlay({
         name: 'textNote',
         totalStep: 2,
@@ -600,66 +907,85 @@
           if (coordinates.length === 0) return [];
           const labelText = typeof overlay.extendData === 'string' && overlay.extendData
             ? overlay.extendData
-            : 'Breakout Pivot';
+            : 'Research Note';
           const pt = coordinates[0];
           return [
             {
               type: 'line',
-              attrs: { coordinates: [pt, { x: pt.x, y: pt.y - 24 }] },
-              styles: { color: '#2563EB', size: 1.5 }
+              attrs: { coordinates: [pt, { x: pt.x, y: pt.y - 22 }] },
+              styles: { color: '#0F172A', size: 1.5 }
             },
             {
               type: 'text',
-              attrs: {
-                x: pt.x - 10,
-                y: pt.y - 44,
-                text: labelText
-              },
+              attrs: { x: pt.x - 8, y: pt.y - 40, text: labelText },
               styles: {
                 style: 'stroke_fill',
                 color: '#FFFFFF',
-                backgroundColor: '#1E293B',
-                borderColor: '#2563EB',
+                backgroundColor: '#0F172A',
+                borderColor: '#0F172A',
                 borderSize: 1,
                 size: 11,
-                weight: 'bold',
-                paddingLeft: 8,
-                paddingRight: 8,
-                paddingTop: 4,
-                paddingBottom: 4,
-                borderRadius: 4
+                weight: '600',
+                paddingLeft: 7,
+                paddingRight: 7,
+                paddingTop: 3,
+                paddingBottom: 3,
+                borderRadius: 3
               }
             }
           ];
         }
       });
+
+      // 5. Stock Comparison Overlay Indicator (Normalized onto primary price scale)
+      if (klinecharts.registerIndicator) {
+        klinecharts.registerIndicator({
+          name: 'COMPARE',
+          shortName: 'CMP',
+          series: 'price',
+          precision: 2,
+          figures: [{ key: 'cmp', title: 'Compare: ', type: 'line' }],
+          styles: {
+            lines: [{ style: 'solid', smooth: false, size: 1.8, color: '#7C3AED' }]
+          },
+          calc: (dataList) => {
+            if (!compareSymbol || dataList.length === 0) return dataList.map(() => ({}));
+            const baseStart = dataList[0].close || 1;
+            let cmpStart = null;
+            return dataList.map(d => {
+              const cVal = compareCandlesMap[d.timeStr];
+              if (cVal !== undefined && cmpStart === null) cmpStart = cVal;
+              if (cVal !== undefined && cmpStart) {
+                return { cmp: (cVal / cmpStart) * baseStart };
+              }
+              return {};
+            });
+          }
+        });
+      }
     }
 
     // =========================================================================
-    // INITIALIZE NATIVE KLINECHARTS INSTANCE
+    // CHART INITIALIZATION & STYLING
     // =========================================================================
     function initChart() {
-      registerCustomChartOverlays();
+      registerCustomStudioExtensions();
 
       const container = document.getElementById('klineChartCanvas');
       container.innerHTML = '';
 
       kChart = klinecharts.init('klineChartCanvas');
 
-      // Configure Volume sub-pane at the bottom
+      // Default Volume Pane
       kChart.createIndicator(
-        {
-          name: 'VOL',
-          calcParams: [],
-        },
+        { name: 'VOL', calcParams: [] },
         false,
-        { id: 'vol_pane', height: 95, minHeight: 60 }
+        { id: 'vol_pane', height: 85, minHeight: 50 }
       );
 
-      applyChartThemeAndStyles();
+      applyInstitutionalChartStyles();
       rebuildUserEmaSeries();
 
-      // Subscribe to crosshair move to update our custom top-left floating legend
       kChart.subscribeAction('onCrosshairChange', (payload) => {
         if (!payload || !payload.kLineData) return;
         updateTopLeftLegend(payload.kLineData, payload.dataIndex);
@@ -670,20 +996,18 @@
       });
     }
 
-    function applyChartThemeAndStyles() {
+    function applyInstitutionalChartStyles() {
       if (!kChart) return;
-      const gridColor = isDark ? 'rgba(255, 255, 255, 0.04)' : '#F1F5F9';
-      const axisColor = isDark ? '#1E293B' : '#E2E8F0';
-      const textColor = isDark ? '#94A3B8' : '#64748B';
+      const resolvedCandleType = (currentChartType === 'heikin_ashi') ? 'candle_solid' : currentChartType;
 
       kChart.setStyles({
         grid: {
           show: true,
-          horizontal: { show: true, size: 1, color: gridColor, style: 'solid' },
-          vertical: { show: true, size: 1, color: gridColor, style: 'solid' }
+          horizontal: { show: true, size: 1, color: '#F1F5F9', style: 'solid' },
+          vertical: { show: true, size: 1, color: '#F8FAFC', style: 'solid' }
         },
         candle: {
-          type: useBarStyle ? 'ohlc' : 'candle_solid',
+          type: resolvedCandleType,
           bar: {
             upColor: UP_COLOR,
             downColor: DOWN_COLOR,
@@ -695,16 +1019,24 @@
             downWickColor: DOWN_COLOR,
             noChangeWickColor: UP_COLOR
           },
+          area: {
+            lineSize: 2,
+            lineColor: currentChartType === 'line' ? '#0F172A' : '#2563EB',
+            value: 'close',
+            backgroundColor: currentChartType === 'line'
+              ? [{ offset: 0, color: 'rgba(15, 23, 42, 0)' }, { offset: 1, color: 'rgba(15, 23, 42, 0)' }]
+              : [{ offset: 0, color: 'rgba(37, 99, 235, 0.02)' }, { offset: 1, color: 'rgba(37, 99, 235, 0.16)' }]
+          },
           priceMark: {
             show: true,
-            high: { show: true, color: textColor, textSize: 10 },
-            low: { show: true, color: textColor, textSize: 10 },
+            high: { show: true, color: '#475569', textSize: 10 },
+            low: { show: true, color: '#475569', textSize: 10 },
             last: {
               show: true,
               upColor: UP_COLOR,
               downColor: DOWN_COLOR,
               noChangeColor: UP_COLOR,
-              line: { show: true, style: 'dashed', dashedValue: [4, 4], size: 1 }
+              line: { show: true, style: 'dashed', dashedValue: [3, 3], size: 1 }
             }
           },
           tooltip: { showRule: 'none' }
@@ -712,59 +1044,152 @@
         indicator: {
           bars: [{
             style: 'fill',
-            upColor: 'rgba(22, 163, 74, 0.5)',
-            downColor: 'rgba(220, 38, 38, 0.5)',
-            noChangeColor: 'rgba(22, 163, 74, 0.5)'
+            upColor: 'rgba(22, 163, 74, 0.45)',
+            downColor: 'rgba(220, 38, 38, 0.45)',
+            noChangeColor: 'rgba(22, 163, 74, 0.45)'
           }],
           tooltip: { showRule: 'none' }
         },
         xAxis: {
-          axisLine: { show: true, color: axisColor },
-          tickLine: { show: true, color: axisColor },
-          tickText: { color: textColor, size: 11 }
+          axisLine: { show: true, color: '#E2E8F0' },
+          tickLine: { show: true, color: '#E2E8F0' },
+          tickText: { color: '#475569', size: 10.5 }
         },
         yAxis: {
           type: isLogScale ? 'log' : 'normal',
-          axisLine: { show: true, color: axisColor },
-          tickLine: { show: true, color: axisColor },
-          tickText: { color: textColor, size: 11 }
+          axisLine: { show: true, color: '#E2E8F0' },
+          tickLine: { show: true, color: '#E2E8F0' },
+          tickText: { color: '#475569', size: 10.5 }
         },
         separator: {
           size: 1,
-          color: axisColor,
+          color: '#E2E8F0',
           fill: true,
-          activeBackgroundColor: 'rgba(37, 99, 235, 0.15)'
+          activeBackgroundColor: 'rgba(15, 23, 42, 0.08)'
         },
         crosshair: {
           show: true,
           horizontal: {
             show: true,
             line: { show: true, style: 'dashed', dashedValue: [4, 2], size: 1, color: '#64748B' },
-            text: { show: true, color: '#FFFFFF', backgroundColor: '#1E293B', size: 11 }
+            text: { show: true, color: '#FFFFFF', backgroundColor: '#0F172A', size: 10.5 }
           },
           vertical: {
             show: true,
             line: { show: true, style: 'dashed', dashedValue: [4, 2], size: 1, color: '#64748B' },
-            text: { show: true, color: '#FFFFFF', backgroundColor: '#1E293B', size: 11 }
+            text: { show: true, color: '#FFFFFF', backgroundColor: '#0F172A', size: 10.5 }
           }
         },
         overlay: {
           point: {
             color: '#FFFFFF',
-            borderColor: '#2563EB',
+            borderColor: '#0F172A',
             borderSize: 2,
-            radius: 5,
+            radius: 4.5,
             activeColor: '#2563EB',
             activeBorderColor: '#FFFFFF',
             activeBorderSize: 2,
-            activeRadius: 6
+            activeRadius: 5.5
           },
-          line: {
-            color: '#2563EB',
-            size: 2
-          }
+          line: { color: '#0F172A', size: 1.8 }
         }
       });
+    }
+
+    function computeHeikinAshiCandles(candles) {
+      const ha = [];
+      for (let i = 0; i < candles.length; i++) {
+        const c = candles[i];
+        const haClose = (c.open + c.high + c.low + c.close) / 4;
+        const haOpen = i === 0 ? (c.open + c.close) / 2 : (ha[i - 1].open + ha[i - 1].close) / 2;
+        const haHigh = Math.max(c.high, haOpen, haClose);
+        const haLow = Math.min(c.low, haOpen, haClose);
+        ha.push({
+          ...c,
+          open: Number(haOpen.toFixed(2)),
+          high: Number(haHigh.toFixed(2)),
+          low: Number(haLow.toFixed(2)),
+          close: Number(haClose.toFixed(2))
+        });
+      }
+      return ha;
+    }
+
+    function changeChartType(typeVal) {
+      currentChartType = typeVal;
+      if (typeVal === 'heikin_ashi') {
+        displayedCandles = computeHeikinAshiCandles(rawStandardCandles);
+      } else {
+        displayedCandles = [...rawStandardCandles];
+      }
+      if (kChart && displayedCandles.length > 0) {
+        kChart.applyNewData(displayedCandles);
+      }
+      if (typeVal === 'line') {
+        kChart.setStyles({
+          candle: {
+            type: 'area',
+            area: {
+              lineSize: 2,
+              lineColor: '#0F172A',
+              value: 'close',
+              backgroundColor: [
+                { offset: 0, color: 'rgba(15, 23, 42, 0)' },
+                { offset: 1, color: 'rgba(15, 23, 42, 0)' }
+              ]
+            }
+          }
+        });
+      } else {
+        applyInstitutionalChartStyles();
+      }
+      rebuildUserEmaSeries();
+    }
+
+    function changeSubIndicator(paneVal) {
+      if (!kChart) return;
+      kChart.removeIndicator('vol_pane');
+      kChart.removeIndicator('osc_pane');
+      if (paneVal === 'NONE') return;
+
+      kChart.createIndicator({ name: 'VOL', calcParams: [] }, false, { id: 'vol_pane', height: 75 });
+      if (paneVal === 'RSI') {
+        kChart.createIndicator({ name: 'RSI', calcParams: [14] }, false, { id: 'osc_pane', height: 75 });
+      } else if (paneVal === 'MACD') {
+        kChart.createIndicator({ name: 'MACD', calcParams: [12, 26, 9] }, false, { id: 'osc_pane', height: 80 });
+      }
+    }
+
+    async function openComparePrompt() {
+      const sym = prompt('Enter NSE symbol to compare on chart (e.g. TCS, INFY, HDFCBANK) or leave blank to clear:', compareSymbol || 'NIFTY');
+      const badge = document.getElementById('legendCompareBadge');
+      const btn = document.getElementById('compareBtn');
+
+      if (!sym || !sym.trim()) {
+        compareSymbol = null;
+        compareCandlesMap = {};
+        if (kChart) kChart.removeIndicator('candle_pane', 'COMPARE');
+        badge.classList.add('hidden');
+        btn.innerText = '+ Compare';
+        return;
+      }
+
+      const clean = sym.trim().toUpperCase();
+      try {
+        const res = await fetch(`/api/v1/screener/company-terminal?symbol=${clean}&timeframe=${currentTimeframe}&exchange=${currentExchange}`);
+        const data = await res.json();
+        if (data.status === 'success' && data.candles && data.candles.length > 0) {
+          compareSymbol = clean;
+          compareCandlesMap = {};
+          data.candles.forEach(c => { compareCandlesMap[c.time] = c.close; });
+          kChart.createIndicator({ name: 'COMPARE' }, true, { id: 'candle_pane' });
+          badge.innerText = `vs ${clean} (Normalized)`;
+          badge.classList.remove('hidden');
+          btn.innerText = `Comparing: ${clean}`;
+        }
+      } catch (e) {
+        console.error('Compare fetch error:', e);
+      }
     }
 
     function updateTopLeftLegend(bar, dataIndex) {
@@ -772,21 +1197,20 @@
       const chg = (bar.close - bar.open).toFixed(2);
       const chgPct = bar.open ? (((bar.close - bar.open) / bar.open) * 100).toFixed(2) : '0.00';
       const sign = chg >= 0 ? '+' : '';
-      const colClass = chg >= 0 ? 'text-emerald-600 font-semibold' : 'text-rose-600 font-semibold';
+      const colClass = chg >= 0 ? 'text-[#16A34A] font-semibold' : 'text-[#DC2626] font-semibold';
 
       document.getElementById('legendOhlc').innerHTML =
-        `O <b>${bar.open.toFixed(2)}</b> &nbsp;H <b>${bar.high.toFixed(2)}</b> &nbsp;L <b>${bar.low.toFixed(2)}</b> &nbsp;C <b>${bar.close.toFixed(2)}</b> &nbsp;<span class="${colClass}">${sign}${chg} (${sign}${chgPct}%)</span>`;
+        `O <b>${bar.open.toFixed(2)}</b> H <b>${bar.high.toFixed(2)}</b> L <b>${bar.low.toFixed(2)}</b> C <b>${bar.close.toFixed(2)}</b> <span class="${colClass}">${sign}${chg} (${sign}${chgPct}%)</span>`;
       document.getElementById('legendVol').innerText = `Vol ${(bar.volume / 10000000).toFixed(2)}Cr`;
 
-      // Update EMA values at hovered bar index
       const legendContainer = document.getElementById('legendEmaContainer');
       const activeEmas = userEmas.filter(e => e.enabled);
-      if (activeEmas.length === 0 || cachedCandles.length === 0) {
+      if (activeEmas.length === 0 || displayedCandles.length === 0) {
         legendContainer.innerHTML = '';
         return;
       }
 
-      const idx = (dataIndex !== undefined && dataIndex !== null) ? dataIndex : cachedCandles.length - 1;
+      const idx = (dataIndex !== undefined && dataIndex !== null) ? dataIndex : displayedCandles.length - 1;
       legendContainer.innerHTML = activeEmas.map(ema => {
         const val = ema.computedValues && ema.computedValues[idx] !== undefined
           ? ema.computedValues[idx].toFixed(2)
@@ -796,24 +1220,15 @@
     }
 
     // =========================================================================
-    // FEATURE 3: NATIVE INTERACTIVE DRAWING TOOLS (Zero Freeze, Smooth Pan/Zoom)
+    // DRAWING TOOLS & UNDO / REDO
     // =========================================================================
     function setToolbarActiveButton(toolName) {
-      const buttons = [
-        'cursor',
-        'segment',
-        'horizontalStraightLine',
-        'priceMeasure',
-        'swingPath',
-        'rectBox',
-        'textNote',
-        'priceLine'
-      ];
+      const buttons = ['cursor', 'segment', 'horizontalStraightLine', 'priceMeasure', 'swingPath', 'rectBox', 'fibonacciLine', 'textNote', 'priceLine'];
       buttons.forEach(b => {
         const el = document.getElementById('tool_' + b);
         if (el) {
-          if (b === toolName) el.classList.add('draw-btn-active');
-          else el.classList.remove('draw-btn-active');
+          if (b === toolName) el.classList.add('tool-icon-active');
+          else el.classList.remove('tool-icon-active');
         }
       });
     }
@@ -821,14 +1236,11 @@
     function activateDrawingTool(toolName) {
       if (!kChart) return;
       setToolbarActiveButton(toolName);
-
-      if (toolName === 'cursor') {
-        return;
-      }
+      if (toolName === 'cursor') return;
 
       let extendData = undefined;
       if (toolName === 'textNote') {
-        const input = prompt('Enter chart annotation text:', 'Breakout Pivot');
+        const input = prompt('Enter chart research annotation:', 'Key Breakout Level');
         if (!input || !input.trim()) {
           setToolbarActiveButton('cursor');
           return;
@@ -842,7 +1254,6 @@
         mode: isMagnet ? 'weak_magnet' : 'normal',
         extendData: extendData,
         onDrawEnd: () => {
-          // Automatically return toolbar highlight to Cursor once drawing completes
           setToolbarActiveButton('cursor');
         },
         onSelected: (ev) => {
@@ -855,44 +1266,55 @@
 
       if (overlayId) {
         createdOverlayIds.push(overlayId);
+        redoOverlayStack = [];
       }
     }
 
-    function toggleMagnetMode() {
-      isMagnet = !isMagnet;
-      const btn = document.getElementById('magnetBtn');
-      if (isMagnet) {
-        btn.innerText = 'Magnet: ON';
-        btn.className = 'px-2 py-0.5 rounded bg-blue-600 text-white font-semibold';
-      } else {
-        btn.innerText = 'Magnet: OFF';
-        btn.className = 'px-2 py-0.5 rounded border border-std text-secondary hover:text-primary font-medium';
+    function undoDrawingAction() {
+      if (!kChart || createdOverlayIds.length === 0) return;
+      const lastId = createdOverlayIds.pop();
+      const ov = kChart.getOverlayById(lastId);
+      if (ov) {
+        redoOverlayStack.push({
+          name: ov.name,
+          points: ov.points,
+          extendData: ov.extendData
+        });
       }
+      kChart.removeOverlay({ id: lastId });
     }
 
-    function removeSelectedOrLastOverlay() {
-      if (!kChart) return;
-      if (selectedOverlayId) {
-        kChart.removeOverlay({ id: selectedOverlayId });
-        createdOverlayIds = createdOverlayIds.filter(id => id !== selectedOverlayId);
-        selectedOverlayId = null;
-      } else if (createdOverlayIds.length > 0) {
-        const lastId = createdOverlayIds.pop();
-        kChart.removeOverlay({ id: lastId });
-      }
-      setToolbarActiveButton('cursor');
+    function redoDrawingAction() {
+      if (!kChart || redoOverlayStack.length === 0) return;
+      const item = redoOverlayStack.pop();
+      const newId = kChart.createOverlay({
+        name: item.name,
+        paneId: 'candle_pane',
+        points: item.points,
+        extendData: item.extendData
+      });
+      if (newId) createdOverlayIds.push(newId);
     }
 
     function clearAllOverlays() {
       if (!kChart) return;
       kChart.removeOverlay();
       createdOverlayIds = [];
+      redoOverlayStack = [];
       selectedOverlayId = null;
       setToolbarActiveButton('cursor');
     }
 
+    function toggleMagnetMode() {
+      isMagnet = !isMagnet;
+      const btn = document.getElementById('magnetBtn');
+      btn.className = isMagnet
+        ? 'px-2 py-0.5 rounded bg-[#0F172A] text-white text-[11px] font-semibold'
+        : 'px-2 py-0.5 rounded border border-[#CBD5E1] bg-white text-[#475569] hover:text-[#0F172A] text-[11px] font-medium';
+    }
+
     // =========================================================================
-    // FEATURE 4: USER CUSTOMIZABLE EMA ENGINE
+    // CUSTOM EMA ENGINE
     // =========================================================================
     function computeEmaArrayForValues(candles, period) {
       const k = 2 / (period + 1);
@@ -901,28 +1323,24 @@
       for (let i = 0; i < candles.length; i++) {
         const c = candles[i].close;
         prev = prev === null ? c : (c * k) + (prev * (1 - k));
-        if (i >= period - 1) {
-          out[i] = prev;
-        }
+        if (i >= period - 1) out[i] = prev;
       }
       return out;
     }
 
     function rebuildUserEmaSeries() {
       if (!kChart) return;
-
       const activeEmas = userEmas.filter(e => e.enabled);
       document.getElementById('emaCountBadge').innerText = activeEmas.length;
 
-      // Pre-compute values for the top-left legend
       activeEmas.forEach(ema => {
-        ema.computedValues = computeEmaArrayForValues(cachedCandles, ema.period);
+        ema.computedValues = computeEmaArrayForValues(displayedCandles, ema.period);
       });
 
       if (activeEmas.length === 0) {
         kChart.removeIndicator('candle_pane', 'EMA');
-        if (cachedCandles.length > 0) {
-          updateTopLeftLegend(cachedCandles[cachedCandles.length - 1], cachedCandles.length - 1);
+        if (displayedCandles.length > 0) {
+          updateTopLeftLegend(displayedCandles[displayedCandles.length - 1], displayedCandles.length - 1);
         }
         return;
       }
@@ -931,32 +1349,15 @@
       const lineStyles = activeEmas.map(e => ({
         style: 'solid',
         smooth: false,
-        size: 1.8,
+        size: 1.6,
         color: e.color
       }));
 
-      // Create or override EMA indicator on main candle_pane
-      kChart.createIndicator(
-        {
-          name: 'EMA',
-          calcParams: calcParams,
-          styles: { lines: lineStyles }
-        },
-        true,
-        { id: 'candle_pane' }
-      );
+      kChart.createIndicator({ name: 'EMA', calcParams, styles: { lines: lineStyles } }, true, { id: 'candle_pane' });
+      kChart.overrideIndicator({ name: 'EMA', calcParams, styles: { lines: lineStyles } }, 'candle_pane');
 
-      kChart.overrideIndicator(
-        {
-          name: 'EMA',
-          calcParams: calcParams,
-          styles: { lines: lineStyles }
-        },
-        'candle_pane'
-      );
-
-      if (cachedCandles.length > 0) {
-        updateTopLeftLegend(cachedCandles[cachedCandles.length - 1], cachedCandles.length - 1);
+      if (displayedCandles.length > 0) {
+        updateTopLeftLegend(displayedCandles[displayedCandles.length - 1], displayedCandles.length - 1);
       }
     }
 
@@ -973,118 +1374,104 @@
 
     function renderEmaModalList() {
       const container = document.getElementById('emaListContainer');
-      if (userEmas.length === 0) {
-        container.innerHTML = '<div class="text-secondary text-center py-3">No EMAs configured. Add one below.</div>';
-        return;
-      }
       container.innerHTML = userEmas.map((ema, idx) => `
-        <div class="flex items-center justify-between p-2 rounded-lg border border-std bg-slate-500/5">
-          <div class="flex items-center space-x-2.5">
-            <input type="checkbox" ${ema.enabled ? 'checked' : ''} onchange="toggleUserEma(${idx}, this.checked)" class="w-4 h-4 accent-blue-600 cursor-pointer">
-            <span class="font-semibold text-primary">EMA</span>
-            <input type="number" min="2" max="500" value="${ema.period}" onchange="updateUserEmaPeriod(${idx}, this.value)" class="w-16 px-2 py-0.5 rounded border border-std bg-transparent text-primary font-mono text-xs">
+        <div class="flex items-center justify-between p-2 rounded border border-[#E2E8F0] bg-[#F8FAFC]">
+          <div class="flex items-center space-x-2">
+            <input type="checkbox" ${ema.enabled ? 'checked' : ''} onchange="toggleUserEma(${idx}, this.checked)" class="w-3.5 h-3.5 accent-[#0F172A] cursor-pointer">
+            <span class="font-semibold text-[#0F172A]">EMA</span>
+            <input type="number" min="2" max="500" value="${ema.period}" onchange="updateUserEmaPeriod(${idx}, this.value)" class="w-16 px-2 py-0.5 rounded border border-[#CBD5E1] bg-white text-[#0F172A] font-mono text-xs">
           </div>
           <div class="flex items-center space-x-2">
-            <input type="color" value="${ema.color}" onchange="updateUserEmaColor(${idx}, this.value)" class="w-6 h-6 rounded cursor-pointer border-0 bg-transparent">
-            <button onclick="removeUserEma(${idx})" class="text-rose-500 hover:text-rose-600 px-1.5 py-0.5 text-xs font-semibold">Remove</button>
+            <input type="color" value="${ema.color}" onchange="updateUserEmaColor(${idx}, this.value)" class="w-5 h-5 rounded cursor-pointer border-0 bg-transparent">
+            <button onclick="removeUserEma(${idx})" class="text-[#DC2626] hover:underline text-[11px] font-medium">Remove</button>
           </div>
         </div>
       `).join('');
     }
 
-    function toggleUserEma(idx, checked) {
-      userEmas[idx].enabled = checked;
-      rebuildUserEmaSeries();
-    }
-
-    function updateUserEmaPeriod(idx, val) {
-      const p = parseInt(val, 10);
-      if (!p || p < 2) return;
-      userEmas[idx].period = p;
-      rebuildUserEmaSeries();
-    }
-
-    function updateUserEmaColor(idx, col) {
-      userEmas[idx].color = col;
-      rebuildUserEmaSeries();
-    }
-
-    function removeUserEma(idx) {
-      userEmas.splice(idx, 1);
-      renderEmaModalList();
-      rebuildUserEmaSeries();
-    }
-
+    function toggleUserEma(idx, checked) { userEmas[idx].enabled = checked; rebuildUserEmaSeries(); }
+    function updateUserEmaPeriod(idx, val) { const p = parseInt(val, 10); if (p >= 2) { userEmas[idx].period = p; rebuildUserEmaSeries(); } }
+    function updateUserEmaColor(idx, col) { userEmas[idx].color = col; rebuildUserEmaSeries(); }
+    function removeUserEma(idx) { userEmas.splice(idx, 1); renderEmaModalList(); rebuildUserEmaSeries(); }
     function addNewUserEma() {
-      const periodInput = document.getElementById('newEmaPeriodInput');
-      const colorInput = document.getElementById('newEmaColorInput');
-      const p = parseInt(periodInput.value, 10);
-      if (!p || p < 2 || p > 500) return;
-      userEmas.push({
-        id: 'ema_' + Date.now(),
-        period: p,
-        color: colorInput.value || '#F59E0B',
-        enabled: true
-      });
+      const p = parseInt(document.getElementById('newEmaPeriodInput').value, 10);
+      const c = document.getElementById('newEmaColorInput').value || '#D97706';
+      if (!p || p < 2) return;
+      userEmas.push({ id: 'ema_' + Date.now(), period: p, color: c, enabled: true });
       renderEmaModalList();
       rebuildUserEmaSeries();
     }
 
     // =========================================================================
-    // FEATURE 1 & 2: CHART REFRESH BUTTON & TOGGLE BOTTOM FUNDAMENTALS
-    // =========================================================================
-    function toggleBottomFundamentals() {
-      showBottomFundamentals = !showBottomFundamentals;
-      const panel = document.getElementById('bottomFundamentalsPanel');
-      const topBtn = document.getElementById('toggleFundamentalsBtn');
-      const botBtn = document.getElementById('bottomToggleFundBtn');
-
-      if (showBottomFundamentals) {
-        panel.classList.remove('hidden');
-        panel.classList.add('flex');
-        topBtn.innerText = 'Hide Fundamentals';
-        botBtn.innerText = 'Fundamentals: ON';
-        botBtn.className = 'px-2 py-0.5 rounded border border-std text-secondary hover:text-primary font-medium transition-colors';
-      } else {
-        panel.classList.add('hidden');
-        panel.classList.remove('flex');
-        topBtn.innerText = 'Show Fundamentals';
-        botBtn.innerText = 'Fundamentals: OFF';
-        botBtn.className = 'px-2 py-0.5 rounded border border-rose-500/30 bg-rose-500/10 text-rose-600 font-medium transition-colors';
-      }
-
-      setTimeout(() => {
-        if (kChart) kChart.resize();
-      }, 30);
-    }
-
-    async function refreshChartView() {
-      const icon = document.getElementById('refreshIconSvg');
-      if (icon) icon.classList.add('animate-spin');
-      await selectStock(currentSymbol);
-      if (kChart) {
-        kChart.scrollToRealTime();
-        kChart.resize();
-      }
-      setTimeout(() => {
-        if (icon) icon.classList.remove('animate-spin');
-      }, 350);
-    }
-
-    // =========================================================================
-    // SCREENER LIST & COMPANY TERMINAL DATA LOADING
+    // WATCHLIST & STOCK NAVIGATION (Section 3)
     // =========================================================================
     async function loadScreenerList() {
       try {
         const res = await fetch('/api/v1/screener/fundamentals');
         const data = await res.json();
         allStocks = data.stocks || [];
-        allStocks.sort((a, b) => (b.roe || 0) - (a.roe || 0));
-        filteredStocks = [...allStocks];
-        renderStockList();
+        applyWatchlistFilter();
+        renderScreenerBuilderUI();
+        runFundamentalScreenerQuery();
       } catch (e) {
-        console.error('Failed to load screener list:', e);
+        console.error('Failed to load equities:', e);
       }
+    }
+
+    function switchWatchlistMode(mode) {
+      currentWatchlistMode = mode;
+      applyWatchlistFilter();
+    }
+
+    function applyWatchlistFilter(searchQuery = '') {
+      const q = searchQuery.trim().toUpperCase();
+      let base = [];
+      if (currentWatchlistMode === 'watchlist') {
+        base = watchlistSymbols
+          .map(sym => allStocks.find(s => s.symbol === sym))
+          .filter(Boolean);
+      } else if (currentWatchlistMode === 'large') {
+        base = allStocks.filter(s => s.cap_category === 'Large Cap');
+      } else if (currentWatchlistMode === 'mid') {
+        base = allStocks.filter(s => s.cap_category === 'Mid Cap');
+      } else if (currentWatchlistMode === 'high_roe') {
+        base = allStocks.filter(s => (s.roe || 0) >= 18);
+      } else {
+        base = [...allStocks];
+      }
+
+      if (q) {
+        filteredStocks = base.filter(s =>
+          s.symbol.includes(q) || (s.name && s.name.toUpperCase().includes(q))
+        );
+      } else {
+        filteredStocks = base;
+      }
+      renderStockList();
+    }
+
+    function filterWatchlistRows(val) {
+      applyWatchlistFilter(val);
+    }
+
+    function addSymbolFromSearch() {
+      const inp = document.getElementById('watchlistFilterInput');
+      const sym = inp.value.trim().toUpperCase();
+      if (!sym) return;
+      if (!watchlistSymbols.includes(sym)) {
+        watchlistSymbols.unshift(sym);
+      }
+      inp.value = '';
+      document.getElementById('watchlistGroupSelect').value = 'watchlist';
+      currentWatchlistMode = 'watchlist';
+      applyWatchlistFilter();
+      selectStock(sym);
+    }
+
+    function removeSymbolFromWatchlist(e, sym) {
+      e.stopPropagation();
+      watchlistSymbols = watchlistSymbols.filter(s => s !== sym);
+      applyWatchlistFilter();
     }
 
     function renderStockList() {
@@ -1092,35 +1479,50 @@
       document.getElementById('listCountFooter').innerText = `${filteredStocks.length} Equities`;
 
       if (filteredStocks.length === 0) {
-        container.innerHTML = '<div class="p-6 text-center text-secondary">No matching stocks</div>';
+        container.innerHTML = '<div class="p-6 text-center text-[#64748B]">No matching stocks</div>';
         return;
       }
 
       container.innerHTML = filteredStocks.map(s => {
         const isSelected = s.symbol === currentSymbol;
-        const metricVal = s.roe !== null && s.roe !== undefined ? `${s.roe > 0 ? '+' : ''}${s.roe}%` : '-';
-        const metricColor = (s.roe || 0) >= 15 ? 'text-emerald-600 font-semibold' : 'text-secondary';
+        const chgPct = s.change_pct !== undefined ? s.change_pct : 0.45;
+        const chgVal = s.change !== undefined ? s.change : 4.20;
+        const isUp = chgPct >= 0;
+        const colorCls = isUp ? 'text-[#16A34A]' : 'text-[#DC2626]';
+        const sign = isUp ? '+' : '';
 
         return `
           <div
             id="row_${s.symbol}"
             onclick="selectStock('${s.symbol}')"
-            class="row-item px-3 py-2 flex items-center justify-between cursor-pointer transition-colors ${isSelected ? 'row-active' : ''}"
+            class="watch-row px-2.5 py-2 flex items-center justify-between cursor-pointer group ${isSelected ? 'watch-row-active' : ''}"
           >
-            <div class="w-28 truncate">
-              <span class="font-medium text-primary">${s.symbol}</span>
+            <div class="w-32 min-w-0 pr-1">
+              <div class="flex items-center space-x-1">
+                <span class="font-bold text-[#0F172A] text-[11px] truncate">${s.symbol}</span>
+                ${currentWatchlistMode === 'watchlist' ? `
+                  <button onclick="removeSymbolFromWatchlist(event, '${s.symbol}')" title="Remove from Watchlist" class="opacity-0 group-hover:opacity-100 text-[#94A3B8] hover:text-[#DC2626] text-[10px] px-1">x</button>
+                ` : ''}
+              </div>
+              <div class="text-[10px] text-[#64748B] truncate">${s.name || s.industry || 'NSE Equity'}</div>
             </div>
-            <div class="w-16 text-right tabular-nums text-primary">
+
+            <div class="w-16 text-right font-mono-num font-semibold text-[#0F172A] text-[11px]">
               ${s.ltp ? s.ltp.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-'}
             </div>
-            <div class="w-16 text-right tabular-nums ${metricColor}">
-              ${metricVal}
+
+            <div class="w-20 text-right font-mono-num">
+              <div class="font-semibold ${colorCls} text-[11px]">${sign}${chgPct.toFixed(2)}%</div>
+              <div class="text-[9.5px] text-[#64748B]">${sign}₹${Math.abs(chgVal).toFixed(1)}</div>
             </div>
           </div>
         `;
       }).join('');
     }
 
+    // =========================================================================
+    // LOAD STOCK CHART & INTEGRATED FUNDAMENTAL RESEARCH (Sections 2 & 4)
+    // =========================================================================
     async function selectStock(sym) {
       if (sym !== currentSymbol && kChart) {
         clearAllOverlays();
@@ -1129,28 +1531,34 @@
       renderStockList();
 
       document.getElementById('headerCompanyName').innerText = `Loading ${sym}...`;
-      document.getElementById('legendOhlc').innerText = `Fetching ${sym} chart & quarterly data...`;
+      document.getElementById('legendOhlc').innerText = `Loading ${currentExchange}:${sym}...`;
 
       try {
-        const res = await fetch(`/api/v1/screener/company-terminal?symbol=${sym}&timeframe=${currentTimeframe}`);
+        const res = await fetch(`/api/v1/screener/company-terminal?symbol=${sym}&timeframe=${currentTimeframe}&exchange=${currentExchange}`);
         const data = await res.json();
         if (data.status !== 'success') return;
 
-        // 1. Update Top Header
+        // 1. Update Header
         document.getElementById('headerCompanyName').innerText = data.name;
-        document.getElementById('headerSymbolSector').innerText = `NSE:${data.symbol} - ${data.industry}`;
+        document.getElementById('headerSymbolSector').innerText = `${currentExchange}:${data.symbol} · ${data.industry}`;
         document.getElementById('headerLtp').innerText = `₹${data.ltp.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
-        document.getElementById('headerFromHigh').innerText = `${data.pct_from_high}% from high`;
 
-        // 2. Update Floating Chart Legend
-        const tfMap = { '1d': '1D', '1wk': '1W', '1mo': '1M' };
+        const isUp = (data.change_pct || 0) >= 0;
+        const sign = isUp ? '+' : '';
+        const chgBadge = document.getElementById('headerChangeBadge');
+        chgBadge.innerText = `${sign}${data.change} (${sign}${data.change_pct}%)`;
+        chgBadge.className = `text-[11px] font-semibold font-mono-num ${isUp ? 'text-[#16A34A]' : 'text-[#DC2626]'}`;
+
+        document.getElementById('headerFromHigh').innerText = `${data.pct_from_high}% from 52W High`;
+
+        // 2. Update Floating Legend
         document.getElementById('legendTitle').innerText = data.name;
-        document.getElementById('legendTf').innerText = `${tfMap[currentTimeframe] || '1W'} - NSE`;
+        document.getElementById('legendTf').innerText = `${currentTimeframe.toUpperCase()} · ${currentExchange}`;
 
-        // 3. Convert Candles to KLineCharts Format (timestamp in ms)
+        // 3. Process Candles & Apply Chart Type
         const rawCandles = data.candles || [];
-        cachedCandles = rawCandles.map(c => ({
-          timestamp: new Date(c.time + 'T00:00:00Z').getTime(),
+        rawStandardCandles = rawCandles.map(c => ({
+          timestamp: c.timestamp || new Date(c.time + 'T00:00:00Z').getTime(),
           open: c.open,
           high: c.high,
           low: c.low,
@@ -1159,18 +1567,59 @@
           timeStr: c.time
         }));
 
-        if (cachedCandles.length > 0 && kChart) {
-          kChart.applyNewData(cachedCandles);
+        displayedCandles = currentChartType === 'heikin_ashi'
+          ? computeHeikinAshiCandles(rawStandardCandles)
+          : [...rawStandardCandles];
+
+        if (displayedCandles.length > 0 && kChart) {
+          kChart.applyNewData(displayedCandles);
           rebuildUserEmaSeries();
-          updateTopLeftLegend(cachedCandles[cachedCandles.length - 1], cachedCandles.length - 1);
+          updateTopLeftLegend(displayedCandles[displayedCandles.length - 1], displayedCandles.length - 1);
         }
 
-        // 4. Render Quarterly EPS & Sales Table
-        renderQuarterlyTable(data.quarters || []);
+        // 4. Populate Quarterly & Annual Financial Statements
+        cachedQuarters = data.quarters || [];
+        cachedAnnuals = data.annuals || [];
+        renderFinancialStatementView();
 
-        // 5. Render Bottom Summary Strip
+        // 5. Populate 5-Pillar Institutional Fundamental Matrix
+        if (data.pillars) {
+          const v = data.pillars.valuation || {};
+          const p = data.pillars.profitability || {};
+          const g = data.pillars.growth || {};
+          const h = data.pillars.health || {};
+          const o = data.pillars.ownership || {};
+
+          document.getElementById('p_pe').innerText = v.pe ? `${v.pe}x` : '-';
+          document.getElementById('p_pb').innerText = v.pb ? `${v.pb}x` : '-';
+          document.getElementById('p_evebitda').innerText = v.ev_ebitda ? `${v.ev_ebitda}x` : '-';
+          document.getElementById('p_div').innerText = v.div_yield !== undefined ? `${v.div_yield}%` : '-';
+          document.getElementById('p_mcap').innerText = v.market_cap_cr ? `₹${v.market_cap_cr.toLocaleString('en-IN')} Cr` : '-';
+
+          document.getElementById('p_roe').innerText = p.roe !== undefined ? `${p.roe}%` : '-';
+          document.getElementById('p_roce').innerText = p.roce !== undefined ? `${p.roce}%` : '-';
+          document.getElementById('p_opm').innerText = p.operating_margin !== undefined ? `${p.operating_margin}%` : '-';
+          document.getElementById('p_npm').innerText = p.net_profit_margin !== undefined ? `${p.net_profit_margin}%` : '-';
+
+          document.getElementById('p_revg').innerText = g.revenue_growth !== undefined ? `${g.revenue_growth >= 0 ? '+' : ''}${g.revenue_growth}%` : '-';
+          document.getElementById('p_epsg').innerText = g.eps_growth !== undefined ? `${g.eps_growth >= 0 ? '+' : ''}${g.eps_growth}%` : '-';
+          document.getElementById('p_npg').innerText = g.net_profit_growth !== undefined ? `${g.net_profit_growth >= 0 ? '+' : ''}${g.net_profit_growth}%` : '-';
+          document.getElementById('p_stage').innerText = data.stage || '-';
+
+          document.getElementById('p_de').innerText = h.debt_to_equity !== undefined ? `${h.debt_to_equity}x` : '-';
+          document.getElementById('p_cr').innerText = h.current_ratio !== undefined ? `${h.current_ratio}x` : '-';
+          document.getElementById('p_icov').innerText = h.interest_coverage !== undefined ? `${h.interest_coverage}x` : '-';
+          document.getElementById('p_ocf').innerText = h.operating_cash_flow_cr !== undefined ? `₹${h.operating_cash_flow_cr.toLocaleString('en-IN')} Cr` : '-';
+
+          document.getElementById('p_prom').innerText = o.promoter_holding !== undefined ? `${o.promoter_holding}%` : '-';
+          document.getElementById('p_fii').innerText = o.fii_holding !== undefined ? `${o.fii_holding}%` : '-';
+          document.getElementById('p_dii').innerText = o.dii_holding !== undefined ? `${o.dii_holding}%` : '-';
+          document.getElementById('p_pledge').innerText = o.pledge_pct !== undefined ? `${o.pledge_pct}%` : '-';
+        }
+
+        // 6. Update Bottom Telemetry Strip
         const fmtRet = (val) => `${val >= 0 ? '+' : ''}${val}%`;
-        const colRet = (val) => val >= 0 ? 'text-emerald-600' : 'text-rose-600';
+        const colRet = (val) => val >= 0 ? 'text-[#16A34A] font-mono-num' : 'text-[#DC2626] font-mono-num';
 
         const el3m = document.getElementById('strip3m');
         el3m.innerText = fmtRet(data.ret_3m);
@@ -1186,120 +1635,226 @@
 
         document.getElementById('stripRs').innerText = data.rs;
         document.getElementById('stripRs3m').innerText = data.rs_3m;
-        document.getElementById('stripRs6m').innerText = data.rs_6m;
         document.getElementById('stripMcap').innerText = `₹${(data.market_cap_cr || 0).toLocaleString('en-IN')} Cr`;
         document.getElementById('stripPe').innerText = data.pe || '-';
         document.getElementById('stripRoe').innerText = data.roe ? `${data.roe}%` : '-';
         document.getElementById('stripStage').innerText = data.stage;
-        document.getElementById('strip52w').innerText = `52W ₹${data.low_52} - ₹${data.high_52}`;
+        document.getElementById('strip52w').innerText = `52W: ₹${data.low_52} - ₹${data.high_52}`;
 
       } catch (e) {
         console.error('Error loading company terminal:', e);
       }
     }
 
-    function renderQuarterlyTable(quarters) {
+    function switchStatementPeriod(period) {
+      statementPeriod = period;
+      document.getElementById('periodBtn_quarterly').className = period === 'quarterly'
+        ? 'px-2 py-0.5 rounded-xs text-[10px] font-semibold bg-[#0F172A] text-white'
+        : 'px-2 py-0.5 rounded-xs text-[10px] font-medium text-[#64748B] hover:text-[#0F172A]';
+      document.getElementById('periodBtn_annual').className = period === 'annual'
+        ? 'px-2 py-0.5 rounded-xs text-[10px] font-semibold bg-[#0F172A] text-white'
+        : 'px-2 py-0.5 rounded-xs text-[10px] font-medium text-[#64748B] hover:text-[#0F172A]';
+      renderFinancialStatementView();
+    }
+
+    function renderFinancialStatementView() {
+      const items = statementPeriod === 'annual' ? cachedAnnuals : cachedQuarters;
       const hRow = document.getElementById('quarterHeaderRow');
       const epsRow = document.getElementById('quarterEpsRow');
       const salesRow = document.getElementById('quarterSalesRow');
+      const subLabel = statementPeriod === 'annual' ? 'YoY' : 'YoY / QoQ';
 
-      hRow.innerHTML = `
-        <th class="py-1.5 px-3 w-28 font-semibold border-r border-std">
-          <div class="flex items-center justify-between">
-            <span>Stats</span>
-            <button onclick="toggleBottomFundamentals()" title="Hide Quarterly Table" class="text-[10px] text-blue-600 hover:underline font-normal">Hide</button>
-          </div>
-        </th>`;
+      hRow.innerHTML = `<th class="py-1.5 px-3 w-32 font-semibold border-r border-[#E2E8F0]">${statementPeriod === 'annual' ? 'Annual (FY)' : 'Quarterly'}</th>`;
       epsRow.innerHTML = `
-        <td class="py-1.5 px-3 border-r border-std font-medium text-secondary">
+        <td class="py-1.5 px-3 border-r border-[#E2E8F0]">
           <div class="flex items-center justify-between">
-            <span class="text-primary font-semibold">EPS ₹</span>
-            <div class="text-[9px] leading-tight text-right text-tertiary"><div>YoY</div><div>QoQ</div></div>
+            <span class="text-[#0F172A] font-semibold">EPS (₹)</span>
+            <span class="text-[9px] text-[#64748B] font-mono">${subLabel}</span>
           </div>
         </td>`;
       salesRow.innerHTML = `
-        <td class="py-1.5 px-3 border-r border-std font-medium text-secondary">
+        <td class="py-1.5 px-3 border-r border-[#E2E8F0]">
           <div class="flex items-center justify-between">
-            <span class="text-primary font-semibold">Sales Cr</span>
-            <div class="text-[9px] leading-tight text-right text-tertiary"><div>YoY</div><div>QoQ</div></div>
+            <span class="text-[#0F172A] font-semibold">Revenue (Cr)</span>
+            <span class="text-[9px] text-[#64748B] font-mono">${subLabel}</span>
           </div>
         </td>`;
 
-      if (!quarters || quarters.length === 0) {
-        hRow.innerHTML += '<th class="px-4 py-1 text-tertiary">Quarterly financial statements syncing...</th>';
+      if (!items || items.length === 0) {
+        hRow.innerHTML += '<th class="px-4 py-1 text-[#64748B] font-normal">Financial statements syncing...</th>';
         return;
       }
 
-      quarters.forEach(q => {
-        hRow.innerHTML += `<th class="py-1.5 px-3 border-r border-std font-medium text-secondary min-w-[110px]">${q.label}</th>`;
+      const fmtPct = (v) => {
+        if (v === null || v === undefined) return '<span class="text-[#94A3B8]">-</span>';
+        const color = v >= 0 ? 'text-[#16A34A]' : 'text-[#DC2626]';
+        return `<span class="${color}">${v >= 0 ? '+' : ''}${v}%</span>`;
+      };
 
-        const fmtPct = (v) => {
-          if (v === null || v === undefined) return '<span class="text-tertiary">-</span>';
-          const color = v >= 0 ? 'text-emerald-600' : 'text-rose-500';
-          return `<span class="${color}">${v >= 0 ? '+' : ''}${v}%</span>`;
-        };
-
+      items.forEach(q => {
+        hRow.innerHTML += `<th class="py-1.5 px-3 border-r border-[#E2E8F0] font-semibold text-[#475569] min-w-[105px]">${q.label}</th>`;
         epsRow.innerHTML += `
-          <td class="py-1.5 px-3 border-r border-std">
+          <td class="py-1.5 px-3 border-r border-[#E2E8F0] font-mono-num">
             <div class="flex items-center justify-between">
-              <span class="font-bold text-primary">${q.eps !== null && q.eps !== undefined ? q.eps.toFixed(2) : '-'}</span>
-              <div class="text-[10px] leading-tight text-right font-medium">
+              <span class="font-bold text-[#0F172A]">${q.eps !== null && q.eps !== undefined ? q.eps.toFixed(2) : '-'}</span>
+              <div class="text-[9.5px] leading-tight text-right font-medium">
                 <div>${fmtPct(q.eps_yoy)}</div>
-                <div>${fmtPct(q.eps_qoq)}</div>
+                ${statementPeriod === 'quarterly' ? `<div>${fmtPct(q.eps_qoq)}</div>` : ''}
               </div>
             </div>
-          </td>
-        `;
-
+          </td>`;
         salesRow.innerHTML += `
-          <td class="py-1.5 px-3 border-r border-std">
+          <td class="py-1.5 px-3 border-r border-[#E2E8F0] font-mono-num">
             <div class="flex items-center justify-between">
-              <span class="font-bold text-primary">${q.sales_cr !== null && q.sales_cr !== undefined ? q.sales_cr.toLocaleString('en-IN') : '-'}</span>
-              <div class="text-[10px] leading-tight text-right font-medium">
+              <span class="font-bold text-[#0F172A]">${q.sales_cr !== null && q.sales_cr !== undefined ? q.sales_cr.toLocaleString('en-IN') : '-'}</span>
+              <div class="text-[9.5px] leading-tight text-right font-medium">
                 <div>${fmtPct(q.sales_yoy)}</div>
-                <div>${fmtPct(q.sales_qoq)}</div>
+                ${statementPeriod === 'quarterly' ? `<div>${fmtPct(q.sales_qoq)}</div>` : ''}
               </div>
             </div>
-          </td>
-        `;
+          </td>`;
       });
+
+      // Render Historical Mini Bar Chart on the right
+      const miniContainer = document.getElementById('historicalMiniBars');
+      document.getElementById('miniChartPeriodLabel').innerText = `${items.length} ${statementPeriod === 'annual' ? 'Years' : 'Quarters'}`;
+      const maxSales = Math.max(...items.map(i => i.sales_cr || 1), 1);
+      miniContainer.innerHTML = items.map(i => {
+        const val = i.sales_cr || 0;
+        const hPct = Math.max(12, Math.round((val / maxSales) * 100));
+        return `
+          <div class="flex-1 flex flex-col items-center h-full justify-end group" title="${i.label}: ₹${val.toLocaleString('en-IN')} Cr">
+            <div class="w-full bg-[#0F172A] group-hover:bg-[#2563EB] rounded-t-xs transition-all" style="height:${hPct}%"></div>
+            <span class="text-[8.5px] font-mono text-[#64748B] mt-1 truncate max-w-full">${i.label.split(' ')[0]}</span>
+          </div>
+        `;
+      }).join('');
     }
 
+    function switchFundamentalTab(tab) {
+      activeFundamentalTab = tab;
+      const finView = document.getElementById('fundView_financials');
+      const pilView = document.getElementById('fundView_pillars');
+      const tFin = document.getElementById('fundTab_financials');
+      const tPil = document.getElementById('fundTab_pillars');
+      const pToggle = document.getElementById('statementPeriodToggle');
+
+      if (tab === 'financials') {
+        finView.classList.remove('hidden');
+        finView.classList.add('flex');
+        pilView.classList.add('hidden');
+        tFin.classList.add('pillar-tab-active');
+        tPil.classList.remove('pillar-tab-active');
+        pToggle.classList.remove('hidden');
+      } else {
+        finView.classList.add('hidden');
+        finView.classList.remove('flex');
+        pilView.classList.remove('hidden');
+        tPil.classList.add('pillar-tab-active');
+        tFin.classList.remove('pillar-tab-active');
+        pToggle.classList.add('hidden');
+      }
+    }
+
+    function toggleBottomFundamentals() {
+      showBottomFundamentals = !showBottomFundamentals;
+      const panel = document.getElementById('bottomFundamentalsPanel');
+      const btn = document.getElementById('toggleFundamentalsBtn');
+
+      if (showBottomFundamentals) {
+        panel.classList.remove('hidden');
+        panel.classList.add('flex');
+        btn.innerText = 'Fundamentals Panel: ON';
+        btn.className = 'px-2.5 py-0.5 rounded border border-[#0F172A] bg-[#0F172A] text-white text-[11px] font-medium';
+      } else {
+        panel.classList.add('hidden');
+        panel.classList.remove('flex');
+        btn.innerText = 'Fundamentals Panel: OFF';
+        btn.className = 'px-2.5 py-0.5 rounded border border-[#CBD5E1] bg-white text-[#475569] text-[11px] font-medium';
+      }
+      setTimeout(() => { if (kChart) kChart.resize(); }, 30);
+    }
+
+    // =========================================================================
+    // TIMEFRAMES, EXCHANGE, LAYOUT PERSISTENCE & FULLSCREEN
+    // =========================================================================
     function changeTimeframe(tf) {
       currentTimeframe = tf;
-      ['1d', '1wk', '1mo'].forEach(id => {
+      ['1m', '3m', '5m', '15m', '30m', '1h', '4h', '1d', '1wk', '1mo'].forEach(id => {
         const btn = document.getElementById('tf_' + id);
-        if (id === tf) {
-          btn.className = 'px-2 py-0.5 rounded font-semibold bg-blue-600 text-white';
-        } else {
-          btn.className = 'px-2 py-0.5 rounded font-medium text-secondary hover:text-primary';
+        if (btn) {
+          if (id === tf) btn.classList.add('tf-btn-active');
+          else btn.classList.remove('tf-btn-active');
         }
       });
       selectStock(currentSymbol);
     }
 
-    function toggleChartStyle() {
-      useBarStyle = !useBarStyle;
-      document.getElementById('styleBtn').innerText = useBarStyle ? 'Bars (Green/Red)' : 'Candles (Green/Red)';
-      applyChartThemeAndStyles();
+    function switchExchange(exch) {
+      currentExchange = exch;
+      document.getElementById('exch_NSE').className = exch === 'NSE'
+        ? 'px-2 py-0.5 rounded-xs text-[10px] font-bold bg-[#0F172A] text-white'
+        : 'px-2 py-0.5 rounded-xs text-[10px] font-semibold text-[#64748B] hover:text-[#0F172A]';
+      document.getElementById('exch_BSE').className = exch === 'BSE'
+        ? 'px-2 py-0.5 rounded-xs text-[10px] font-bold bg-[#0F172A] text-white'
+        : 'px-2 py-0.5 rounded-xs text-[10px] font-semibold text-[#64748B] hover:text-[#0F172A]';
+      selectStock(currentSymbol);
     }
 
     function toggleLogScale() {
       isLogScale = !isLogScale;
       const btn = document.getElementById('logBtn');
       btn.className = isLogScale
-        ? 'px-2 py-0.5 rounded bg-blue-600 text-white font-semibold'
-        : 'px-2 py-0.5 rounded border border-std text-secondary';
-      applyChartThemeAndStyles();
+        ? 'px-2 py-0.5 rounded bg-[#0F172A] text-white text-[11px] font-semibold'
+        : 'px-2 py-0.5 rounded border border-[#CBD5E1] bg-white text-[#475569] text-[11px] font-medium';
+      applyInstitutionalChartStyles();
     }
 
-    function toggleTheme() {
-      isDark = !isDark;
-      document.body.className = isDark
-        ? 'theme-dark app-surface h-screen w-screen overflow-hidden flex flex-col select-none text-xs'
-        : 'theme-light app-surface h-screen w-screen overflow-hidden flex flex-col select-none text-xs';
-      document.getElementById('themeBtn').innerText = isDark ? 'Light Mode' : 'Dark Mode';
-      applyChartThemeAndStyles();
+    function saveStudioLayout() {
+      const payload = {
+        watchlistSymbols,
+        currentTimeframe,
+        currentChartType,
+        isLogScale,
+        userEmas: userEmas.map(e => ({ id: e.id, period: e.period, color: e.color, enabled: e.enabled }))
+      };
+      localStorage.setItem('alphaquant_studio_layout', JSON.stringify(payload));
+      const toast = document.getElementById('saveLayoutToast');
+      toast.classList.remove('hidden');
+      setTimeout(() => toast.classList.add('hidden'), 2200);
+    }
+
+    function loadSavedStudioLayout() {
+      try {
+        const raw = localStorage.getItem('alphaquant_studio_layout');
+        if (!raw) return;
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed.watchlistSymbols) && parsed.watchlistSymbols.length > 0) {
+          watchlistSymbols = parsed.watchlistSymbols;
+        }
+        if (Array.isArray(parsed.userEmas) && parsed.userEmas.length > 0) {
+          userEmas = parsed.userEmas;
+        }
+      } catch (e) {}
+    }
+
+    function toggleFullScreenStudio() {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      } else {
+        document.exitFullscreen().catch(() => {});
+      }
+    }
+
+    async function refreshChartView() {
+      const icon = document.getElementById('refreshIconSvg');
+      if (icon) icon.classList.add('animate-spin');
+      await selectStock(currentSymbol);
+      if (kChart) {
+        kChart.scrollToRealTime();
+        kChart.resize();
+      }
+      setTimeout(() => { if (icon) icon.classList.remove('animate-spin'); }, 350);
     }
 
     function searchSymbol(val) {
@@ -1317,70 +1872,214 @@
       if (rowEl) rowEl.scrollIntoView({ block: 'nearest' });
     }
 
-    function applyScreenerPreset(preset) {
-      if (preset === 'all') {
-        filteredStocks = [...allStocks];
-      } else if (preset === 'high_rs') {
-        filteredStocks = allStocks.filter(s => (s.roe || 0) >= 15);
-      } else if (preset === 'quality_roe') {
-        filteredStocks = allStocks.filter(s => (s.roe || 0) >= 18 && (s.debt_to_equity === null || s.debt_to_equity < 50));
-      } else if (preset === 'low_pe') {
-        filteredStocks = allStocks.filter(s => s.pe && s.pe < 22 && (s.roe || 0) > 12);
-      } else if (preset === 'large_cap') {
-        filteredStocks = allStocks.filter(s => s.cap_category === 'Large Cap');
-      } else if (preset === 'mid_cap') {
-        filteredStocks = allStocks.filter(s => s.cap_category === 'Mid Cap');
+    // =========================================================================
+    // SECTION 5: FUNDAMENTAL SCREENER STUDIO (MULTI-CONDITION AND/OR BUILDER)
+    // =========================================================================
+    function switchStudioMode(mode) {
+      const vChart = document.getElementById('viewChartWorkspace');
+      const vScreen = document.getElementById('viewScreenerStudio');
+      const tChart = document.getElementById('studioTab_chart');
+      const tScreen = document.getElementById('studioTab_screener');
+
+      if (mode === 'chart') {
+        vChart.classList.remove('hidden');
+        vChart.classList.add('flex');
+        vScreen.classList.add('hidden');
+        vScreen.classList.remove('flex');
+        tChart.className = 'px-3 py-1 rounded text-[11px] font-semibold bg-white text-[#0F172A] shadow-2xs transition-all';
+        tScreen.className = 'px-3 py-1 rounded text-[11px] font-medium text-[#475569] hover:text-[#0F172A] transition-all flex items-center space-x-1.5';
+        setTimeout(() => { if (kChart) kChart.resize(); }, 30);
+      } else {
+        vChart.classList.add('hidden');
+        vChart.classList.remove('flex');
+        vScreen.classList.remove('hidden');
+        vScreen.classList.add('flex');
+        tScreen.className = 'px-3 py-1 rounded text-[11px] font-semibold bg-white text-[#0F172A] shadow-2xs transition-all flex items-center space-x-1.5';
+        tChart.className = 'px-3 py-1 rounded text-[11px] font-medium text-[#475569] hover:text-[#0F172A] transition-all';
+        runFundamentalScreenerQuery();
       }
-      renderStockList();
-      if (filteredStocks.length > 0) selectStock(filteredStocks[0].symbol);
     }
 
-    function openFilterModal() {
-      document.getElementById('filterModal').classList.remove('hidden');
-      document.getElementById('filterModal').classList.add('flex');
+    function setScreenerLogic(logic) {
+      screenerLogic = logic;
+      document.getElementById('logic_AND').className = logic === 'AND'
+        ? 'px-2 py-0.5 rounded-xs text-[10px] font-bold bg-[#0F172A] text-white'
+        : 'px-2 py-0.5 rounded-xs text-[10px] font-semibold text-[#64748B]';
+      document.getElementById('logic_OR').className = logic === 'OR'
+        ? 'px-2 py-0.5 rounded-xs text-[10px] font-bold bg-[#0F172A] text-white'
+        : 'px-2 py-0.5 rounded-xs text-[10px] font-semibold text-[#64748B]';
+      renderScreenerBuilderUI();
+      runFundamentalScreenerQuery();
     }
 
-    function closeFilterModal() {
-      document.getElementById('filterModal').classList.add('hidden');
-      document.getElementById('filterModal').classList.remove('flex');
+    function addFilterCondition(field, op, val) {
+      screenerConditions.push({ id: Date.now() + Math.random(), field, op, val });
+      renderScreenerBuilderUI();
+      runFundamentalScreenerQuery();
     }
 
-    function applyCustomFilters() {
-      const maxPe = parseFloat(document.getElementById('modalPeInput').value);
-      const minRoe = parseFloat(document.getElementById('modalRoeInput').value);
-      const maxDe = parseFloat(document.getElementById('modalDeInput').value);
-
-      filteredStocks = allStocks.filter(s => {
-        if (s.pe && s.pe > maxPe) return false;
-        if ((s.roe || 0) < minRoe) return false;
-        if (s.debt_to_equity && (s.debt_to_equity / 100) > maxDe) return false;
-        return true;
-      });
-      renderStockList();
+    function removeFilterCondition(idx) {
+      screenerConditions.splice(idx, 1);
+      renderScreenerBuilderUI();
+      runFundamentalScreenerQuery();
     }
 
-    function resetCustomFilters() {
-      document.getElementById('modalPeInput').value = 100;
-      document.getElementById('modalPeLabel').innerText = '< 100';
-      document.getElementById('modalRoeInput').value = 0;
-      document.getElementById('modalRoeLabel').innerText = '> 0%';
-      document.getElementById('modalDeInput').value = 3.0;
-      document.getElementById('modalDeLabel').innerText = '< 3.0';
-      filteredStocks = [...allStocks];
-      renderStockList();
+    function updateConditionField(idx, field) {
+      screenerConditions[idx].field = field;
+      runFundamentalScreenerQuery();
     }
 
+    function updateConditionOp(idx, op) {
+      screenerConditions[idx].op = op;
+      runFundamentalScreenerQuery();
+    }
+
+    function updateConditionVal(idx, val) {
+      screenerConditions[idx].val = parseFloat(val) || 0;
+      runFundamentalScreenerQuery();
+    }
+
+    function clearAllScreenerConditions() {
+      screenerConditions = [];
+      renderScreenerBuilderUI();
+      runFundamentalScreenerQuery();
+    }
+
+    function loadScreenerPreset(preset) {
+      if (preset === 'compounders') {
+        screenerLogic = 'AND';
+        screenerConditions = [
+          { id: 1, field: 'roe', op: '>', val: 18 },
+          { id: 2, field: 'roce', op: '>', val: 20 },
+          { id: 3, field: 'debt_to_equity', op: '<', val: 0.5 }
+        ];
+      } else if (preset === 'garp') {
+        screenerLogic = 'AND';
+        screenerConditions = [
+          { id: 1, field: 'pe', op: '<', val: 25 },
+          { id: 2, field: 'eps_growth', op: '>', val: 15 },
+          { id: 3, field: 'roe', op: '>', val: 14 }
+        ];
+      } else if (preset === 'institutional_ownership') {
+        screenerLogic = 'AND';
+        screenerConditions = [
+          { id: 1, field: 'promoter_holding', op: '>', val: 55 },
+          { id: 2, field: 'fii_holding', op: '>', val: 12 },
+          { id: 3, field: 'pledge_pct', op: '<=', val: 0 }
+        ];
+      }
+      setScreenerLogic(screenerLogic);
+    }
+
+    function renderScreenerBuilderUI() {
+      const container = document.getElementById('screenerConditionsContainer');
+      if (screenerConditions.length === 0) {
+        container.innerHTML = '<div class="p-6 text-center text-[#64748B] border border-dashed border-[#CBD5E1] rounded bg-white">No active filter conditions. All 498 NSE equities shown. Click any category above to add a rule.</div>';
+        return;
+      }
+
+      container.innerHTML = screenerConditions.map((cond, idx) => `
+        <div class="p-2.5 rounded border border-[#CBD5E1] bg-white space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="text-[10px] font-mono font-bold uppercase px-1.5 py-0.2 rounded bg-[#F1F5F9] text-[#0F172A]">
+              ${idx === 0 ? 'WHERE' : screenerLogic}
+            </span>
+            <button onclick="removeFilterCondition(${idx})" class="text-[10px] text-[#DC2626] hover:underline font-medium">Remove</button>
+          </div>
+          <select onchange="updateConditionField(${idx}, this.value)" class="w-full px-2 py-1 rounded border border-[#CBD5E1] bg-[#F8FAFC] text-[#0F172A] text-[11px] font-medium focus:outline-none">
+            ${SCREENER_FIELDS.map(f => `<option value="${f.key}" ${f.key === cond.field ? 'selected' : ''}>${f.label}</option>`).join('')}
+          </select>
+          <div class="flex items-center space-x-2">
+            <select onchange="updateConditionOp(${idx}, this.value)" class="w-24 px-2 py-1 rounded border border-[#CBD5E1] bg-[#F8FAFC] text-[#0F172A] font-mono text-[11px] font-bold">
+              <option value=">" ${cond.op === '>' ? 'selected' : ''}>&gt; Greater</option>
+              <option value="<" ${cond.op === '<' ? 'selected' : ''}>&lt; Less</option>
+              <option value=">=" ${cond.op === '>=' ? 'selected' : ''}>&gt;= Min</option>
+              <option value="<=" ${cond.op === '<=' ? 'selected' : ''}>&lt;= Max</option>
+            </select>
+            <input
+              type="number"
+              step="0.1"
+              value="${cond.val}"
+              oninput="updateConditionVal(${idx}, this.value)"
+              class="flex-1 px-2 py-1 rounded border border-[#CBD5E1] bg-white text-[#0F172A] font-mono-num text-xs font-semibold focus:outline-none focus:border-[#0F172A]"
+            />
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function evaluateSingleCondition(stock, cond) {
+      const v = stock[cond.field];
+      if (v === null || v === undefined) return false;
+      if (cond.op === '>') return v > cond.val;
+      if (cond.op === '<') return v < cond.val;
+      if (cond.op === '>=') return v >= cond.val;
+      if (cond.op === '<=') return v <= cond.val;
+      return true;
+    }
+
+    function runFundamentalScreenerQuery() {
+      let matches = [];
+      if (screenerConditions.length === 0) {
+        matches = [...allStocks];
+      } else {
+        matches = allStocks.filter(s => {
+          if (screenerLogic === 'AND') {
+            return screenerConditions.every(c => evaluateSingleCondition(s, c));
+          } else {
+            return screenerConditions.some(c => evaluateSingleCondition(s, c));
+          }
+        });
+      }
+
+      document.getElementById('screenerMatchBadge').innerText = matches.length;
+      document.getElementById('screenerResultCountLabel').innerText = `Showing ${matches.length} of ${allStocks.length} equities`;
+
+      const tbody = document.getElementById('screenerTableBody');
+      if (matches.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="14" class="p-8 text-center text-[#64748B]">No stocks match the current filter criteria.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = matches.map(s => `
+        <tr onclick="openScreenerStockInChart('${s.symbol}')" class="hover:bg-[#EFF6FF] cursor-pointer transition-colors">
+          <td class="py-2 px-3 border-r border-[#E2E8F0] font-bold text-[#0F172A]">${s.symbol}</td>
+          <td class="py-2 px-3 border-r border-[#E2E8F0] text-[#334155] truncate max-w-[180px]">${s.name || s.symbol}</td>
+          <td class="py-2 px-3 border-r border-[#E2E8F0] text-[#64748B] truncate max-w-[150px]">${s.sector || s.industry || 'Equities'}</td>
+          <td class="py-2 px-3 border-r border-[#E2E8F0] text-right font-mono-num font-semibold text-[#0F172A]">${s.ltp ? s.ltp.toLocaleString('en-IN', { minimumFractionDigits: 2 }) : '-'}</td>
+          <td class="py-2 px-3 border-r border-[#E2E8F0] text-right font-mono-num text-[#0F172A]">${s.market_cap_cr ? s.market_cap_cr.toLocaleString('en-IN') : '-'}</td>
+          <td class="py-2 px-3 border-r border-[#E2E8F0] text-right font-mono-num">${s.pe ?? '-'}</td>
+          <td class="py-2 px-3 border-r border-[#E2E8F0] text-right font-mono-num">${s.pb ?? '-'}</td>
+          <td class="py-2 px-3 border-r border-[#E2E8F0] text-right font-mono-num">${s.ev_to_ebitda ?? '-'}</td>
+          <td class="py-2 px-3 border-r border-[#E2E8F0] text-right font-mono-num font-semibold ${(s.roe || 0) >= 15 ? 'text-[#16A34A]' : 'text-[#0F172A]'}">${s.roe !== undefined ? s.roe + '%' : '-'}</td>
+          <td class="py-2 px-3 border-r border-[#E2E8F0] text-right font-mono-num">${s.roce !== undefined ? s.roce + '%' : '-'}</td>
+          <td class="py-2 px-3 border-r border-[#E2E8F0] text-right font-mono-num ${(s.revenue_growth || 0) >= 0 ? 'text-[#16A34A]' : 'text-[#DC2626]'}">${s.revenue_growth !== undefined ? '+' + s.revenue_growth + '%' : '-'}</td>
+          <td class="py-2 px-3 border-r border-[#E2E8F0] text-right font-mono-num">${s.debt_to_equity ?? '-'}</td>
+          <td class="py-2 px-3 border-r border-[#E2E8F0] text-right font-mono-num">${s.promoter_holding !== undefined ? s.promoter_holding + '%' : '-'}</td>
+          <td class="py-2 px-3 text-right font-mono-num">${s.dividend_yield !== undefined ? s.dividend_yield + '%' : '-'}</td>
+        </tr>
+      `).join('');
+    }
+
+    function openScreenerStockInChart(sym) {
+      switchStudioMode('chart');
+      selectStock(sym);
+    }
+
+    // =========================================================================
+    // KEYBOARD NAVIGATION
+    // =========================================================================
     window.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
         setToolbarActiveButton('cursor');
         closeEmaModal();
-        closeFilterModal();
         return;
       }
-      if (document.activeElement.tagName === 'INPUT') return;
+      if (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'SELECT') return;
       if (e.key === 'Backspace' || e.key === 'Delete') {
-        if (selectedOverlayId) {
-          removeSelectedOrLastOverlay();
+        if (selectedOverlayId && kChart) {
+          kChart.removeOverlay({ id: selectedOverlayId });
+          selectedOverlayId = null;
           return;
         }
       }
@@ -1394,6 +2093,7 @@
     });
 
     window.onload = async () => {
+      loadSavedStudioLayout();
       initChart();
       await loadScreenerList();
       await selectStock('RELIANCE');

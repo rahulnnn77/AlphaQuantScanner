@@ -154,7 +154,10 @@ if os.path.exists(dist_dir):
         real_dist = os.path.realpath(dist_dir)
         candidate = os.path.realpath(os.path.join(dist_dir, full_path))
         if candidate.startswith(real_dist + os.sep) and os.path.exists(candidate) and os.path.isfile(candidate):
-            return FileResponse(candidate)
+            return FileResponse(
+                candidate,
+                headers={"Cache-Control": "no-cache, no-store, must-revalidate", "Pragma": "no-cache", "Expires": "0"}
+            )
         return FileResponse(
             os.path.join(dist_dir, "index.html"),
             headers={"Cache-Control": "no-cache, no-store, must-revalidate", "Pragma": "no-cache", "Expires": "0"}

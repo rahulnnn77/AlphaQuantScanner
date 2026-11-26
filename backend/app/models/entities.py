@@ -104,3 +104,21 @@ class TelegramSettings(Base):
     alert_on_hps_breakout = Column(Boolean, default=True)
     alert_on_mean_reversion = Column(Boolean, default=True)
     updated_at = Column(DateTime, default=datetime.utcnow)
+
+
+class UserActivitySession(Base):
+    __tablename__ = "user_activity_sessions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    username = Column(String(50), nullable=False, index=True)
+    session_date = Column(String(10), nullable=False, index=True) # YYYY-MM-DD
+    active_seconds = Column(Integer, default=0, nullable=False)
+    last_heartbeat = Column(DateTime, default=datetime.utcnow, nullable=False)
+    last_active_tab = Column(String(50), default="breadth", nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    __table_args__ = (
+        UniqueConstraint('user_id', 'session_date', name='uq_user_session_date'),
+    )
