@@ -895,6 +895,13 @@ class ScreenerEngine:
         except Exception as e:
             logger.warning(f"Failed to persist market_breadth_snapshot: {e}")
 
+        # Zero-load evaluation of active user price alerts against already-fetched live_quotes
+        try:
+            from app.api.watchlist import evaluate_price_alerts
+            evaluate_price_alerts(result_payload.get("live_quotes", {}))
+        except Exception:
+            pass
+
         return result_payload
 
     @classmethod

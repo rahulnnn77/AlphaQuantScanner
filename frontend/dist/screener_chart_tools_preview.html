@@ -66,6 +66,16 @@
   .modal .mbtn{all:unset;cursor:pointer;padding:6px 14px;border-radius:4px;font-size:12px;font-weight:500}
   .modal .mbtn.pri{background:var(--accent);color:#fff}
   .modal .mbtn.sec{border:1px solid var(--railLine);color:var(--icon)}
+  .plus-btn{position:absolute;z-index:25;width:22px;height:22px;border-radius:4px;background:var(--rail);border:1px solid var(--railLine);color:var(--iconHover);display:none;align-items:center;justify-content:center;cursor:pointer;transform:translateY(-50%);box-shadow:0 2px 8px rgba(0,0,0,.35);transition:background .12s,border-color .12s,color .12s}
+  .plus-btn:hover{background:var(--accent);border-color:var(--accent);color:#fff}
+  .plus-btn .ptip{position:absolute;right:28px;top:50%;transform:translateY(-50%);background:var(--tip);color:var(--tipText);font:11px ui-monospace,monospace;padding:3px 7px;border-radius:4px;white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .12s}
+  .plus-btn:hover .ptip{opacity:1}
+  .al-strip{display:flex;flex-wrap:wrap;gap:6px;padding:8px 14px;border-top:1px solid var(--chromeLine);background:#0a0f18;font-size:11.5px;align-items:center}
+  .al-chip{display:inline-flex;align-items:center;gap:6px;padding:3px 8px;border-radius:4px;background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.35);color:#fbbf24;font-family:ui-monospace,monospace}
+  .al-chip button{all:unset;cursor:pointer;opacity:.7;padding-left:3px;color:#fca5a5}
+  .al-chip button:hover{opacity:1}
+  .toast{position:fixed;bottom:20px;right:20px;z-index:95;background:#131722;color:#e2e8f0;border:1px solid rgba(245,158,11,.45);border-radius:6px;padding:10px 14px;font-size:12.5px;box-shadow:0 12px 30px rgba(0,0,0,.5);display:none}
+  .toast.on{display:block}
   .foot{max-width:1320px;margin:10px auto 0;color:#475569;font-size:12px;display:flex;justify-content:space-between}
   .foot kbd{font:11px ui-monospace,monospace;color:#64748b;border:1px solid #1e293b;border-radius:3px;padding:0 4px}
 </style>
@@ -147,9 +157,51 @@
         </div>
       </div>
       <div id="chart"></div>
+      <!-- TradingView-style Hover '+' Price Alert Button -->
+      <button class="plus-btn" id="plusAlertBtn" aria-label="Add price alert" onclick="openAlertModal()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        <span class="ptip" id="plusTip">Add alert</span>
+      </button>
+      <!-- Create Price Alert Modal -->
+      <div class="modal-bg" id="alertModal" onclick="if(event.target===this)closeAlertModal()">
+        <div class="modal" style="width:360px">
+          <div class="mh"><span>Create Price Alert · BEL</span><button class="mbtn" onclick="closeAlertModal()">✕</button></div>
+          <div class="mb">
+            <div class="row">
+              <label>Condition</label>
+              <select id="alCond">
+                <option value="crossing_up">Crossing Up</option>
+                <option value="crossing_down">Crossing Down</option>
+                <option value="crossing">Crossing (Either)</option>
+              </select>
+            </div>
+            <div class="row">
+              <label>Target Price (₹)</label>
+              <input type="number" step="0.05" id="alPrice" style="width:120px;background:var(--bg);color:var(--iconHover);border:1px solid var(--railLine);border-radius:4px;padding:4px 8px;font:12.5px ui-monospace,monospace" />
+            </div>
+            <div class="row">
+              <label>Notify via</label>
+              <div style="display:flex;gap:14px">
+                <label style="cursor:pointer"><input type="checkbox" id="alTg" checked /> Telegram</label>
+                <label style="cursor:pointer"><input type="checkbox" id="alEmail" checked /> Email</label>
+              </div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:5px">
+              <label>Alert Note (optional)</label>
+              <input type="text" id="alNote" placeholder="e.g. Breakout above resistance" style="width:100%;background:var(--bg);color:var(--iconHover);border:1px solid var(--railLine);border-radius:4px;padding:6px 8px;font-size:12px" />
+            </div>
+          </div>
+          <div class="mf">
+            <button class="mbtn sec" onclick="closeAlertModal()">Cancel</button>
+            <button class="mbtn pri" onclick="createPriceAlert()">Create Alert</button>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
+  <div class="al-strip" id="alStrip"><span style="color:#64748b">Active Alerts:</span><span style="color:#475569">Hover over the chart and click <b style="color:#94a3b8">+</b> on the right price axis to create an alert.</span></div>
 </div>
+<div class="toast" id="alToast"></div>
 <div class="foot">
   <span>Drawings are saved automatically for this user and symbol.</span>
   <span>Drag a drawing or its handles to edit &nbsp;·&nbsp; <kbd>Del</kbd> remove &nbsp;·&nbsp; <kbd>⌘Z</kbd> undo &nbsp;·&nbsp; <kbd>Esc</kbd> cancel</span>
@@ -159,9 +211,12 @@
 /* ---------------- state ---------------- */
 const USER = 'demo', SYMBOL = 'BEL';
 const KEY = `aq_drawings_v2_${USER}_${SYMBOL}`;
+const AL_KEY = `aq_alerts_v1_${USER}_${SYMBOL}`;
 const S = {
   chart: null, series: null, prim: null, candles: [], idx: new Map(),
   drawings: (() => { try { const a = JSON.parse(localStorage.getItem(KEY) || '[]'); return Array.isArray(a) ? a.filter(d => d && Array.isArray(d.pts) && d.pts.length) : []; } catch { return []; } })(),
+  alerts: (() => { try { const a = JSON.parse(localStorage.getItem(AL_KEY) || '[]'); return Array.isArray(a) ? a : []; } catch { return []; } })(),
+  hoverAlertPrice: null,
   tool: 'cursor', draft: null, sel: null, hover: null, drag: null,
   hidden: false, magnet: true, undo: [],
   theme: localStorage.getItem('aq_chart_theme') || 'dark'
@@ -323,6 +378,35 @@ function render(ctx, W, H) {
     });
     ctx.restore();
   });
+
+  // Render active Price Alerts — clean, restrained TradingView-grade line & tag
+  S.alerts.forEach(al => {
+    const y = yOf(al.price);
+    if (y == null) return;
+    ctx.save();
+    const col = S.theme === 'light' ? '#d97706' : '#f59e0b';
+    ctx.strokeStyle = col;
+    ctx.lineWidth = 1;
+    ctx.globalAlpha = 0.85;
+    ctx.setLineDash([4, 4]);
+    ctx.beginPath(); ctx.moveTo(0, Math.round(y) + .5); ctx.lineTo(W, Math.round(y) + .5); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.globalAlpha = 1;
+
+    const txt = al.note ? `${al.note}  ·  ₹${fmt(al.price)}` : `Alert  ·  ₹${fmt(al.price)}`;
+    ctx.font = '500 11px -apple-system,BlinkMacSystemFont,"Inter",sans-serif';
+    const tw = ctx.measureText(txt).width;
+    const lx = 12, ly = y - 10;
+    // Small clean bell-dot indicator + crisp label (no loud box, no channel clutter)
+    ctx.fillStyle = S.theme === 'light' ? 'rgba(255,255,255,0.92)' : 'rgba(19,23,34,0.88)';
+    ctx.fillRect(lx - 4, ly - 8, tw + 22, 16);
+    ctx.strokeStyle = col; ctx.lineWidth = 1.2;
+    ctx.beginPath(); ctx.arc(lx + 4, ly, 2.5, 0, Math.PI * 2); ctx.stroke();
+    ctx.fillStyle = S.theme === 'light' ? '#92400e' : '#fbbf24';
+    ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+    ctx.fillText(txt, lx + 12, ly + 0.5);
+    ctx.restore();
+  });
 }
 function handlesOf(d, g) {
   if (d.type === 'trend' || d.type === 'measure') return g.map((p, i) => ({ ...p, i }));
@@ -350,6 +434,7 @@ class Drawings {
         : d.type === 'text' ? [] : d.pts.map(p => [p.p, th.line]);
       prices.forEach(([p, c]) => out.push({ coordinate: () => yOf(p), text: () => fmt(p), textColor: () => '#ffffff', backColor: () => c, visible: () => true, tickVisible: () => true }));
     });
+    S.alerts.forEach(al => out.push({ coordinate: () => yOf(al.price), text: () => fmt(al.price), textColor: () => '#ffffff', backColor: () => '#d97706', visible: () => true, tickVisible: () => true }));
     this._axis = out;
   }
   priceAxisViews() { return this._axis; }
@@ -432,7 +517,7 @@ const rel = e => { const r = wrap.getBoundingClientRect(); return { x: e.clientX
 const inPane = ({ x, y }) => S.chart && x < S.chart.timeScale().width() && y < wrap.clientHeight - 28;
 
 wrap.addEventListener('mousedown', e => {
-  if (e.button !== 0 || e.target.classList.contains('txtin') || (e.target.closest && e.target.closest('#chanBar, #setModal'))) return;
+  if (e.button !== 0 || e.target.classList.contains('txtin') || (e.target.closest && e.target.closest('#chanBar, #setModal, #plusAlertBtn, #alertModal'))) return;
   const m = rel(e); if (!inPane(m)) return;
   if (S.tool !== 'cursor') {
     e.stopPropagation(); e.preventDefault();
@@ -681,10 +766,80 @@ fetch('/assets/landing/charts.json').then(r => r.json()).then(data => {
 
   S.prim = new Drawings();
   S.series.attachPrimitive(S.prim);
-  S.chart.subscribeCrosshairMove(p => legend(p && p.seriesData && p.seriesData.get(S.series)));
+  S.chart.subscribeCrosshairMove(p => {
+    legend(p && p.seriesData && p.seriesData.get(S.series));
+    const btn = document.getElementById('plusAlertBtn');
+    if (p && p.point && p.point.y >= 16 && p.point.y <= wrap.clientHeight - 34 && S.tool === 'cursor') {
+      const price = S.series.coordinateToPrice(p.point.y);
+      if (price != null && price > 0) {
+        S.hoverAlertPrice = +price.toFixed(2);
+        const paneW = S.chart.timeScale().width();
+        btn.style.display = 'flex';
+        btn.style.top = `${p.point.y}px`;
+        btn.style.left = `${Math.max(8, paneW - 26)}px`;
+        document.getElementById('plusTip').textContent = `Add alert at ₹${fmt(price)}`;
+        return;
+      }
+    }
+    if (!btn.matches(':hover')) btn.style.display = 'none';
+  });
+  wrap.addEventListener('mouseleave', () => {
+    const btn = document.getElementById('plusAlertBtn');
+    if (btn) btn.style.display = 'none';
+  });
   setTheme(S.theme);
   refreshRail();
+  renderAlertStrip();
 });
+
+function saveAlerts() {
+  localStorage.setItem(AL_KEY, JSON.stringify(S.alerts));
+  renderAlertStrip();
+  repaint();
+}
+function renderAlertStrip() {
+  const el = document.getElementById('alStrip');
+  if (!el) return;
+  if (!S.alerts.length) {
+    el.innerHTML = `<span style="color:#64748b">Active Alerts:</span><span style="color:#475569">Hover over the chart and click <b style="color:#94a3b8">+</b> on the right price axis to create an alert.</span>`;
+    return;
+  }
+  el.innerHTML = `<span style="color:#64748b">Active Alerts (${S.alerts.length}):</span>` + S.alerts.map((al, idx) => {
+    const c = al.cond === 'crossing_up' ? 'Crossing Up' : al.cond === 'crossing_down' ? 'Crossing Down' : 'Crossing';
+    return `<span class="al-chip">${SYMBOL} · ${c} ₹${fmt(al.price)}${al.note ? ' · ' + al.note : ''}<button onclick="deleteAlert(${idx})" title="Remove alert">✕</button></span>`;
+  }).join('');
+}
+function openAlertModal() {
+  const ltp = S.candles.length ? S.candles[S.candles.length - 1].close : 400;
+  const px = S.hoverAlertPrice != null ? S.hoverAlertPrice : ltp;
+  document.getElementById('alPrice').value = px.toFixed(2);
+  document.getElementById('alCond').value = px >= ltp ? 'crossing_up' : 'crossing_down';
+  document.getElementById('alNote').value = '';
+  document.getElementById('alertModal').classList.add('on');
+  document.getElementById('alPrice').focus();
+}
+function closeAlertModal() {
+  document.getElementById('alertModal').classList.remove('on');
+}
+function createPriceAlert() {
+  const price = parseFloat(document.getElementById('alPrice').value);
+  if (isNaN(price) || price <= 0) return;
+  const cond = document.getElementById('alCond').value;
+  const tg = document.getElementById('alTg').checked;
+  const email = document.getElementById('alEmail').checked;
+  const note = document.getElementById('alNote').value.trim();
+  S.alerts.push({ id: Date.now(), symbol: SYMBOL, price, cond, tg, email, note });
+  saveAlerts();
+  closeAlertModal();
+  const t = document.getElementById('alToast');
+  t.textContent = `Alert set: ${SYMBOL} at ₹${fmt(price)} (${[tg ? 'Telegram' : '', email ? 'Email' : ''].filter(Boolean).join(' + ') || 'In-App'})`;
+  t.classList.add('on');
+  setTimeout(() => t.classList.remove('on'), 2800);
+}
+function deleteAlert(idx) {
+  S.alerts.splice(idx, 1);
+  saveAlerts();
+}
 </script>
 </body>
 </html>

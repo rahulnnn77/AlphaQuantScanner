@@ -1567,3 +1567,234 @@ def save_chart_drawings(
     )
     db.commit()
     return {"status": "saved", "symbol": sym, "count": len(payload.drawings or [])}
+
+
+# ----------------- ZERO-LOAD PER-USER PRICE ALERTS (TELEGRAM + EMAIL) ----------------- #
+class PriceAlertCreate(BaseModel):
+    symbol: str
+    target_price: float
+    condition: str = "crossing_up"  # crossing_up | crossing_down | crossing
+    notify_telegram: bool = True
+    notify_email: bool = True
+    note: str = ""
+
+
+_LAST_ALERT_EVAL_TS: float = 0.0
+
+
+def _ensure_alerts_table(db: Session):
+    from sqlalchemy import text
+    db.execute(text("""
+        CREATE TABLE IF NOT EXISTS price_alerts (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            symbol TEXT NOT NULL,
+            target_price REAL NOT NULL,
+            condition TEXT NOT NULL DEFAULT 'crossing_up',
+            notify_telegram INTEGER NOT NULL DEFAULT 1,
+            notify_email INTEGER NOT NULL DEFAULT 1,
+            note TEXT DEFAULT '',
+            status TEXT NOT NULL DEFAULT 'ACTIVE',
+            triggered_price REAL,
+            triggered_at DATETIME,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+    """))
+    db.commit()
+
+
+@router.get("/alerts")
+def list_price_alerts(
+    symbol: Optional[str] = None,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    from sqlalchemy import text
+    _ensure_alerts_table(db)
+    if symbol:
+        rows = db.execute(
+            text("SELECT id, symbol, target_price, condition, notify_telegram, notify_email, note, status, created_at FROM price_alerts WHERE user_id = :uid AND symbol = :sym AND status = 'ACTIVE' ORDER BY id DESC"),
+            {"uid": current_user.id, "sym": symbol.strip().upper()},
+        ).fetchall()
+    else:
+        rows = db.execute(
+            text("SELECT id, symbol, target_price, condition, notify_telegram, notify_email, note, status, created_at FROM price_alerts WHERE user_id = :uid AND status = 'ACTIVE' ORDER BY id DESC LIMIT 100"),
+            {"uid": current_user.id},
+        ).fetchall()
+    return {
+        "alerts": [
+            {
+                "id": r[0], "symbol": r[1], "price": float(r[2]), "cond": r[3],
+                "tg": bool(r[4]), "email": bool(r[5]), "note": r[6] or "",
+                "status": r[7], "created_at": str(r[8]) if r[8] else "",
+            }
+            for r in rows
+        ]
+    }
+
+
+@router.post("/alerts")
+def create_price_alert(
+    payload: PriceAlertCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    from sqlalchemy import text
+    _ensure_alerts_table(db)
+    sym = payload.symbol.strip().upper()
+    if payload.target_price <= 0:
+        raise HTTPException(status_code=400, detail="Target price must be positive")
+    cond = payload.condition if payload.condition in ("crossing_up", "crossing_down", "crossing") else "crossing_up"
+    res = db.execute(
+        text("""
+            INSERT INTO price_alerts (user_id, symbol, target_price, condition, notify_telegram, notify_email, note, status)
+            VALUES (:uid, :sym, :px, :cond, :tg, :em, :note, 'ACTIVE')
+        """),
+        {
+            "uid": current_user.id, "sym": sym, "px": round(float(payload.target_price), 2),
+            "cond": cond, "tg": 1 if payload.notify_telegram else 0,
+            "em": 1 if payload.notify_email else 0, "note": (payload.note or "").strip()[:160],
+        },
+    )
+    db.commit()
+    return {
+        "status": "created",
+        "alert": {
+            "id": res.lastrowid, "symbol": sym, "price": round(float(payload.target_price), 2),
+            "cond": cond, "tg": bool(payload.notify_telegram), "email": bool(payload.notify_email),
+            "note": (payload.note or "").strip()[:160], "status": "ACTIVE",
+        },
+    }
+
+
+@router.delete("/alerts/{alert_id}")
+def delete_price_alert(
+    alert_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    from sqlalchemy import text
+    _ensure_alerts_table(db)
+    db.execute(
+        text("DELETE FROM price_alerts WHERE id = :aid AND user_id = :uid"),
+        {"aid": alert_id, "uid": current_user.id},
+    )
+    db.commit()
+    return {"status": "deleted", "id": alert_id}
+
+
+def _send_email_async(to_email: str, subject: str, body: str):
+    import os, smtplib, threading
+    from email.message import EmailMessage
+    host = os.getenv("SMTP_HOST", "").strip()
+    user = os.getenv("SMTP_USER", "").strip()
+    pwd = os.getenv("SMTP_PASS", "").strip()
+    port = int(os.getenv("SMTP_PORT", "587") or 587)
+    sender = os.getenv("SMTP_FROM", user).strip()
+    if not (host and user and pwd and to_email):
+        return
+    def _worker():
+        try:
+            msg = EmailMessage()
+            msg["Subject"] = subject
+            msg["From"] = sender
+            msg["To"] = to_email
+            msg.set_content(body)
+            with smtplib.SMTP(host, port, timeout=10) as s:
+                s.starttls()
+                s.login(user, pwd)
+                s.send_message(msg)
+        except Exception as e:
+            logger.warning(f"Price alert email failed for {to_email}: {e}")
+    threading.Thread(target=_worker, daemon=True).start()
+
+
+def evaluate_price_alerts(live_quotes: Dict[str, Any]):
+    """Zero-load in-memory evaluator called when live_quotes already refreshes."""
+    global _LAST_ALERT_EVAL_TS
+    import time, threading
+    from sqlalchemy import text
+    from app.core.database import SessionLocal
+    from app.services.telegram_service import TelegramAlertService
+
+    if not live_quotes:
+        return
+    now_ts = time.time()
+    if now_ts - _LAST_ALERT_EVAL_TS < 10.0:
+        return
+    _LAST_ALERT_EVAL_TS = now_ts
+
+    db = SessionLocal()
+    try:
+        _ensure_alerts_table(db)
+        rows = db.execute(
+            text("""
+                SELECT a.id, a.user_id, a.symbol, a.target_price, a.condition, a.notify_telegram, a.notify_email, a.note,
+                       u.username, u.email, u.telegram_chat_id
+                FROM price_alerts a
+                JOIN users u ON u.id = a.user_id
+                WHERE a.status = 'ACTIVE'
+            """)
+        ).fetchall()
+        if not rows:
+            return
+
+        tg_settings = None
+        for r in rows:
+            aid, uid, sym, target, cond, want_tg, want_em, note, uname, uemail, uchat = r
+            ltp = live_quotes.get(sym)
+            if ltp is None:
+                continue
+            try:
+                ltp = float(ltp)
+            except Exception:
+                continue
+            hit = (
+                (cond == "crossing_up" and ltp >= target)
+                or (cond == "crossing_down" and ltp <= target)
+                or (cond == "crossing" and abs(ltp - target) / max(target, 0.01) <= 0.0025)
+            )
+            if not hit:
+                continue
+
+            # Mark TRIGGERED atomically before notifying so multi-worker setups never double-fire
+            upd = db.execute(
+                text("UPDATE price_alerts SET status = 'TRIGGERED', triggered_price = :ltp, triggered_at = CURRENT_TIMESTAMP WHERE id = :aid AND status = 'ACTIVE'"),
+                {"ltp": ltp, "aid": aid},
+            )
+            db.commit()
+            if upd.rowcount == 0:
+                continue
+
+            cond_txt = "crossed above" if cond == "crossing_up" else ("crossed below" if cond == "crossing_down" else "reached")
+            note_line = f"\nNote: {note}" if note else ""
+            msg_tg = (
+                f"<b>AlphaQuant Price Alert — {sym}</b>\n"
+                f"{sym} {cond_txt} <b>₹{target:,.2f}</b>\n"
+                f"Live LTP: <b>₹{ltp:,.2f}</b>{note_line}"
+            )
+            msg_email = (
+                f"AlphaQuant Price Alert — {sym}\n\n"
+                f"{sym} {cond_txt} Rs {target:,.2f}\n"
+                f"Live LTP: Rs {ltp:,.2f}{note_line}\n\n"
+                f"https://alphaquanttechnolgy.com/"
+            )
+
+            if want_tg:
+                if tg_settings is None:
+                    tg_settings = TelegramAlertService.get_settings(db)
+                bot_tok = getattr(tg_settings, "bot_token", None)
+                chat_id = uchat or getattr(tg_settings, "chat_id", None)
+                if bot_tok and chat_id:
+                    threading.Thread(
+                        target=TelegramAlertService.send_message,
+                        args=(bot_tok, chat_id, msg_tg),
+                        daemon=True,
+                    ).start()
+
+            if want_em and uemail:
+                _send_email_async(uemail, f"AlphaQuant Alert: {sym} at ₹{ltp:,.2f}", msg_email)
+    except Exception as e:
+        logger.warning(f"evaluate_price_alerts error: {e}")
+    finally:
+        db.close()
