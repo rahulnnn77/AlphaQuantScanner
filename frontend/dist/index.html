@@ -3183,9 +3183,24 @@ function PublicLandingPage({ onOpenLogin, onOpenRegister, onOpenLegal }) {
         }
         try {
           const n50Res = await api.get('/screener/index-stocks?index=NIFTY%2050');
-          if (n50Res.data && Array.isArray(n50Res.data.stocks) && n50Res.data.stocks.length > 0) {
-            setIndices(n50Res.data.stocks);
-          }
+          const n50List = (n50Res.data && Array.isArray(n50Res.data.stocks)) ? n50Res.data.stocks : [];
+          const seen = new Set();
+          const merged = [];
+          n50List.forEach(s => {
+            if (s && s.symbol && !seen.has(s.symbol)) { seen.add(s.symbol); merged.push(s); }
+          });
+          // Append all Nifty F&O stocks from RS_DATA so ticker covers full Nifty 50 + Nifty F&O
+          const foList = (typeof RS_DATA !== 'undefined' ? RS_DATA : []).filter(s => s.universe === 'both' || s.is_fo);
+          foList.forEach(s => {
+            if (s && s.symbol && !seen.has(s.symbol)) {
+              seen.add(s.symbol);
+              const ltp = Number(s.ltp || 0);
+              const pct = Number(s.change_pct || 0);
+              const chg = ltp > 0 ? +((ltp * pct) / (100 + pct)).toFixed(2) : 0;
+              merged.push({ symbol: s.symbol, ltp, change: chg, change_pct: pct });
+            }
+          });
+          if (merged.length > 0) setIndices(merged);
         } catch (e) {}
         try {
           const tgRes = await api.get('/telegram/config');
@@ -3331,7 +3346,7 @@ function PublicLandingPage({ onOpenLogin, onOpenRegister, onOpenLegal }) {
             </button>
             <div className="flex items-center space-x-2 mr-3 pr-3 border-r border-[#1E293B] shrink-0 text-cyan-400">
               <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse"></span>
-              <span className="font-sans font-bold text-[10px] tracking-wider text-slate-300 uppercase">NIFTY 50</span>
+              <span className="font-sans font-bold text-[10px] tracking-wider text-slate-300 uppercase">NIFTY 50 · F&amp;O</span>
               <button 
                 onClick={() => setIsPaused(!isPaused)} 
                 title={isPaused ? "Play marquee" : "Pause marquee"}
@@ -3344,9 +3359,12 @@ function PublicLandingPage({ onOpenLogin, onOpenRegister, onOpenLegal }) {
             <div className="overflow-hidden flex-1 flex">
               <div 
                 className="ticker-track flex items-center space-x-7 tabular-nums"
-                style={{ animationPlayState: isPaused ? 'paused' : 'running' }}
+                style={{
+                  animationPlayState: isPaused ? 'paused' : 'running',
+                  animationDuration: `${Math.max(140, Math.round(indices.length * 2.8))}s`
+                }}
               >
-                {[...indices, ...indices, ...indices].map((item, idx) => {
+                {[...indices, ...indices].map((item, idx) => {
                   const isBull = item.change >= 0;
                   return (
                     <div key={idx} className="flex items-center space-x-1.5 shrink-0 px-1 font-medium">
@@ -11343,10 +11361,14 @@ function PublicLandingPage({ onOpenLogin, onOpenRegister, onOpenLegal }) {
         .aq-plus-btn:hover{background:var(--accent);border-color:var(--accent);color:#fff}
         .aq-plus-btn .ptip{position:absolute;right:28px;top:50%;transform:translateY(-50%);background:var(--tip);color:var(--tipText);font:11px ui-monospace,monospace;padding:3px 7px;border-radius:4px;white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .12s}
         .aq-plus-btn:hover .ptip{opacity:1}
-        .aq-al-strip{display:flex;flex-wrap:wrap;gap:6px;padding:6px 12px;border-top:1px solid #272d36;background:#0e1218;font-size:11px;align-items:center}
-        .aq-al-chip{display:inline-flex;align-items:center;gap:6px;padding:2px 8px;border-radius:4px;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);color:#fbbf24;font-family:ui-monospace,monospace}
-        .aq-al-chip button{all:unset;cursor:pointer;opacity:.7;padding-left:2px;color:#fca5a5}
+        .aq-al-strip{display:flex;flex-wrap:wrap;gap:6px;padding:6px 12px;border-top:1px solid var(--railLine);background:var(--rail);color:var(--icon);font-size:11px;align-items:center;position:relative;z-index:25}
+        .aq-al-chip{display:inline-flex;align-items:center;gap:6px;padding:2px 8px;border-radius:4px;background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.35);color:#fbbf24;font-family:ui-monospace,monospace}
+        .aq-chart-light .aq-al-strip,.aq-site-light .aq-al-strip{background:#F6F8FA!important;border-top-color:#D5DCE5!important;color:#334155!important}
+        .aq-chart-light .aq-al-chip,.aq-site-light .aq-al-chip{background:rgba(180,83,9,.10)!important;border-color:rgba(180,83,9,.32)!important;color:#B45309!important}
+        .aq-al-chip button{all:unset;cursor:pointer;opacity:.75;padding-left:2px;color:#ef4444}
         .aq-al-chip button:hover{opacity:1}
+        .aq-draw-rail{overflow-y:auto;scrollbar-width:none}
+        .aq-draw-rail::-webkit-scrollbar{display:none}
       `;
       document.head.appendChild(s);
     })();
@@ -11391,10 +11413,21 @@ function PublicLandingPage({ onOpenLogin, onOpenRegister, onOpenLegal }) {
       const [ohlc, setOhlc] = useState(null);
       const [latestMas, setLatestMas] = useState({ e21: null, e50: null, e200: null, hps: null, v20: null });
 
-      // Chart-Only Dark / Light Theme + Drawing Tools State
-      const [chartTheme, setChartTheme] = useState(() => localStorage.getItem('aq_chart_theme') || 'dark');
+      // Chart-Only Dark / Light Theme + Drawing Tools State (synced with site theme)
+      const [chartTheme, setChartTheme] = useState(() => {
+        try {
+          const siteL = localStorage.getItem('aq_hps_light');
+          if (siteL != null) return siteL !== '0' ? 'light' : 'dark';
+        } catch (e) {}
+        return localStorage.getItem('aq_chart_theme') || 'dark';
+      });
       const chartThemeRef = React.useRef(chartTheme);
       chartThemeRef.current = chartTheme;
+      useEffect(() => {
+        const onSiteTheme = (e) => setChartTheme(e.detail ? 'light' : 'dark');
+        window.addEventListener('aq-hps-theme', onSiteTheme);
+        return () => window.removeEventListener('aq-hps-theme', onSiteTheme);
+      }, []);
       const [drawTool, setDrawTool] = useState('cursor');
       const [drawHidden, setDrawHidden] = useState(false);
       const [drawMagnet, setDrawMagnet] = useState(true);
@@ -11412,11 +11445,11 @@ function PublicLandingPage({ onOpenLogin, onOpenRegister, onOpenLegal }) {
       const primRef = React.useRef(null);
       const syncTimerRef = React.useRef(null);
 
-      // Indicator Visibility Toggles
+      // Indicator Visibility Toggles (Default: ONLY HPS Alpha ON; 21/50/200 OFF)
       const [showHpsAlpha, setShowHpsAlpha] = useState(true);
       const [showEma21, setShowEma21] = useState(false);
-      const [showEma50, setShowEma50] = useState(true);
-      const [showEma200, setShowEma200] = useState(true);
+      const [showEma50, setShowEma50] = useState(false);
+      const [showEma200, setShowEma200] = useState(false);
       const [showHvMarks, setShowHvMarks] = useState(true);
       const [showIpoPivot, setShowIpoPivot] = useState(true);
       const stockRef = React.useRef(stock);
@@ -12774,7 +12807,7 @@ function PublicLandingPage({ onOpenLogin, onOpenRegister, onOpenLegal }) {
       React.useEffect(() => {
         if (!visible || candles) return;
         let alive = true;
-        api.get(`/watchlists/history?symbol=${encodeURIComponent(stk.symbol)}&exchange=NSE&period=1d`)
+        api.get(`/watchlists/history?symbol=${encodeURIComponent(stk.symbol)}&exchange=NSE&period=D`)
           .then(res => {
             if (!alive) return;
             const raw = (res.data?.candles || []).filter(c => c.close);
