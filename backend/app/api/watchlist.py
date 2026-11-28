@@ -1204,8 +1204,8 @@ def get_stock_chart_history(
         "1Y": ("1y", "1d"),
         "5Y": ("5y", "1wk"),
         "4H": ("60d", "1h"),
-        "D": ("1y", "1d"),
-        "W": ("2y", "1wk"),
+        "D": ("5y", "1d"),
+        "W": ("10y", "1wk"),
     }
     yf_range, yf_interval = period_map.get(p_norm, ("1mo", "1d"))
 

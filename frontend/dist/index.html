@@ -11330,7 +11330,8 @@ function PublicLandingPage({ onOpenLogin, onOpenRegister, onOpenLegal }) {
       s.textContent = `
         .aq-seg-chart{--bg:#161a20;--rail:#13171d;--railLine:#262c36;--icon:#9aa4b2;--iconHover:#e8eaed;--hoverBg:#222831;--accent:#2962ff;--tip:#1e222d;--tipText:#d1d4dc}
         .aq-seg-chart.aq-light{--bg:#ffffff;--rail:#ffffff;--railLine:#e0e3eb;--icon:#334155;--iconHover:#0f172a;--hoverBg:#f0f3fa;--accent:#2962ff;--tip:#131722;--tipText:#ffffff}
-        .aq-rail{width:42px;flex:none;background:var(--rail);border-right:1px solid var(--railLine);display:flex;flex-direction:column;align-items:center;padding:6px 0;gap:2px;user-select:none;z-index:25}
+        .aq-rail{width:42px;flex:none;background:var(--rail);border-right:1px solid var(--railLine);display:flex;flex-direction:column;align-items:center;padding:6px 0;gap:2px;user-select:none;z-index:25;overflow-y:auto;overflow-x:hidden;scrollbar-width:none;max-height:100%}
+        .aq-rail::-webkit-scrollbar{display:none}
         .aq-rail .sep{width:20px;height:1px;background:var(--railLine);margin:4px 0}
         .aq-tb{all:unset;width:34px;height:32px;border-radius:4px;display:flex;align-items:center;justify-content:center;color:var(--icon);cursor:pointer;position:relative}
         .aq-tb:hover{background:var(--hoverBg);color:var(--iconHover)}
@@ -11361,14 +11362,12 @@ function PublicLandingPage({ onOpenLogin, onOpenRegister, onOpenLegal }) {
         .aq-plus-btn:hover{background:var(--accent);border-color:var(--accent);color:#fff}
         .aq-plus-btn .ptip{position:absolute;right:28px;top:50%;transform:translateY(-50%);background:var(--tip);color:var(--tipText);font:11px ui-monospace,monospace;padding:3px 7px;border-radius:4px;white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .12s}
         .aq-plus-btn:hover .ptip{opacity:1}
-        .aq-al-strip{display:flex;flex-wrap:wrap;gap:6px;padding:6px 12px;border-top:1px solid var(--railLine);background:var(--rail);color:var(--icon);font-size:11px;align-items:center;position:relative;z-index:25}
+        .aq-al-strip{display:flex;flex-wrap:wrap;gap:6px;padding:6px 12px;border-top:1px solid #262c36;background:#13171d;color:#9aa4b2;font-size:11px;align-items:center;position:relative;z-index:30;flex-shrink:0}
         .aq-al-chip{display:inline-flex;align-items:center;gap:6px;padding:2px 8px;border-radius:4px;background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.35);color:#fbbf24;font-family:ui-monospace,monospace}
-        .aq-chart-light .aq-al-strip,.aq-site-light .aq-al-strip{background:#F6F8FA!important;border-top-color:#D5DCE5!important;color:#334155!important}
-        .aq-chart-light .aq-al-chip,.aq-site-light .aq-al-chip{background:rgba(180,83,9,.10)!important;border-color:rgba(180,83,9,.32)!important;color:#B45309!important}
+        .aq-al-strip.aq-al-light{background:#F6F8FA!important;border-top-color:#D5DCE5!important;color:#334155!important}
+        .aq-al-strip.aq-al-light .aq-al-chip{background:rgba(180,83,9,.10)!important;border-color:rgba(180,83,9,.32)!important;color:#B45309!important}
         .aq-al-chip button{all:unset;cursor:pointer;opacity:.75;padding-left:2px;color:#ef4444}
         .aq-al-chip button:hover{opacity:1}
-        .aq-draw-rail{overflow-y:auto;scrollbar-width:none}
-        .aq-draw-rail::-webkit-scrollbar{display:none}
       `;
       document.head.appendChild(s);
     })();
@@ -12520,7 +12519,7 @@ function PublicLandingPage({ onOpenLogin, onOpenRegister, onOpenLegal }) {
               </button>
             </div>
           </div>
-          <div className={`aq-seg-chart flex flex-1 min-h-[300px] relative ${chartTheme === 'light' ? 'aq-light bg-white' : 'bg-[#161a20]'}`}>
+          <div className={`aq-seg-chart flex flex-1 min-h-[300px] relative overflow-hidden ${chartTheme === 'light' ? 'aq-light bg-white' : 'bg-[#161a20]'}`}>
             {/* Left Vertical Drawing Toolbar */}
             <div className="aq-rail">
               <button type="button" className={`aq-tb ${drawTool === 'cursor' ? 'on' : ''}`} onClick={() => drawEngRef.current && drawEngRef.current.setTool('cursor')} aria-label="Cursor">
@@ -12755,7 +12754,7 @@ function PublicLandingPage({ onOpenLogin, onOpenRegister, onOpenLegal }) {
             </div>
           </div>
           {priceAlerts.length > 0 && (
-            <div className="aq-al-strip">
+            <div className={`aq-al-strip ${chartTheme === 'light' ? 'aq-al-light' : ''}`}>
               <span className="text-slate-400">Active Alerts ({priceAlerts.length}):</span>
               {priceAlerts.map(al => (
                 <span key={al.id} className="aq-al-chip">
@@ -12807,7 +12806,7 @@ function PublicLandingPage({ onOpenLogin, onOpenRegister, onOpenLegal }) {
       React.useEffect(() => {
         if (!visible || candles) return;
         let alive = true;
-        api.get(`/watchlists/history?symbol=${encodeURIComponent(stk.symbol)}&exchange=NSE&period=D`)
+        api.get(`/watchlists/history?symbol=${encodeURIComponent(stk.symbol)}&exchange=NSE&period=6M`)
           .then(res => {
             if (!alive) return;
             const raw = (res.data?.candles || []).filter(c => c.close);
