@@ -2624,24 +2624,336 @@ function PublicLandingPage({ onOpenLogin, onOpenRegister, onOpenLegal }) {
     }
 
 
-    function BacktestingLabSection() {
+    function BacktestingLabSection({ user }) {
+      const isAdmin = user && user.role === 'admin';
+      const [previewUserView, setPreviewUserView] = useState(false);
+      const [notifyEmail, setNotifyEmail] = useState(() => (user && user.email) || '');
+      const [notifySaved, setNotifySaved] = useState(() => {
+        try { return localStorage.getItem('aq_bt_notify_email') || ''; } catch (e) { return ''; }
+      });
+      const [notifyErr, setNotifyErr] = useState('');
       const [frameHeight, setFrameHeight] = useState(1650);
+      const [frameReady, setFrameReady] = useState(false);
+      const iframeRef = React.useRef(null);
+
+      const handleNotifySubmit = (e) => {
+        e.preventDefault();
+        const em = (notifyEmail || '').trim();
+        if (!em || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) {
+          setNotifyErr('Please enter a valid email address.');
+          return;
+        }
+        setNotifyErr('');
+        try { localStorage.setItem('aq_bt_notify_email', em); } catch (ex) {}
+        setNotifySaved(em);
+      };
+
+      const getCurLight = () => {
+        try { return localStorage.getItem('aq_hps_light') !== '0'; } catch (e) { return true; }
+      };
+
+      const syncIframeTheme = React.useCallback((isLight) => {
+        try {
+          const doc = iframeRef.current && iframeRef.current.contentDocument;
+          if (!doc || !doc.head || !doc.body || !doc.getElementById('kpiCagr')) return false;
+          let st = doc.getElementById('aq-bt-light-style');
+          if (!st) {
+            st = doc.createElement('style');
+            st.id = 'aq-bt-light-style';
+            st.textContent = `
+              html.aq-bt-light, html.aq-bt-light body {
+                --bg: #EEF1F5;
+                --bg-subtle: #F6F8FA;
+                --bg-card: #F6F8FA;
+                --bg-inner: #EAEFF5;
+                --bg-hover: #E2E8F0;
+                --ink: #161E29;
+                --ink-secondary: #334155;
+                --muted: #64748B;
+                --muted-light: #64748B;
+                --line: #D5DCE5;
+                --line-soft: #E2E8F0;
+                --green: #0F766E;
+                --green-bg: rgba(15, 118, 110, 0.10);
+                --green-border: rgba(15, 118, 110, 0.28);
+                --red: #BE123C;
+                --red-bg: rgba(190, 18, 60, 0.10);
+                --red-border: rgba(190, 18, 60, 0.28);
+                --accent: #0369A1;
+                --accent-soft: rgba(3, 105, 161, 0.10);
+                --accent-border: rgba(3, 105, 161, 0.28);
+                --amber: #B45309;
+                --amber-bg: rgba(180, 83, 9, 0.12);
+                background: #EEF1F5 !important;
+                color: #161E29 !important;
+                color-scheme: light !important;
+              }
+              html.aq-bt-light .bt-res,
+              html.aq-bt-light .bt-panel,
+              html.aq-bt-light .bt-card,
+              html.aq-bt-light .bt-chart-card,
+              html.aq-bt-light .bt-table-card,
+              html.aq-bt-light .bt-config-card {
+                background: #F6F8FA !important;
+                background-image: none !important;
+                border-color: #D5DCE5 !important;
+                box-shadow: none !important;
+              }
+              html.aq-bt-light .cond-box,
+              html.aq-bt-light details.adv-details,
+              html.aq-bt-light .cost-item,
+              html.aq-bt-light .bt-metric,
+              html.aq-bt-light .bt-assump,
+              html.aq-bt-light .bt-chip {
+                background: #EEF1F5 !important;
+                border-color: #D5DCE5 !important;
+              }
+              html.aq-bt-light .bt-bignum,
+              html.aq-bt-light .bt-kpi-val,
+              html.aq-bt-light .bt-panel-title,
+              html.aq-bt-light .sym-badge,
+              html.aq-bt-light .metric-box-val,
+              html.aq-bt-light .bt-hero,
+              html.aq-bt-light .bt-title,
+              html.aq-bt-light .bt-val,
+              html.aq-bt-light h1,
+              html.aq-bt-light h2,
+              html.aq-bt-light h3,
+              html.aq-bt-light strong,
+              html.aq-bt-light b {
+                color: #161E29 !important;
+              }
+              html.aq-bt-light .sym-tag { background: #E6EBF1 !important; color: #334155 !important; }
+              html.aq-bt-light .bt-kpi-val.pos, html.aq-bt-light .pos { color: #0F766E !important; }
+              html.aq-bt-light .bt-kpi-val.neg, html.aq-bt-light .neg { color: #BE123C !important; }
+              html.aq-bt-light .bt-disclosure-pill {
+                background: #FFFFFF !important;
+                color: #334155 !important;
+                border-color: #CBD5E1 !important;
+              }
+              html.aq-bt-light select.aq-select,
+              html.aq-bt-light input.aq-input,
+              html.aq-bt-light .seg-btn {
+                background: #FFFFFF !important;
+                color: #161E29 !important;
+                border-color: #CBD5E1 !important;
+                color-scheme: light !important;
+              }
+              html.aq-bt-light .seg-btn.on {
+                background: #161E29 !important;
+                color: #F8FAFC !important;
+                border-color: #161E29 !important;
+              }
+              html.aq-bt-light .bt-run-btn {
+                background: #161E29 !important;
+                color: #F8FAFC !important;
+                border-color: #161E29 !important;
+                box-shadow: none !important;
+              }
+              html.aq-bt-light .bt-run-btn:hover {
+                background: #0F172A !important;
+                color: #FFFFFF !important;
+              }
+              html.aq-bt-light table { background: #F6F8FA !important; }
+              html.aq-bt-light thead th { background: #E6EBF1 !important; color: #475569 !important; border-color: #D5DCE5 !important; }
+              html.aq-bt-light tbody td { color: #161E29 !important; border-color: #E2E8F0 !important; }
+              html.aq-bt-light tbody tr:hover { background: #EAEFF5 !important; }
+            `;
+            doc.head.appendChild(st);
+          }
+          doc.documentElement.classList.toggle('aq-bt-light', Boolean(isLight));
+          doc.body.classList.toggle('aq-bt-light', Boolean(isLight));
+          setFrameReady(true);
+          return true;
+        } catch (e) { return false; }
+      }, []);
+
       useEffect(() => {
         const onMsg = (e) => {
           if (e.data && e.data.type === 'AQ_BT_HEIGHT' && Number(e.data.height) > 600) {
             setFrameHeight(Number(e.data.height));
+            syncIframeTheme(getCurLight());
           }
         };
+        const onTheme = (e) => syncIframeTheme(Boolean(e.detail));
         window.addEventListener('message', onMsg);
-        return () => window.removeEventListener('message', onMsg);
-      }, []);
+        window.addEventListener('aq-hps-theme', onTheme);
+        // Poll briefly until backtest_preview.html DOM (#kpiCagr) is genuinely loaded, then enforce theme
+        const poll = setInterval(() => {
+          syncIframeTheme(getCurLight());
+        }, 250);
+        return () => {
+          clearInterval(poll);
+          window.removeEventListener('message', onMsg);
+          window.removeEventListener('aq-hps-theme', onTheme);
+        };
+      }, [syncIframeTheme]);
+
+      if (!isAdmin || previewUserView) {
+        return (
+          <section className="w-full max-w-[1600px] mx-auto min-h-[calc(100vh-132px)] flex flex-col justify-between py-4 md:py-6 px-2 md:px-4 font-sans">
+            <div className="flex items-center justify-between pb-4 border-b border-white/[0.08]">
+              <div className="text-[11px] font-mono uppercase tracking-[0.12em] text-slate-400">
+                Strategy Backtest · Release Queue
+              </div>
+              {isAdmin && (
+                <button
+                  type="button"
+                  onClick={() => setPreviewUserView(false)}
+                  className="text-[11.5px] font-mono text-slate-400 hover:text-white underline underline-offset-4 transition-colors"
+                >
+                  Return to Admin Backtester
+                </button>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-center my-auto py-8">
+              <div className="lg:col-span-5 space-y-8">
+                <div className="space-y-3.5">
+                  <h1 className="text-[32px] md:text-[38px] leading-[1.12] font-semibold tracking-tight text-white">
+                    Historical Portfolio Simulation
+                  </h1>
+                  <p className="text-[14px] text-slate-400 leading-relaxed max-w-lg">
+                    Currently under final production deployment for member accounts. Leave your email below to receive a single release notice when access opens.
+                  </p>
+                </div>
+
+                <div>
+                  {notifySaved ? (
+                    <div className="py-3.5 px-4 rounded-md border border-white/[0.1] bg-[#0E1420] flex items-center justify-between gap-4">
+                      <div className="text-[13px] text-slate-200">
+                        Release alert registered for <span className="font-mono font-semibold text-white">{notifySaved}</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => { setNotifySaved(''); setNotifyEmail(notifySaved); }}
+                        className="text-[11.5px] font-mono text-slate-400 hover:text-white underline shrink-0"
+                      >
+                        Edit
+                      </button>
+                    </div>
+                  ) : (
+                    <form onSubmit={handleNotifySubmit} className="space-y-2">
+                      <div className="flex flex-col sm:flex-row gap-2.5">
+                        <input
+                          type="email"
+                          value={notifyEmail}
+                          onChange={(e) => { setNotifyEmail(e.target.value); if (notifyErr) setNotifyErr(''); }}
+                          placeholder="name@domain.com"
+                          className="flex-1 h-10 px-3.5 rounded-md border border-white/[0.14] bg-[#070B13] text-[13px] text-white placeholder-slate-500 focus:outline-none focus:border-slate-300 transition-colors"
+                        />
+                        <button
+                          type="submit"
+                          className="h-10 px-5 rounded-md text-[13px] font-semibold transition-colors shrink-0"
+                          style={{ background: '#161E29', color: '#F8FAFC', border: '1px solid rgba(255,255,255,0.18)' }}
+                        >
+                          Notify me
+                        </button>
+                      </div>
+                      {notifyErr && <div className="text-[11.5px] text-rose-400">{notifyErr}</div>}
+                    </form>
+                  )}
+                </div>
+
+                <div className="pt-2 border-t border-white/[0.08] divide-y divide-white/[0.06] text-[12.5px]">
+                  <div className="py-3 flex items-center justify-between">
+                    <span className="text-slate-300">NSE F&amp;O &amp; Nifty 500 EOD Engine</span>
+                    <span className="font-mono text-[11px] text-emerald-400">Verified</span>
+                  </div>
+                  <div className="py-3 flex items-center justify-between">
+                    <span className="text-slate-300">Indian Statutory Costs (STT, Stamp, Slippage)</span>
+                    <span className="font-mono text-[11px] text-emerald-400">Verified</span>
+                  </div>
+                  <div className="py-3 flex items-center justify-between">
+                    <span className="text-slate-300">Member Account Rollout</span>
+                    <span className="font-mono text-[11px] text-slate-400">In deployment</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="lg:col-span-7">
+                <div className="rounded-lg border border-white/[0.08] bg-[#0E1420] overflow-hidden">
+                  <div className="px-5 py-3 border-b border-white/[0.06] flex items-center justify-between text-[11.5px] font-mono text-slate-400">
+                    <span>HPS Alpha Breakout · 5-Year NSE F&amp;O Simulation</span>
+                    <span>Preview</span>
+                  </div>
+                  <div className="p-5 md:p-6 space-y-5">
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pb-4 border-b border-white/[0.06] font-mono">
+                      <div>
+                        <div className="text-[10px] uppercase tracking-wider text-slate-500">CAGR</div>
+                        <div className="text-[20px] font-semibold text-white mt-0.5">+19.3%</div>
+                      </div>
+                      <div>
+                        <div className="text-[10px] uppercase tracking-wider text-slate-500">Profit Factor</div>
+                        <div className="text-[20px] font-semibold text-white mt-0.5">1.59</div>
+                      </div>
+                      <div>
+                        <div className="text-[10px] uppercase tracking-wider text-slate-500">Max Drawdown</div>
+                        <div className="text-[20px] font-semibold text-rose-400 mt-0.5">-25.8%</div>
+                      </div>
+                      <div>
+                        <div className="text-[10px] uppercase tracking-wider text-slate-500">Executed Trades</div>
+                        <div className="text-[20px] font-semibold text-white mt-0.5">374</div>
+                      </div>
+                    </div>
+
+                    <div className="relative h-64 md:h-72 w-full">
+                      <svg viewBox="0 0 600 220" className="w-full h-full" preserveAspectRatio="none">
+                        <line x1="0" y1="45" x2="600" y2="45" stroke="currentColor" strokeOpacity="0.08" strokeWidth="1" />
+                        <line x1="0" y1="100" x2="600" y2="100" stroke="currentColor" strokeOpacity="0.08" strokeWidth="1" />
+                        <line x1="0" y1="155" x2="600" y2="155" stroke="currentColor" strokeOpacity="0.08" strokeWidth="1" />
+                        <line x1="0" y1="205" x2="600" y2="205" stroke="currentColor" strokeOpacity="0.08" strokeWidth="1" />
+                        <polyline
+                          fill="none"
+                          stroke="#64748B"
+                          strokeWidth="1.3"
+                          strokeDasharray="4 4"
+                          points="0,188 85,182 170,174 255,164 340,154 425,142 510,132 600,122"
+                        />
+                        <polyline
+                          fill="none"
+                          stroke="#0F766E"
+                          strokeWidth="2.2"
+                          points="0,188 60,178 120,168 180,174 240,142 300,128 360,134 420,92 480,72 540,48 600,26"
+                        />
+                      </svg>
+                      <div className="flex items-center justify-between text-[10.5px] font-mono text-slate-500 mt-1.5">
+                        <span>2021</span><span>2022</span><span>2023</span><span>2024</span><span>2025</span><span>2026</span>
+                      </div>
+                    </div>
+
+                    <div className="pt-3 border-t border-white/[0.06] flex items-center justify-between text-[11px] font-mono text-slate-500">
+                      <span>Solid: HPS Alpha · Dashed: NIFTY 50 Benchmark</span>
+                      <span>Sample output</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="pt-4 border-t border-white/[0.06] flex items-center justify-between text-[11px] font-mono text-slate-500">
+              <span>AlphaQuant Quantitative Research</span>
+              <span>NSE Historical Simulation Engine</span>
+            </div>
+          </section>
+        );
+      }
+
       return (
-        <div className="w-full bg-[#0A0E17] overflow-hidden" style={{ height: `${frameHeight}px`, minHeight: '950px' }}>
+        <div className="w-full overflow-hidden rounded-lg relative" style={{ height: `${frameHeight}px`, minHeight: '950px' }}>
+          {!frameReady && (
+            <div className="absolute inset-0 flex items-start justify-center pt-24 text-xs font-mono text-slate-500">
+              Loading Strategy Backtest...
+            </div>
+          )}
           <iframe
+            ref={iframeRef}
+            onLoad={() => syncIframeTheme(getCurLight())}
             src="/backtest_preview.html?embedded=1&v=11"
             title="AlphaQuant Strategy Backtesting Lab"
             scrolling="no"
-            className="w-full h-full border-0 block bg-[#0A0E17]"
+            className="w-full h-full border-0 block transition-opacity duration-150"
+            style={{ opacity: frameReady ? 1 : 0 }}
           />
         </div>
       );
@@ -2661,6 +2973,132 @@ function PublicLandingPage({ onOpenLogin, onOpenRegister, onOpenLegal }) {
       const [selectedStock, setSelectedStock] = useState(null);
       const [isPaused, setIsPaused] = useState(false);
       const [mobileNavOpen, setMobileNavOpen] = useState(false);
+      const [adminMenuOpen, setAdminMenuOpen] = useState(false);
+      const [hpsMenuOpen, setHpsMenuOpen] = useState(false);
+      const [globalQuery, setGlobalQuery] = useState('');
+      const [globalResults, setGlobalResults] = useState([]);
+      const [globalOpen, setGlobalOpen] = useState(false);
+      const [wlAddedMap, setWlAddedMap] = useState({});
+      const [wlAddingSym, setWlAddingSym] = useState('');
+      const globalSearchRef = React.useRef(null);
+
+      const handleQuickAddWatchlist = async (e, stk) => {
+        e.stopPropagation();
+        if (!stk || !stk.symbol || wlAddingSym === stk.symbol) return;
+        setWlAddingSym(stk.symbol);
+        try {
+          const wRes = await api.get('/watchlists');
+          const lists = wRes.data?.data?.watchlists || wRes.data?.watchlists || (Array.isArray(wRes.data) ? wRes.data : []);
+          let targetId = lists.length > 0 ? lists[0].id : null;
+          if (!targetId) {
+            const cRes = await api.post('/watchlists', { name: 'Core Portfolio Watchlist' });
+            const created = cRes.data?.data?.watchlists || cRes.data?.watchlists || [];
+            targetId = cRes.data?.id || (created[0] && created[0].id);
+          }
+          if (targetId) {
+            await api.post(`/watchlists/${targetId}/stocks`, {
+              symbol: stk.symbol,
+              exchange: 'NSE',
+              company_name: stk.name || stk.symbol,
+              sector: stk.sector || 'Equities'
+            });
+            setWlAddedMap(prev => ({ ...prev, [stk.symbol]: true }));
+          }
+        } catch (err) {
+          if (err?.response?.status === 400 || err?.response?.status === 409) {
+            setWlAddedMap(prev => ({ ...prev, [stk.symbol]: true }));
+          }
+        } finally {
+          setWlAddingSym('');
+        }
+      };
+
+      useEffect(() => {
+        const q = globalQuery.trim();
+        if (!q) { setGlobalResults([]); return; }
+        const ql = q.toLowerCase();
+        const majorIdx = [
+          { symbol: 'NIFTY', name: 'NIFTY 50 Index', sector: 'Index', isIndex: true },
+          { symbol: 'BANKNIFTY', name: 'NIFTY Bank Index', sector: 'Index', isIndex: true },
+          { symbol: 'FINNIFTY', name: 'NIFTY Financial Services', sector: 'Index', isIndex: true },
+          { symbol: 'INDIAVIX', name: 'India VIX Volatility Index', sector: 'Index', isIndex: true },
+          { symbol: 'NIFTYIT', name: 'NIFTY IT Index', sector: 'Index', isIndex: true },
+          { symbol: 'NIFTYMIDCAP100', name: 'NIFTY Midcap 100', sector: 'Index', isIndex: true },
+          ...(typeof SECTOR_INDICES_DATA !== 'undefined' ? SECTOR_INDICES_DATA.map(x => ({
+            symbol: x.symbol, name: x.name, sector: x.sector || 'Sector Index', ltp: x.ltp, change_pct: x.change_pct, isIndex: true
+          })) : [])
+        ];
+        const idxSeen = new Set();
+        const idxMatches = majorIdx.filter(x => {
+          if (!x.symbol || idxSeen.has(x.symbol)) return false;
+          const hit = x.symbol.toLowerCase().includes(ql) || (x.name && x.name.toLowerCase().includes(ql)) || (x.sector && x.sector.toLowerCase().includes(ql));
+          if (hit) idxSeen.add(x.symbol);
+          return hit;
+        }).slice(0, 4);
+
+        const local = (typeof RS_DATA !== 'undefined' ? RS_DATA : [])
+          .filter(s => (s.symbol && s.symbol.toLowerCase().includes(ql)) || (s.name && s.name.toLowerCase().includes(ql)))
+          .sort((a, b) => {
+            const as = a.symbol.toLowerCase().startsWith(ql) ? 0 : 1;
+            const bs = b.symbol.toLowerCase().startsWith(ql) ? 0 : 1;
+            return as - bs;
+          })
+          .slice(0, 8 - idxMatches.length)
+          .map(s => ({ symbol: s.symbol, name: s.name, sector: s.sector, ltp: s.ltp, change_pct: s.change_pct, isIndex: false }));
+        const combined = [...idxMatches, ...local];
+        setGlobalResults(combined);
+        if (q.length >= 2 && combined.length < 5) {
+          let alive = true;
+          const t = setTimeout(() => {
+            api.get(`/watchlists/search?q=${encodeURIComponent(q)}&exchange=NSE`)
+              .then(res => {
+                if (!alive) return;
+                const apiRows = (res.data?.results || res.data || []).slice(0, 8).map(r => ({
+                  symbol: r.symbol || r.tradingsymbol, name: r.name || r.company_name || r.symbol,
+                  sector: r.sector || r.exchange || 'NSE', ltp: r.ltp, change_pct: r.change_pct, isIndex: false
+                })).filter(r => r.symbol);
+                const seen = new Set(combined.map(x => x.symbol));
+                const merged = [...combined];
+                apiRows.forEach(r => { if (!seen.has(r.symbol)) { seen.add(r.symbol); merged.push(r); } });
+                setGlobalResults(merged.slice(0, 8));
+              }).catch(() => {});
+          }, 180);
+          return () => { alive = false; clearTimeout(t); };
+        }
+      }, [globalQuery]);
+
+      useEffect(() => {
+        const onKey = (e) => {
+          if (e.key === '/' && document.activeElement && !['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName)) {
+            e.preventDefault();
+            if (globalSearchRef.current) globalSearchRef.current.focus();
+          }
+          if (e.key === 'Escape') setGlobalOpen(false);
+        };
+        window.addEventListener('keydown', onKey);
+        return () => window.removeEventListener('keydown', onKey);
+      }, []);
+
+      const handlePickGlobalStock = (stk) => {
+        if (!stk || !stk.symbol) return;
+        setGlobalOpen(false);
+        setGlobalQuery('');
+        setSelectedStock({
+          symbol: stk.symbol,
+          name: stk.name || stk.symbol,
+          ltp: stk.ltp || 0,
+          change_pct: stk.change_pct || 0,
+          timeframe: 'DAILY'
+        });
+      };
+      const [hpsLight, setHpsLight] = useState(() => {
+        try { return localStorage.getItem('aq_hps_light') !== '0'; } catch (e) { return true; }
+      });
+      const updateHpsLight = (val) => {
+        setHpsLight(val);
+        try { localStorage.setItem('aq_hps_light', val ? '1' : '0'); } catch (e) {}
+        window.dispatchEvent(new CustomEvent('aq-hps-theme', { detail: val }));
+      };
       const [legalModal, setLegalModal] = useState(null);
       const [showWelcomeTour, setShowWelcomeTour] = useState(() => {
         const saved = localStorage.getItem("alphaquant_user");
@@ -2863,6 +3301,8 @@ function PublicLandingPage({ onOpenLogin, onOpenRegister, onOpenLegal }) {
       const handleSelectNav = (navKey) => {
         setActiveNav(navKey);
         setMobileNavOpen(false);
+        setAdminMenuOpen(false);
+        setHpsMenuOpen(false);
       };
 
       return (
@@ -2875,7 +3315,7 @@ function PublicLandingPage({ onOpenLogin, onOpenRegister, onOpenLegal }) {
               }} 
             />
           )}
-          <div className="flex flex-col h-screen bg-[#0A0E17] text-slate-100 font-sans apple-app-shell">
+          <div className={`flex flex-col h-screen bg-[#0A0E17] text-slate-100 font-sans apple-app-shell ${hpsLight ? 'aq-site-light' : ''}`}>
           
           {/* Top Running Market Ticker Bar (Nifty 50 Constituents) */}
           <div className="h-8 bg-[#070A10] border-b border-[#161F30] flex items-center px-3 overflow-hidden select-none text-[11px] font-mono shrink-0 ticker-bar z-30">
@@ -2922,29 +3362,275 @@ function PublicLandingPage({ onOpenLogin, onOpenRegister, onOpenLegal }) {
                 })}
               </div>
             </div>
-            {/* Top Right Quick Session Badges */}
-            <div className="hidden md:flex items-center space-x-4 pl-4 border-l border-[#161F30] shrink-0 font-mono text-[11px]">
-              <button
-                onClick={() => { if (user.role === 'admin') handleSelectNav('broker_auth'); }}
-                className={`flex items-center space-x-1.5 px-2 py-0.5 rounded border transition-colors ${
-                  brokerSession.authenticated
-                    ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
-                    : 'bg-rose-500/10 border-rose-500/30 text-rose-300'
-                } ${user.role === 'admin' ? 'cursor-pointer hover:opacity-90' : 'cursor-default'}`}
-                title={user.role === 'admin' ? 'Click to open Dhan Broker Connect' : 'Broker Feed Status'}
-              >
-                <span className={`w-1.5 h-1.5 rounded-full ${brokerSession.authenticated ? 'bg-emerald-400 animate-pulse' : 'bg-rose-400'}`}></span>
-                <span className="text-slate-300">Dhan Broker:</span>
-                <span className="font-bold">
-                  {brokerSession.authenticated
-                    ? `LIVE${brokerSession.client_id ? ` (${brokerSession.client_id})` : ''}`
-                    : 'NOT CONNECTED'}
-                </span>
-              </button>
-            </div>
+            {/* Top Right Quick Session Badges (Admin only) */}
+            {user.role === 'admin' && (
+              <div className="hidden md:flex items-center space-x-4 pl-4 border-l border-[#161F30] shrink-0 font-mono text-[11px]">
+                <button
+                  onClick={() => handleSelectNav('broker_auth')}
+                  className={`flex items-center space-x-1.5 px-2 py-0.5 rounded border transition-colors cursor-pointer hover:opacity-90 ${
+                    brokerSession.authenticated
+                      ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
+                      : 'bg-rose-500/10 border-rose-500/30 text-rose-300'
+                  }`}
+                  title="Click to open Dhan Broker Connect"
+                >
+                  <span className={`w-1.5 h-1.5 rounded-full ${brokerSession.authenticated ? 'bg-emerald-400 animate-pulse' : 'bg-rose-400'}`}></span>
+                  <span className="text-slate-300">Dhan Broker:</span>
+                  <span className="font-bold">
+                    {brokerSession.authenticated
+                      ? `LIVE${brokerSession.client_id ? ` (${brokerSession.client_id})` : ''}`
+                      : 'NOT CONNECTED'}
+                  </span>
+                </button>
+              </div>
+            )}
           </div>
 
-          {/* App Body: Left Sidebar + Main Content Viewport */}
+          {/* Desktop Top Navigation Bar (All Real AlphaQuant Modules, Directly Below Live Ticker) */}
+          <header className="hidden md:flex items-center justify-between h-12 px-5 bg-[#0A0E17] border-b border-white/[0.07] shrink-0 select-none z-30">
+            <div className="flex items-center space-x-5 h-full min-w-0">
+              <div
+                onClick={() => handleSelectNav('breadth')}
+                className="flex items-center cursor-pointer shrink-0 pr-2"
+              >
+                <AlphaQuantLogo size="sm" showSubtitle={false} variant="dark" />
+              </div>
+
+              <nav className="flex items-center space-x-5 h-full text-[12.5px]">
+                {[
+                  ['breadth', 'Market Breadth'],
+                  ['screener', 'Screener'],
+                ].map(([key, label]) => (
+                  <button
+                    key={key}
+                    onClick={() => handleSelectNav(key)}
+                    className={`h-full inline-flex items-center border-b-2 whitespace-nowrap transition-colors ${
+                      activeNav === key
+                        ? 'border-cyan-400 text-white font-semibold'
+                        : 'border-transparent text-slate-400 hover:text-slate-200 font-medium'
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+
+                {/* HPS Dropdown: HPS / HPS Selected / HPS Mean */}
+                <div className="relative h-full flex items-center shrink-0">
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setAdminMenuOpen(false); setHpsMenuOpen(!hpsMenuOpen); }}
+                    className={`h-full inline-flex items-center space-x-1 border-b-2 whitespace-nowrap transition-colors ${
+                      ['hps', 'hps_selected', 'hps_mean_reversion'].includes(activeNav)
+                        ? 'border-cyan-400 text-white font-semibold'
+                        : 'border-transparent text-slate-400 hover:text-slate-200 font-medium'
+                    }`}
+                  >
+                    <span>{activeNav === 'hps_selected' ? 'HPS Selected' : activeNav === 'hps_mean_reversion' ? 'HPS Mean Reversion' : 'HPS'}</span>
+                    <span className="text-[10px] opacity-60">▾</span>
+                  </button>
+                  {hpsMenuOpen && (
+                    <>
+                      <div className="fixed inset-0 z-40" onClick={() => setHpsMenuOpen(false)} />
+                      <div className="absolute left-0 top-[calc(100%+4px)] w-52 bg-[#0E1420] border border-white/[0.1] rounded-lg shadow-2xl p-1.5 z-50 flex flex-col space-y-0.5 text-[12.5px]">
+                        <button onClick={() => handleSelectNav('hps')} className={`w-full flex items-center justify-between px-3 py-2 rounded-md transition-colors ${activeNav === 'hps' ? 'bg-white/[0.08] text-white font-semibold' : 'text-slate-300 hover:bg-white/[0.05] hover:text-white'}`}>
+                          <span>HPS</span>
+                          {activeNav === 'hps' && <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>}
+                        </button>
+                        <button onClick={() => handleSelectNav('hps_selected')} className={`w-full flex items-center justify-between px-3 py-2 rounded-md transition-colors ${activeNav === 'hps_selected' ? 'bg-white/[0.08] text-white font-semibold' : 'text-slate-300 hover:bg-white/[0.05] hover:text-white'}`}>
+                          <span>HPS Selected</span>
+                          {activeNav === 'hps_selected' && <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>}
+                        </button>
+                        <button onClick={() => handleSelectNav('hps_mean_reversion')} className={`w-full flex items-center justify-between px-3 py-2 rounded-md transition-colors ${activeNav === 'hps_mean_reversion' ? 'bg-white/[0.08] text-white font-semibold' : 'text-slate-300 hover:bg-white/[0.05] hover:text-white'}`}>
+                          <span>HPS Mean Reversion</span>
+                          {activeNav === 'hps_mean_reversion' && <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>}
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                {[
+                  ['weekly_position', 'Weekly Position'],
+                  ['backtest', 'Strategy Backtest'],
+                  ['watchlist', 'Watchlist'],
+                ].map(([key, label]) => (
+                  <button
+                    key={key}
+                    onClick={() => handleSelectNav(key)}
+                    className={`h-full inline-flex items-center border-b-2 whitespace-nowrap transition-colors ${
+                      activeNav === key
+                        ? 'border-cyan-400 text-white font-semibold'
+                        : 'border-transparent text-slate-400 hover:text-slate-200 font-medium'
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </nav>
+
+              {user.role === 'admin' && (
+                <div className="relative h-full flex items-center shrink-0 text-[12.5px]">
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setHpsMenuOpen(false); setAdminMenuOpen(!adminMenuOpen); }}
+                    className={`h-full inline-flex items-center space-x-1.5 border-b-2 whitespace-nowrap transition-colors ${
+                      ['rules', 'access_management', 'users', 'broker_auth', 'telegram_alerts'].includes(activeNav)
+                        ? 'border-cyan-400 text-white font-semibold'
+                        : 'border-transparent text-slate-400 hover:text-slate-200 font-medium'
+                    }`}
+                  >
+                    <span>Admin</span>
+                    {pendingRequestsCount > 0 && (
+                      <span className="px-1.5 py-0 rounded-full text-[10px] font-mono bg-amber-500 text-slate-950 font-bold">
+                        {pendingRequestsCount}
+                      </span>
+                    )}
+                    <span className="text-[10px] opacity-60">▾</span>
+                  </button>
+                  {adminMenuOpen && (
+                    <>
+                      <div className="fixed inset-0 z-40" onClick={() => setAdminMenuOpen(false)} />
+                      <div className="absolute left-0 top-[calc(100%+4px)] w-52 bg-[#0E1420] border border-white/[0.1] rounded-lg shadow-2xl p-1.5 z-50 flex flex-col space-y-0.5 text-[12.5px]">
+                        <button onClick={() => handleSelectNav('rules')} className={`w-full text-left px-3 py-2 rounded-md transition-colors ${activeNav === 'rules' ? 'bg-white/[0.08] text-white font-medium' : 'text-slate-300 hover:bg-white/[0.05] hover:text-white'}`}>Screener Rules</button>
+                        <button onClick={() => handleSelectNav('access_management')} className={`w-full flex items-center justify-between px-3 py-2 rounded-md transition-colors ${activeNav === 'access_management' ? 'bg-white/[0.08] text-white font-medium' : 'text-slate-300 hover:bg-white/[0.05] hover:text-white'}`}>
+                          <span>User Access Control</span>
+                          {pendingRequestsCount > 0 && <span className="px-1.5 rounded-full text-[10px] font-mono bg-amber-500 text-slate-950 font-bold">{pendingRequestsCount}</span>}
+                        </button>
+                        <button onClick={() => handleSelectNav('users')} className={`w-full text-left px-3 py-2 rounded-md transition-colors ${activeNav === 'users' ? 'bg-white/[0.08] text-white font-medium' : 'text-slate-300 hover:bg-white/[0.05] hover:text-white'}`}>Team Accounts</button>
+                        <div className="h-px bg-white/[0.06] my-1" />
+                        <button onClick={() => handleSelectNav('broker_auth')} className={`w-full flex items-center justify-between px-3 py-2 rounded-md transition-colors ${activeNav === 'broker_auth' ? 'bg-white/[0.08] text-white font-medium' : 'text-slate-300 hover:bg-white/[0.05] hover:text-white'}`}>
+                          <span>Broker Connect</span>
+                          <span className={`w-1.5 h-1.5 rounded-full ${brokerSession.authenticated ? 'bg-emerald-400' : 'bg-rose-400'}`}></span>
+                        </button>
+                        <button onClick={() => handleSelectNav('telegram_alerts')} className={`w-full flex items-center justify-between px-3 py-2 rounded-md transition-colors ${activeNav === 'telegram_alerts' ? 'bg-white/[0.08] text-white font-medium' : 'text-slate-300 hover:bg-white/[0.05] hover:text-white'}`}>
+                          <span>Telegram Alerts</span>
+                          <span className={`w-1.5 h-1.5 rounded-full ${telegramActive ? 'bg-emerald-400' : 'bg-amber-400'}`}></span>
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-center space-x-3 shrink-0 pl-4 border-l border-white/[0.06] text-[12px]">
+              {/* Global Dashboard Stock Search */}
+              <div className="relative">
+                <div className="relative flex items-center">
+                  <svg className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                  <input
+                    ref={globalSearchRef}
+                    type="text"
+                    value={globalQuery}
+                    onFocus={() => setGlobalOpen(true)}
+                    onChange={(e) => { setGlobalQuery(e.target.value); setGlobalOpen(true); }}
+                    onKeyDown={(e) => { if (e.key === 'Enter' && globalResults.length > 0) handlePickGlobalStock(globalResults[0]); }}
+                    placeholder="Search stock or index... (/)"
+                    className="w-44 lg:w-52 pl-8 pr-6 py-1 rounded-md border border-white/[0.12] bg-[#070B13] text-[12px] text-slate-200 placeholder-slate-500 focus:outline-none focus:border-cyan-400 transition-colors"
+                  />
+                  {globalQuery && (
+                    <button type="button" onClick={() => { setGlobalQuery(''); setGlobalResults([]); }} className="absolute right-2 text-[10px] text-slate-400 hover:text-white">✕</button>
+                  )}
+                </div>
+                {globalOpen && globalQuery.trim().length > 0 && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setGlobalOpen(false)} />
+                    <div className="absolute right-0 top-[calc(100%+6px)] w-[360px] bg-[#0E1420] border border-white/[0.1] rounded-lg shadow-xl overflow-hidden z-50">
+                      {globalResults.length === 0 ? (
+                        <div className="px-3.5 py-4 text-center text-[11.5px] text-slate-400">No matches for "{globalQuery.trim()}"</div>
+                      ) : (() => {
+                        const idxRows = globalResults.filter(x => x.isIndex);
+                        const eqRows = globalResults.filter(x => !x.isIndex);
+                        const renderRow = (s) => {
+                          const chg = Number(s.change_pct || 0);
+                          const isAdded = Boolean(wlAddedMap[s.symbol]);
+                          const isBusy = wlAddingSym === s.symbol;
+                          return (
+                            <div
+                              key={s.symbol}
+                              onClick={() => handlePickGlobalStock(s)}
+                              className="group px-3.5 py-2 flex items-center justify-between gap-3 text-left hover:bg-white/[0.05] cursor-pointer transition-colors"
+                            >
+                              <div className="min-w-0 flex-1">
+                                <div className="flex items-baseline gap-2">
+                                  <span className="font-mono font-semibold text-[12.5px] text-white tracking-tight">{s.symbol}</span>
+                                  <span className="text-[11px] text-slate-400 truncate">{s.name}</span>
+                                </div>
+                                {!s.isIndex && s.sector && (
+                                  <div className="text-[10px] text-slate-500 truncate leading-tight mt-0.5">{s.sector}</div>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-2.5 shrink-0">
+                                {s.ltp != null && (
+                                  <div className="text-right font-mono leading-tight">
+                                    <div className="text-[12px] font-medium text-white">₹{Number(s.ltp).toLocaleString('en-IN')}</div>
+                                    <div className={`text-[10px] ${chg >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>{chg >= 0 ? '+' : ''}{chg.toFixed(2)}%</div>
+                                  </div>
+                                )}
+                                <button
+                                  type="button"
+                                  onClick={(e) => handleQuickAddWatchlist(e, s)}
+                                  disabled={isBusy || isAdded}
+                                  title={isAdded ? 'Added to Watchlist' : 'Add to Watchlist'}
+                                  className={`w-6 h-6 rounded flex items-center justify-center text-[13px] font-mono transition-colors ${
+                                    isAdded
+                                      ? 'text-emerald-400 bg-emerald-500/10'
+                                      : 'text-slate-400 hover:text-white hover:bg-white/[0.08]'
+                                  }`}
+                                >
+                                  {isAdded ? '✓' : (isBusy ? '·' : '+')}
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        };
+                        return (
+                          <div className="max-h-80 overflow-y-auto py-1">
+                            {idxRows.length > 0 && (
+                              <div>
+                                <div className="px-3.5 pt-1.5 pb-1 text-[10px] font-mono uppercase tracking-wider text-slate-500">Indices</div>
+                                {idxRows.map(renderRow)}
+                              </div>
+                            )}
+                            {eqRows.length > 0 && (
+                              <div className={idxRows.length > 0 ? 'mt-1 pt-1 border-t border-white/[0.06]' : ''}>
+                                <div className="px-3.5 pt-1.5 pb-1 text-[10px] font-mono uppercase tracking-wider text-slate-500">Stocks</div>
+                                {eqRows.map(renderRow)}
+                              </div>
+                            )}
+                            <div className="px-3.5 py-1.5 mt-1 border-t border-white/[0.06] flex items-center justify-between text-[10px] font-mono text-slate-500">
+                              <span>Enter to open chart</span>
+                              <span>+ add to watchlist</span>
+                            </div>
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  </>
+                )}
+              </div>
+
+              <div className="inline-flex items-center p-0.5 rounded-md border border-white/[0.12] bg-[#070B13] text-[11px]" role="group" aria-label="Theme" title="Switch Light / Dark theme across all screens">
+                <button type="button" onClick={() => updateHpsLight(false)} className={`px-2 py-0.5 rounded transition-colors ${!hpsLight ? 'bg-white/[0.16] text-white font-semibold' : 'text-slate-400 hover:text-slate-200'}`}>Dark</button>
+                <button type="button" onClick={() => updateHpsLight(true)} className={`px-2 py-0.5 rounded transition-colors ${hpsLight ? 'bg-white text-slate-900 font-semibold' : 'text-slate-400 hover:text-slate-200'}`}>Light</button>
+              </div>
+              <button
+                onClick={() => handleSelectNav('profile')}
+                className={`px-2.5 py-1 rounded-md transition-colors ${activeNav === 'profile' ? 'bg-white/[0.08] text-white font-medium' : 'text-slate-300 hover:text-white hover:bg-white/[0.04]'}`}
+              >
+                {user.username}
+              </button>
+              <button
+                onClick={handleLogout}
+                title="Sign Out"
+                className="text-slate-500 hover:text-slate-200 transition-colors"
+              >
+                Sign Out
+              </button>
+            </div>
+          </header>
+
+          {/* App Body: Mobile Drawer Only + Full-Width Main Content Viewport */}
           <div className="flex flex-1 min-h-0 overflow-hidden relative">
             {/* Mobile Backdrop Overlay */}
             {mobileNavOpen && (
@@ -2954,9 +3640,9 @@ function PublicLandingPage({ onOpenLogin, onOpenRegister, onOpenLegal }) {
               />
             )}
 
-            {/* Left Navigation Sidebar */}
-            <aside className={`fixed md:static inset-y-0 left-0 w-60 bg-[#0A0E17] border-r border-white/[0.06] flex flex-col justify-between shrink-0 select-none z-40 md:z-20 transform transition-transform duration-300 ease-out ${
-              mobileNavOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
+            {/* Mobile-Only Slide-Over Navigation Sidebar */}
+            <aside className={`fixed md:hidden inset-y-0 left-0 w-60 bg-[#0A0E17] border-r border-white/[0.06] flex flex-col justify-between shrink-0 select-none z-40 transform transition-transform duration-300 ease-out ${
+              mobileNavOpen ? 'translate-x-0' : '-translate-x-full'
             }`}>
               <div>
                 {/* Brand Logo Header */}
@@ -3165,7 +3851,39 @@ function PublicLandingPage({ onOpenLogin, onOpenRegister, onOpenLegal }) {
             {/* Main Content Viewport */}
             <div className="flex-1 flex flex-col min-w-0 overflow-hidden bg-[#0A0E17]">
               {/* Main Content Area */}
-              <main id="apple-main-viewport" className="flex-1 overflow-y-auto p-4 md:p-5 space-y-6">
+              <main id="apple-main-viewport" className="flex-1 overflow-y-auto p-4 md:p-5 space-y-6 transition-colors">
+                <div className="flex md:hidden items-center justify-between gap-2 -mb-3">
+                  <div className="relative flex-1">
+                    <input
+                      type="text"
+                      value={globalQuery}
+                      onFocus={() => setGlobalOpen(true)}
+                      onChange={(e) => { setGlobalQuery(e.target.value); setGlobalOpen(true); }}
+                      onKeyDown={(e) => { if (e.key === 'Enter' && globalResults.length > 0) handlePickGlobalStock(globalResults[0]); }}
+                      placeholder="Search any NSE stock..."
+                      className="w-full px-3 py-1.5 rounded-md border border-white/[0.12] bg-[#070B13] text-[12px] text-slate-200 placeholder-slate-500 focus:outline-none"
+                    />
+                    {globalOpen && globalQuery.trim().length > 0 && globalResults.length > 0 && (
+                      <div className="absolute left-0 right-0 top-[calc(100%+4px)] bg-[#0E1420] border border-white/[0.12] rounded-lg shadow-2xl overflow-hidden z-50 max-h-60 overflow-y-auto divide-y divide-white/[0.05]">
+                        {globalResults.map((s) => {
+                          const isAdded = Boolean(wlAddedMap[s.symbol]);
+                          return (
+                            <div key={s.symbol} onClick={() => handlePickGlobalStock(s)} className="w-full px-3 py-2 flex items-center justify-between gap-2 text-left text-[12px] cursor-pointer">
+                              <span className="font-mono font-semibold text-white truncate">{s.symbol} <span className="font-sans font-normal text-slate-400 ml-1">{s.name}</span></span>
+                              <button type="button" onClick={(e) => handleQuickAddWatchlist(e, s)} className={`shrink-0 px-2 py-0.5 rounded border text-[10px] font-mono font-semibold ${isAdded ? 'border-emerald-500/40 text-emerald-400' : 'border-white/[0.15] text-slate-200'}`}>
+                                {isAdded ? 'Added' : '+ WL'}
+                              </button>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                  <div className={`inline-flex items-center p-0.5 rounded-md border text-[11px] shrink-0 ${hpsLight ? 'border-[#E6E8EC] bg-white' : 'border-white/[0.1] bg-[#070B13]'}`}>
+                    <button type="button" onClick={() => updateHpsLight(false)} className={`px-2.5 py-0.5 rounded ${!hpsLight ? 'bg-white/[0.14] text-white font-semibold' : 'text-slate-500'}`}>Dark</button>
+                    <button type="button" onClick={() => updateHpsLight(true)} className={`px-2.5 py-0.5 rounded ${hpsLight ? 'bg-[#111827] text-white font-semibold' : 'text-slate-400'}`}>Light</button>
+                  </div>
+                </div>
                 <div key={activeNav} className="apple-page-view space-y-6">
                   {activeNav === 'breadth' && (
                     <MarketBreadthSection onSelectStock={setSelectedStock} />
@@ -3186,7 +3904,7 @@ function PublicLandingPage({ onOpenLogin, onOpenRegister, onOpenLegal }) {
                     <WeeklyPositionSection />
                   )}
                   {activeNav === 'backtest' && (
-                    <BacktestingLabSection />
+                    <BacktestingLabSection user={user} />
                   )}
                   {activeNav === 'watchlist' && (
                     <WatchlistSection user={user} />
@@ -3639,58 +4357,9 @@ function PublicLandingPage({ onOpenLogin, onOpenRegister, onOpenLegal }) {
               <h2 className="text-sm font-bold text-white tracking-wide uppercase">Market Breadth Analyser</h2>
             </div>
             <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
-            <div className="hidden md:block text-[11px] font-mono text-slate-400 whitespace-nowrap">
-              {breadthData?.candle_time || "Live Market Session"}
-            </div>
-{/* ===== NEW: Market Breadth Search ===== */}
-          <div className="relative w-full sm:w-64">
-            <div className={`flex items-center h-8 px-2.5 rounded-lg bg-[#0B111D] border transition-colors ${mbFocus ? 'border-blue-500/60' : 'border-[#1A2538]'}`}>
-              <svg className="w-4 h-4 text-slate-500 mr-2.5 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
-              <input
-                value={mbQuery}
-                onChange={e => setMbQuery(e.target.value)}
-                onFocus={() => setMbFocus(true)}
-                onBlur={() => setTimeout(() => setMbFocus(false), 150)}
-                onKeyDown={e => { if (e.key === 'Escape') { setMbQuery(''); e.target.blur(); } }}
-                placeholder="Search sector or stock"
-                className="flex-1 min-w-0 bg-transparent text-xs text-slate-100 placeholder-slate-500 focus:outline-none"
-              />
-              {mbQuery && (
-                <button onMouseDown={e => e.preventDefault()} onClick={() => setMbQuery('')} className="text-[11px] text-slate-500 hover:text-slate-200 px-1.5">Clear</button>
-              )}
-            </div>
-            {mbFocus && mbQuery.trim() && (
-              <div className="absolute right-0 w-full sm:w-80 mt-1 z-50 rounded-lg bg-[#0B111D] border border-[#1A2538] shadow-2xl overflow-hidden max-h-[360px] overflow-y-auto">
-                {mbResults.sectors.length === 0 && mbResults.stocks.length === 0 && (
-                  <div className="px-3.5 py-3 text-xs text-slate-500">No matches for "{mbQuery}"</div>
-                )}
-                {mbResults.sectors.length > 0 && (
-                  <div>
-                    <div className="px-3.5 pt-2.5 pb-1 text-[10px] uppercase tracking-wider text-slate-500 font-semibold">Sectors and indices</div>
-                    {mbResults.sectors.map(i => (
-                      <button key={i.symbol} onMouseDown={e => e.preventDefault()} onClick={() => { handleIndexClick(i); setMbQuery(''); }}
-                        className="w-full flex items-center justify-between px-3.5 py-2 text-left hover:bg-white/[0.04]">
-                        <span className="text-[13px] text-slate-200">{i.symbol}<span className="ml-2 text-[11px] text-slate-500">{i.name}</span></span>
-                        <span className={`text-xs font-mono tabular-nums ${mbClr(i.change_pct)}`}>{mbPct(i.change_pct)}</span>
-                      </button>
-                    ))}
-                  </div>
-                )}
-                {mbResults.stocks.length > 0 && (
-                  <div className="border-t border-[#1A2538]">
-                    <div className="px-3.5 pt-2.5 pb-1 text-[10px] uppercase tracking-wider text-slate-500 font-semibold">Stocks</div>
-                    {mbResults.stocks.map(s => (
-                      <button key={s.symbol} onMouseDown={e => e.preventDefault()} onClick={() => { onSelectStock(s); setMbQuery(''); }}
-                        className="w-full flex items-center justify-between px-3.5 py-2 text-left hover:bg-white/[0.04]">
-                        <span className="text-[13px] text-slate-200 truncate">{s.symbol}<span className="ml-2 text-[11px] text-slate-500">{s.name || s.company_name || ''}</span></span>
-                        <span className={`text-xs font-mono tabular-nums ${mbClr(s.change_pct)}`}>{s.change_pct != null ? mbPct(s.change_pct) : ''}</span>
-                      </button>
-                    ))}
-                  </div>
-                )}
+              <div className="hidden md:block text-[11px] font-mono text-slate-400 whitespace-nowrap">
+                {breadthData?.candle_time || "Live Market Session"}
               </div>
-            )}
-          </div>
             </div>
           </div>
 
@@ -4689,107 +5358,46 @@ function PublicLandingPage({ onOpenLogin, onOpenRegister, onOpenLegal }) {
       ];
 
       return (
-        <section className="space-y-6 max-w-7xl mx-auto py-2 px-1 font-sans apple-page-view">
-          {/* Header Section */}
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-5 pb-6 border-b border-white/[0.08]">
-            <div className="space-y-2">
-              <div className="flex items-center space-x-2.5">
-                <span className="inline-flex items-center justify-center w-2 h-2 rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.7)] animate-pulse"></span>
-                <span className="text-[11px] font-mono uppercase tracking-widest text-cyan-400 font-semibold">
-                  Institutional Breakout Architecture
-                </span>
-                <span className="text-slate-600">·</span>
-                <span className="text-[11px] font-mono text-slate-400">{lastUpdated || 'Live Terminal'}</span>
+        <section className="space-y-4 max-w-[1600px] mx-auto py-1 font-sans">
+          {/* Compact Editorial Header + Underline Timeframe & Universe Links */}
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-3 border-b border-white/[0.08]">
+            <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+              <div className="flex items-baseline gap-2.5">
+                <h1 className="text-[16px] font-semibold tracking-tight text-white">HPS Stocks</h1>
+                <span className="text-[11px] font-mono text-slate-500">{lastUpdated || 'Live'}</span>
               </div>
-              <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight text-white">
-                HPS Stocks
-              </h1>
-              <p className="text-xs sm:text-sm text-slate-400 max-w-2xl font-normal leading-relaxed">
-                Multi-Timeframe Breakout Tracker monitoring structural price pivots across key time horizons with live Dhan and TradingView feeds.
-              </p>
+              <div className="flex items-center gap-4 text-[12.5px] overflow-x-auto">
+                {timeframes.map(tf => {
+                  const isSelected = activeTimeframe === tf.id;
+                  const count = counts[tf.id] || 0;
+                  return (
+                    <button
+                      key={tf.id}
+                      type="button"
+                      onClick={() => setActiveTimeframe(tf.id)}
+                      className={`pb-1 border-b-2 whitespace-nowrap transition-colors ${
+                        isSelected ? 'border-white text-white font-semibold' : 'border-transparent text-slate-400 hover:text-slate-200'
+                      }`}
+                    >
+                      {tf.label} <span className="font-mono text-[11px] text-slate-500 ml-0.5">{count}</span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
-            {/* Universe Segmented Control */}
-            <div className="flex items-center bg-[#070B12]/80 backdrop-blur-md p-1 rounded-xl border border-white/[0.07] shrink-0 self-start md:self-end">
-              <button
-                type="button"
-                onClick={() => setUniverse('nifty500')}
-                className={`flex items-center space-x-2 px-3.5 py-2 rounded-lg text-xs font-medium transition-all ${
-                  universe === 'nifty500'
-                    ? 'bg-white/[0.1] text-white shadow-sm border border-white/[0.12]'
-                    : 'text-slate-400 hover:text-slate-200'
-                }`}
-              >
-                <span>NIFTY 500</span>
-                <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded ${
-                  universe === 'nifty500' ? 'bg-cyan-500/20 text-cyan-300' : 'bg-white/[0.05] text-slate-500'
-                }`}>500</span>
+            <div className="flex items-center gap-4 text-[12px] shrink-0">
+              <button type="button" onClick={() => setUniverse('nifty500')} className={`pb-0.5 border-b-2 transition-colors ${universe === 'nifty500' ? 'border-white text-white font-semibold' : 'border-transparent text-slate-400 hover:text-slate-200'}`}>
+                Nifty 500 <span className="font-mono text-[10.5px] text-slate-500">500</span>
               </button>
-              <button
-                type="button"
-                onClick={() => setUniverse('fo')}
-                className={`flex items-center space-x-2 px-3.5 py-2 rounded-lg text-xs font-medium transition-all ${
-                  universe === 'fo'
-                    ? 'bg-white/[0.1] text-white shadow-sm border border-white/[0.12]'
-                    : 'text-slate-400 hover:text-slate-200'
-                }`}
-              >
-                <span>NIFTY F&O</span>
-                <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded ${
-                  universe === 'fo' ? 'bg-purple-500/20 text-purple-300' : 'bg-white/[0.05] text-slate-500'
-                }`}>213</span>
+              <button type="button" onClick={() => setUniverse('fo')} className={`pb-0.5 border-b-2 transition-colors ${universe === 'fo' ? 'border-white text-white font-semibold' : 'border-transparent text-slate-400 hover:text-slate-200'}`}>
+                Nifty F&amp;O <span className="font-mono text-[10.5px] text-slate-500">213</span>
               </button>
             </div>
           </div>
 
-          {/* Timeframe Selection Cards */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-            {timeframes.map(tf => {
-              const isSelected = activeTimeframe === tf.id;
-              const count = counts[tf.id] || 0;
-              return (
-                <button
-                  key={tf.id}
-                  type="button"
-                  onClick={() => setActiveTimeframe(tf.id)}
-                  className={`group relative p-4 rounded-2xl border text-left transition-all duration-300 ${
-                    isSelected
-                      ? 'bg-gradient-to-b from-[#111A2B] to-[#0B111D] border-cyan-500/40 shadow-[0_8px_24px_-6px_rgba(6,182,212,0.18)]'
-                      : 'bg-[#0B101B]/70 border-white/[0.06] hover:border-white/[0.14] hover:bg-[#0E1524]'
-                  }`}
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="inline-flex items-center space-x-1.5">
-                      <span className={`w-1.5 h-1.5 rounded-full transition-colors ${
-                        isSelected ? 'bg-cyan-400' : 'bg-slate-600 group-hover:bg-slate-400'
-                      }`}></span>
-                      <span className={`text-xs font-semibold tracking-wide uppercase font-mono ${
-                        isSelected ? 'text-white' : 'text-slate-300'
-                      }`}>
-                        {tf.label}
-                      </span>
-                    </span>
-                    <span className={`text-xs font-mono font-bold px-2 py-0.5 rounded-md transition-all ${
-                      isSelected
-                        ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'
-                        : 'bg-white/[0.04] text-slate-400 border border-white/[0.05]'
-                    }`}>
-                      {count}
-                    </span>
-                  </div>
-                  <div className="text-[11px] text-slate-400 font-normal leading-relaxed truncate">
-                    {tf.desc}
-                  </div>
-                  {isSelected && (
-                    <div className="absolute bottom-0 left-6 right-6 h-[2px] bg-gradient-to-r from-transparent via-cyan-400 to-transparent"></div>
-                  )}
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Institutional Toolbar: Search, Signal Filter, Export, Refresh */}
-          <div className="bg-[#0B101B]/80 backdrop-blur-md border border-white/[0.07] rounded-2xl p-3 sm:p-4 flex flex-col md:flex-row md:items-center justify-between gap-3">
+          {/* Flat Single-Row Toolbar */}
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-2.5">
             {/* Search Input */}
             <div className="relative flex-1 max-w-md">
               <span className="absolute inset-y-0 left-3 flex items-center pointer-events-none text-slate-500 text-xs">
@@ -5320,139 +5928,54 @@ function PublicLandingPage({ onOpenLogin, onOpenRegister, onOpenLegal }) {
       ];
 
       return (
-        <section className="space-y-6 max-w-7xl mx-auto py-2 px-1 font-sans apple-page-view">
-          {/* Header Section */}
-          <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-5 pb-6 border-b border-white/[0.08]">
-            <div className="space-y-2">
-              <div className="flex items-center space-x-2.5">
-                <span className="inline-flex items-center justify-center w-2 h-2 rounded-full bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.7)] animate-pulse"></span>
-                <span className="text-[11px] font-mono uppercase tracking-widest text-amber-400 font-semibold">
-                  {viewMode === 'history' ? 'Rolling 7-Day Audit Log' : 'Quantitative Momentum Selection'}
-                </span>
-                <span className="text-slate-600">·</span>
-                <span className="text-[11px] font-mono text-slate-400">{lastUpdated || 'Live Terminal'}</span>
+        <section className="space-y-4 max-w-[1600px] mx-auto py-1 font-sans">
+          {/* Compact Editorial Header + Underline Timeframe & Mode Links */}
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pb-3 border-b border-white/[0.08]">
+            <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+              <div className="flex items-baseline gap-2.5">
+                <h1 className="text-[16px] font-semibold tracking-tight text-white">
+                  {viewMode === 'history' ? 'HPS Selected Log' : 'HPS Selected'}
+                </h1>
+                <span className="text-[11px] font-mono text-slate-500">{lastUpdated || 'Live'}</span>
               </div>
-              <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight text-white">
-                {viewMode === 'history' ? 'HPS Selected Log' : 'HPS Selected'}
-              </h1>
-              <p className="text-xs sm:text-sm text-slate-400 max-w-2xl font-normal leading-relaxed">
-                {viewMode === 'history'
-                  ? 'Historical 30-minute snapshot archive recording the Top 3 institutional NIFTY F&O candidates with real-time relative excursion.'
-                  : `High Trend Strength algorithm prioritizing the Top 10 breakout candidates ranked by maximum ADX (14) trend power on the ${activeTimeframe.toUpperCase()} timeframe.`}
-              </p>
+              <div className="flex items-center gap-4 text-[12.5px] overflow-x-auto">
+                {timeframes.map(tf => {
+                  const isSelected = activeTimeframe === tf.id;
+                  return (
+                    <button
+                      key={tf.id}
+                      type="button"
+                      onClick={() => setActiveTimeframe(tf.id)}
+                      className={`pb-1 border-b-2 whitespace-nowrap transition-colors ${
+                        isSelected ? 'border-white text-white font-semibold' : 'border-transparent text-slate-400 hover:text-slate-200'
+                      }`}
+                    >
+                      {tf.label}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
-            {/* View Mode & Universe Switchers */}
-            <div className="flex flex-wrap items-center gap-3 shrink-0">
-              {/* Live vs History Mode */}
-              <div className="flex items-center bg-[#070B12]/80 backdrop-blur-md p-1 rounded-xl border border-white/[0.07]">
-                <button
-                  type="button"
-                  onClick={() => setViewMode('live')}
-                  className={`flex items-center space-x-2 px-3.5 py-2 rounded-lg text-xs font-medium transition-all ${
-                    viewMode === 'live'
-                      ? 'bg-amber-500/20 text-amber-300 shadow-sm border border-amber-500/30 font-semibold'
-                      : 'text-slate-400 hover:text-slate-200'
-                  }`}
-                >
-                  <span>Live Top 10</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setViewMode('history');
-                    fetchHpsHistory();
-                  }}
-                  className={`flex items-center space-x-2 px-3.5 py-2 rounded-lg text-xs font-medium transition-all ${
-                    viewMode === 'history'
-                      ? 'bg-purple-500/20 text-purple-300 shadow-sm border border-purple-500/30 font-semibold'
-                      : 'text-purple-400/80 hover:text-purple-300'
-                  }`}
-                >
-                  <span>Saved Top 3 (7D)</span>
-                  <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-purple-950/50 text-purple-300 border border-purple-500/30">
-                    {historySnapshots.length}
-                  </span>
-                </button>
-              </div>
-
-              {/* Universe Selector (Active in Live Mode) */}
+            <div className="flex flex-wrap items-center gap-4 text-[12px] shrink-0">
+              <button type="button" onClick={() => setViewMode('live')} className={`pb-0.5 border-b-2 transition-colors ${viewMode === 'live' ? 'border-white text-white font-semibold' : 'border-transparent text-slate-400 hover:text-slate-200'}`}>
+                Live Top 10
+              </button>
+              <button type="button" onClick={() => { setViewMode('history'); fetchHpsHistory(); }} className={`pb-0.5 border-b-2 transition-colors ${viewMode === 'history' ? 'border-white text-white font-semibold' : 'border-transparent text-slate-400 hover:text-slate-200'}`}>
+                Saved Top 3 (7D) <span className="font-mono text-[10.5px] text-slate-500">{historySnapshots.length}</span>
+              </button>
               {viewMode === 'live' && (
-                <div className="flex items-center bg-[#070B12]/80 backdrop-blur-md p-1 rounded-xl border border-white/[0.07]">
-                  <button
-                    type="button"
-                    onClick={() => setUniverse('nifty500')}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                      universe === 'nifty500'
-                        ? 'bg-white/[0.1] text-white shadow-sm border border-white/[0.12]'
-                        : 'text-slate-400 hover:text-slate-200'
-                    }`}
-                  >
-                    NIFTY 500
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setUniverse('fo')}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                      universe === 'fo'
-                        ? 'bg-white/[0.1] text-white shadow-sm border border-white/[0.12]'
-                        : 'text-slate-400 hover:text-slate-200'
-                    }`}
-                  >
-                    NIFTY F&O
-                  </button>
-                </div>
+                <React.Fragment>
+                  <span className="text-white/15">|</span>
+                  <button type="button" onClick={() => setUniverse('nifty500')} className={`pb-0.5 border-b-2 transition-colors ${universe === 'nifty500' ? 'border-white text-white font-semibold' : 'border-transparent text-slate-400 hover:text-slate-200'}`}>Nifty 500</button>
+                  <button type="button" onClick={() => setUniverse('fo')} className={`pb-0.5 border-b-2 transition-colors ${universe === 'fo' ? 'border-white text-white font-semibold' : 'border-transparent text-slate-400 hover:text-slate-200'}`}>Nifty F&amp;O</button>
+                </React.Fragment>
               )}
             </div>
           </div>
 
-          {/* Timeframe Selection Cards */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-            {timeframes.map(tf => {
-              const isSelected = activeTimeframe === tf.id;
-              return (
-                <button
-                  key={tf.id}
-                  type="button"
-                  onClick={() => setActiveTimeframe(tf.id)}
-                  className={`group relative p-4 rounded-2xl border text-left transition-all duration-300 ${
-                    isSelected
-                      ? 'bg-gradient-to-b from-[#1C160F] to-[#0D1017] border-amber-500/40 shadow-[0_8px_24px_-6px_rgba(245,158,11,0.18)]'
-                      : 'bg-[#0B101B]/70 border-white/[0.06] hover:border-white/[0.14] hover:bg-[#0E1524]'
-                  }`}
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="inline-flex items-center space-x-1.5">
-                      <span className={`w-1.5 h-1.5 rounded-full transition-colors ${
-                        isSelected ? 'bg-amber-400' : 'bg-slate-600 group-hover:bg-slate-400'
-                      }`}></span>
-                      <span className={`text-xs font-semibold tracking-wide uppercase font-mono ${
-                        isSelected ? 'text-white' : 'text-slate-300'
-                      }`}>
-                        {tf.label}
-                      </span>
-                    </span>
-                    <span className={`text-xs font-mono font-bold px-2 py-0.5 rounded-md transition-all ${
-                      isSelected
-                        ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
-                        : 'bg-white/[0.04] text-slate-400 border border-white/[0.05]'
-                    }`}>
-                      {viewMode === 'live' ? 'Top 10' : 'Top 3'}
-                    </span>
-                  </div>
-                  <div className="text-[11px] text-slate-400 font-normal leading-relaxed truncate">
-                    {tf.desc}
-                  </div>
-                  {isSelected && (
-                    <div className="absolute bottom-0 left-6 right-6 h-[2px] bg-gradient-to-r from-transparent via-amber-400 to-transparent"></div>
-                  )}
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Institutional Toolbar: Search, Filters, Dates (if History), Export, Refresh */}
-          <div className="bg-[#0B101B]/80 backdrop-blur-md border border-white/[0.07] rounded-2xl p-3 sm:p-4 flex flex-col md:flex-row md:items-center justify-between gap-3">
+          {/* Flat Single-Row Toolbar */}
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-2.5">
             {/* Search Input */}
             <div className="relative flex-1 max-w-md">
               <span className="absolute inset-y-0 left-3 flex items-center pointer-events-none text-slate-500 text-xs">
@@ -6096,151 +6619,57 @@ function PublicLandingPage({ onOpenLogin, onOpenRegister, onOpenLegal }) {
       ];
 
       return (
-        <section className="space-y-6 max-w-7xl mx-auto py-2 px-1 font-sans apple-page-view">
-          {/* Header Section */}
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-5 pb-6 border-b border-white/[0.08]">
-            <div className="space-y-2">
-              <div className="flex items-center space-x-2.5">
-                <span className="inline-flex items-center justify-center w-2 h-2 rounded-full bg-violet-400 shadow-[0_0_8px_rgba(167,139,250,0.7)] animate-pulse"></span>
-                <span className="text-[11px] font-mono uppercase tracking-widest text-violet-400 font-semibold">
-                  Institutional Value Spectrum
-                </span>
-                <span className="text-slate-600">·</span>
-                <span className="text-[11px] font-mono text-slate-400">{lastUpdated || 'Live Terminal'}</span>
+        <section className="space-y-4 max-w-[1600px] mx-auto py-1 font-sans">
+          {/* Compact Editorial Header + Underline Timeframe & Level Links */}
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pb-3 border-b border-white/[0.08]">
+            <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+              <div className="flex items-baseline gap-2.5">
+                <h1 className="text-[16px] font-semibold tracking-tight text-white">HPS Mean Reversion</h1>
+                <span className="text-[11px] font-mono text-slate-500">{lastUpdated || 'Live'}</span>
               </div>
-              <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight text-white">
-                HPS Mean Reversion
-              </h1>
-              <p className="text-xs sm:text-sm text-slate-400 max-w-2xl font-normal leading-relaxed">
-                Quantitative Mean Reversion Research tracking high-probability structural support bands and statistical deviation zones across listed securities.
-              </p>
+              <div className="flex items-center gap-4 text-[12.5px] overflow-x-auto">
+                {timeframes.map(tf => {
+                  const isSelected = timeframe === tf.id;
+                  const tfCount = (counts[tf.id]?.level1 || 0) + (counts[tf.id]?.level2 || 0) + (counts[tf.id]?.level3 || 0);
+                  return (
+                    <button
+                      key={tf.id}
+                      type="button"
+                      onClick={() => setTimeframe(tf.id)}
+                      className={`pb-1 border-b-2 whitespace-nowrap transition-colors ${
+                        isSelected ? 'border-white text-white font-semibold' : 'border-transparent text-slate-400 hover:text-slate-200'
+                      }`}
+                    >
+                      {tf.label} <span className="font-mono text-[11px] text-slate-500 ml-0.5">{tfCount}</span>
+                    </button>
+                  );
+                })}
+              </div>
+              <span className="text-white/15 hidden sm:inline">|</span>
+              <div className="flex items-center gap-3.5 text-[12px] overflow-x-auto">
+                {levels.map(lvl => (
+                  <button
+                    key={lvl.id}
+                    type="button"
+                    onClick={() => setLevel(lvl.id)}
+                    className={`pb-1 border-b-2 whitespace-nowrap transition-colors ${
+                      level === lvl.id ? 'border-amber-400 text-white font-semibold' : 'border-transparent text-slate-400 hover:text-slate-200'
+                    }`}
+                  >
+                    {lvl.label} <span className="font-mono text-[10.5px] text-slate-500">{lvl.count}</span>
+                  </button>
+                ))}
+              </div>
             </div>
 
-            {/* Universe Segmented Control */}
-            <div className="flex items-center bg-[#070B12]/80 backdrop-blur-md p-1 rounded-xl border border-white/[0.07] shrink-0 self-start md:self-end">
-              <button
-                type="button"
-                onClick={() => setUniverse('nifty500')}
-                className={`flex items-center space-x-2 px-3.5 py-2 rounded-lg text-xs font-medium transition-all ${
-                  universe === 'nifty500'
-                    ? 'bg-white/[0.1] text-white shadow-sm border border-white/[0.12]'
-                    : 'text-slate-400 hover:text-slate-200'
-                }`}
-              >
-                <span>NIFTY 500</span>
-                <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded ${
-                  universe === 'nifty500' ? 'bg-violet-500/20 text-violet-300' : 'bg-white/[0.05] text-slate-500'
-                }`}>500</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setUniverse('fo')}
-                className={`flex items-center space-x-2 px-3.5 py-2 rounded-lg text-xs font-medium transition-all ${
-                  universe === 'fo'
-                    ? 'bg-white/[0.1] text-white shadow-sm border border-white/[0.12]'
-                    : 'text-slate-400 hover:text-slate-200'
-                }`}
-              >
-                <span>NIFTY F&O</span>
-                <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded ${
-                  universe === 'fo' ? 'bg-purple-500/20 text-purple-300' : 'bg-white/[0.05] text-slate-500'
-                }`}>213</span>
-              </button>
+            <div className="flex items-center gap-4 text-[12px] shrink-0">
+              <button type="button" onClick={() => setUniverse('nifty500')} className={`pb-0.5 border-b-2 transition-colors ${universe === 'nifty500' ? 'border-white text-white font-semibold' : 'border-transparent text-slate-400 hover:text-slate-200'}`}>Nifty 500</button>
+              <button type="button" onClick={() => setUniverse('fo')} className={`pb-0.5 border-b-2 transition-colors ${universe === 'fo' ? 'border-white text-white font-semibold' : 'border-transparent text-slate-400 hover:text-slate-200'}`}>Nifty F&amp;O</button>
             </div>
           </div>
 
-          {/* Timeframe Horizon Tabs */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
-            {timeframes.map(tf => {
-              const isSelected = timeframe === tf.id;
-              const tfCount = (counts[tf.id]?.level1 || 0) + (counts[tf.id]?.level2 || 0) + (counts[tf.id]?.level3 || 0);
-              return (
-                <button
-                  key={tf.id}
-                  type="button"
-                  onClick={() => setTimeframe(tf.id)}
-                  className={`group relative p-4 rounded-2xl border text-left transition-all duration-300 ${
-                    isSelected
-                      ? 'bg-gradient-to-b from-[#1E172E] to-[#0D0B14] border-violet-500/40 shadow-[0_8px_24px_-6px_rgba(139,92,246,0.18)]'
-                      : 'bg-[#0B101B]/70 border-white/[0.06] hover:border-white/[0.14] hover:bg-[#0E1524]'
-                  }`}
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="inline-flex items-center space-x-1.5">
-                      <span className={`w-1.5 h-1.5 rounded-full transition-colors ${
-                        isSelected ? 'bg-violet-400' : 'bg-slate-600 group-hover:bg-slate-400'
-                      }`}></span>
-                      <span className={`text-xs font-semibold tracking-wide uppercase font-mono ${
-                        isSelected ? 'text-white' : 'text-slate-300'
-                      }`}>
-                        {tf.label} Horizon
-                      </span>
-                    </span>
-                    <span className={`text-xs font-mono font-bold px-2 py-0.5 rounded-md transition-all ${
-                      isSelected
-                        ? 'bg-violet-500/20 text-violet-300 border border-violet-500/30'
-                        : 'bg-white/[0.04] text-slate-400 border border-white/[0.05]'
-                    }`}>
-                      {tfCount} Setups
-                    </span>
-                  </div>
-                  <div className="text-[11px] text-slate-400 font-normal leading-relaxed truncate">
-                    {tf.desc}
-                  </div>
-                  {isSelected && (
-                    <div className="absolute bottom-0 left-6 right-6 h-[2px] bg-gradient-to-r from-transparent via-violet-400 to-transparent"></div>
-                  )}
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Reversion Level Cards (Level-1, Level-2, Level-3) */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-            {levels.map(lvl => {
-              const isSelected = level === lvl.id;
-              const accentColor = 
-                lvl.accent === 'emerald' ? 'text-emerald-400' :
-                lvl.accent === 'cyan' ? 'text-cyan-400' :
-                lvl.accent === 'amber' ? 'text-amber-400' : 'text-violet-300';
-
-              const activeCardStyle = 
-                lvl.accent === 'emerald' ? 'bg-gradient-to-b from-[#11241C] to-[#0A130F] border-emerald-500/40' :
-                lvl.accent === 'cyan' ? 'bg-gradient-to-b from-[#0F222B] to-[#0A141A] border-cyan-500/40' :
-                lvl.accent === 'amber' ? 'bg-gradient-to-b from-[#241A0E] to-[#120E08] border-amber-500/40' :
-                'bg-gradient-to-b from-[#1C152B] to-[#0D0B16] border-violet-500/40';
-
-              return (
-                <button
-                  key={lvl.id}
-                  type="button"
-                  onClick={() => setLevel(lvl.id)}
-                  className={`p-3.5 rounded-2xl border text-left transition-all duration-200 ${
-                    isSelected
-                      ? `${activeCardStyle} shadow-lg shadow-black/40`
-                      : 'bg-[#0B101B]/70 border-white/[0.06] hover:border-white/[0.12] hover:bg-[#0E1524]'
-                  }`}
-                >
-                  <div className="flex items-center justify-between mb-1.5">
-                    <span className={`text-xs font-mono font-bold tracking-wide ${accentColor}`}>
-                      {lvl.label}
-                    </span>
-                    <span className={`text-xs font-mono font-bold px-2 py-0.5 rounded-md ${
-                      isSelected ? 'bg-white/[0.1] text-white' : 'bg-white/[0.04] text-slate-400'
-                    }`}>
-                      {lvl.count}
-                    </span>
-                  </div>
-                  <div className="text-[11px] text-slate-400 truncate font-normal">
-                    {lvl.desc}
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Institutional Controls Bar: Search, Status Filter, Export, Refresh */}
-          <div className="bg-[#0B101B]/80 backdrop-blur-md border border-white/[0.07] rounded-2xl p-3 sm:p-4 flex flex-col md:flex-row md:items-center justify-between gap-3">
+          {/* Flat Single-Row Toolbar */}
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-2.5">
             {/* Search Input */}
             <div className="relative flex-1 max-w-md">
               <span className="absolute inset-y-0 left-3 flex items-center pointer-events-none text-slate-500 text-xs">
@@ -9202,6 +9631,60 @@ function PublicLandingPage({ onOpenLogin, onOpenRegister, onOpenLegal }) {
     function StockDetailDrawer({ stock, onClose }) {
       const isBull = Number(stock.change_pct || 0) >= 0;
       const [isFullscreen, setIsFullscreen] = useState(false);
+      const [wlLists, setWlLists] = useState([]);
+      const [wlPickerOpen, setWlPickerOpen] = useState(false);
+      const [wlBusy, setWlBusy] = useState(false);
+      const [wlSavedLabel, setWlSavedLabel] = useState('');
+
+      useEffect(() => {
+        setWlSavedLabel('');
+        setWlPickerOpen(false);
+        api.get('/watchlists').then(res => {
+          const lists = res.data?.data?.watchlists || res.data?.watchlists || (Array.isArray(res.data) ? res.data : []);
+          setWlLists(lists);
+        }).catch(() => {});
+      }, [stock.symbol]);
+
+      const addStockToList = async (listId, listName) => {
+        if (wlBusy) return;
+        setWlBusy(true);
+        setWlPickerOpen(false);
+        try {
+          let tid = listId;
+          let tname = listName || 'Watchlist';
+          if (!tid) {
+            const cRes = await api.post('/watchlists', { name: 'Core Portfolio Watchlist' });
+            const created = cRes.data?.data?.watchlists || cRes.data?.watchlists || [];
+            tid = cRes.data?.id || (created[0] && created[0].id);
+            tname = 'Core Portfolio Watchlist';
+          }
+          if (tid) {
+            await api.post(`/watchlists/${tid}/stocks`, {
+              symbol: stock.symbol,
+              exchange: 'NSE',
+              company_name: stock.name || stock.symbol,
+              sector: stock.sector || 'Equities'
+            });
+            setWlSavedLabel(`Added to ${tname}`);
+          }
+        } catch (err) {
+          if (err?.response?.status === 400 || err?.response?.status === 409) {
+            setWlSavedLabel(`In ${listName || 'Watchlist'}`);
+          }
+        } finally {
+          setWlBusy(false);
+        }
+      };
+
+      const handleWlBtnClick = () => {
+        if (wlLists.length > 1) {
+          setWlPickerOpen(!wlPickerOpen);
+        } else if (wlLists.length === 1) {
+          addStockToList(wlLists[0].id, wlLists[0].name);
+        } else {
+          addStockToList(null, 'Core Portfolio Watchlist');
+        }
+      };
 
       useEffect(() => {
         const handleKeyDown = (e) => {
@@ -9261,6 +9744,41 @@ function PublicLandingPage({ onOpenLogin, onOpenRegister, onOpenLegal }) {
                 </span>
               </div>
               <div className="flex items-center space-x-2">
+                {/* Add to Watchlist Button (1-click or multi-watchlist picker) */}
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={handleWlBtnClick}
+                    disabled={wlBusy}
+                    className={`px-2.5 py-1 rounded text-xs border font-mono font-semibold transition-colors flex items-center space-x-1 ${
+                      wlSavedLabel
+                        ? 'border-emerald-500/40 bg-emerald-500/15 text-emerald-400'
+                        : 'border-cyan-500/40 bg-cyan-500/10 text-cyan-300 hover:bg-cyan-500/20 hover:text-white'
+                    }`}
+                    title="Add this stock to your Watchlist"
+                  >
+                    <span>{wlSavedLabel || (wlBusy ? 'Adding...' : `+ Watchlist${wlLists.length > 1 ? ' ▾' : ''}`)}</span>
+                  </button>
+                  {wlPickerOpen && wlLists.length > 1 && (
+                    <>
+                      <div className="fixed inset-0 z-40" onClick={() => setWlPickerOpen(false)} />
+                      <div className="absolute right-0 top-[calc(100%+4px)] w-52 bg-[#0E1420] border border-white/[0.14] rounded-lg shadow-2xl p-1.5 z-50 flex flex-col space-y-0.5 text-xs">
+                        <div className="px-2.5 py-1 text-[10px] font-mono uppercase tracking-wider text-slate-400">Select Watchlist</div>
+                        {wlLists.map(wl => (
+                          <button
+                            key={wl.id}
+                            type="button"
+                            onClick={() => addStockToList(wl.id, wl.name)}
+                            className="w-full text-left px-2.5 py-1.5 rounded text-slate-200 hover:bg-white/[0.08] hover:text-white truncate transition-colors"
+                          >
+                            {wl.name}
+                          </button>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
+
                 <button
                   onClick={() => setIsFullscreen(!isFullscreen)}
                   className="px-2 py-1 rounded text-xs border border-[#1A2538] hover:border-slate-500 bg-[#0A0E17] text-slate-300 hover:text-white transition-colors flex items-center space-x-1 font-mono"
@@ -12269,38 +12787,71 @@ function PublicLandingPage({ onOpenLogin, onOpenRegister, onOpenLegal }) {
         return () => { alive = false; };
       }, [visible, stk.symbol]);
 
+      const [hoverBar, setHoverBar] = React.useState(null);
+      const [isLight, setIsLight] = React.useState(() => {
+        try { return localStorage.getItem('aq_hps_light') !== '0'; } catch (e) { return true; }
+      });
+
+      React.useEffect(() => {
+        const onTheme = (e) => setIsLight(Boolean(e.detail));
+        window.addEventListener('aq-hps-theme', onTheme);
+        return () => window.removeEventListener('aq-hps-theme', onTheme);
+      }, []);
+
       React.useEffect(() => {
         const el = boxRef.current;
         if (!el || !candles || candles.length === 0) return;
         el.innerHTML = '';
+        const bgCol = isLight ? '#F6F8FA' : '#0E131D';
+        const txtCol = isLight ? '#64748B' : '#71717A';
+        const gridCol = isLight ? '#E6EBF1' : 'rgba(255,255,255,0.04)';
+        const borderCol = isLight ? '#D5DCE5' : 'rgba(255,255,255,0.06)';
+        const upCol = isLight ? '#0F766E' : '#26A69A';
+        const dnCol = isLight ? '#BE123C' : '#EF5350';
         const chart = LightweightCharts.createChart(el, {
           width: el.clientWidth || 540,
-          height: 220,
-          layout: { background: { color: '#070B13' }, textColor: '#94A3B8', fontFamily: 'Inter, sans-serif', fontSize: 10 },
-          grid: { vertLines: { color: 'rgba(255,255,255,0.03)' }, horzLines: { color: 'rgba(255,255,255,0.03)' } },
-          rightPriceScale: { borderColor: 'rgba(255,255,255,0.08)' },
-          timeScale: { borderColor: 'rgba(255,255,255,0.08)' }
+          height: el.clientHeight || 220,
+          layout: { background: { type: 'solid', color: bgCol }, textColor: txtCol, fontFamily: 'Inter, sans-serif', fontSize: 10, attributionLogo: false },
+          grid: { vertLines: { visible: false }, horzLines: { color: gridCol } },
+          rightPriceScale: { borderVisible: false, scaleMargins: { top: 0.14, bottom: 0.22 } },
+          timeScale: { borderColor: borderCol, rightOffset: 4, fixLeftEdge: true, fixRightEdge: true },
+          crosshair: { mode: 0 },
+          handleScroll: false,
+          handleScale: false,
         });
         const cs = chart.addCandlestickSeries({
-          upColor: '#10B981', downColor: '#F43F5E',
-          borderUpColor: '#10B981', borderDownColor: '#F43F5E',
-          wickUpColor: '#10B981', wickDownColor: '#F43F5E'
+          upColor: upCol, downColor: dnCol,
+          borderVisible: false,
+          wickUpColor: upCol, wickDownColor: dnCol,
+          priceLineVisible: false, lastValueVisible: false
         });
         cs.setData(candles.map(c => ({ time: c.time, open: c.open, high: c.high, low: c.low, close: c.close })));
-        const hps = hideHps ? null : chart.addLineSeries({ color: '#06B6D4', lineWidth: 1.8 });
+        const vs = chart.addHistogramSeries({ priceScaleId: '', priceFormat: { type: 'volume' }, lastValueVisible: false, priceLineVisible: false });
+        vs.priceScale().applyOptions({ scaleMargins: { top: 0.80, bottom: 0 } });
+        vs.setData(candles.map(c => ({ time: c.time, value: c.volume || 0, color: c.close >= c.open ? (isLight ? 'rgba(13,148,136,0.30)' : 'rgba(38,166,154,0.32)') : (isLight ? 'rgba(220,38,38,0.28)' : 'rgba(239,83,80,0.32)') })));
+        const hps = hideHps ? null : chart.addLineSeries({ color: isLight ? 'rgba(2,132,199,0.68)' : 'rgba(56,189,248,0.75)', lineWidth: 1.3, priceLineVisible: false, lastValueVisible: false });
         let ema = candles[0].close;
         const k = 2 / 64;
         if (hps) hps.setData(candles.map((c, idx) => {
           ema = idx === 0 ? c.close : (c.close * k + ema * (1 - k));
           return { time: c.time, value: +ema.toFixed(2) };
         }));
+        const tailHigh = Math.max(...candles.slice(-26).map(c => c.high));
         if (levelLine && levelLine.price > 0) {
-          cs.createPriceLine({ price: levelLine.price, color: levelLine.color || '#F59E0B', lineWidth: 1, lineStyle: 2, axisLabelVisible: true, title: levelLine.title || 'Level' });
+          cs.createPriceLine({ price: levelLine.price, color: levelLine.color || (isLight ? '#B45309' : '#F59E0B'), lineWidth: 1, lineStyle: 2, axisLabelVisible: false });
+        } else {
+          cs.createPriceLine({ price: tailHigh, color: isLight ? '#15803D' : '#16A34A', lineWidth: 1, lineStyle: 2, axisLabelVisible: false });
         }
+        const byT = new Map(candles.map(c => [c.time, c]));
+        chart.subscribeCrosshairMove(p => { setHoverBar(p && p.time ? (byT.get(p.time) || null) : null); });
         chart.timeScale().fitContent();
         chartRef.current = chart;
-        return () => { chart.remove(); chartRef.current = null; };
-      }, [candles]);
+        const ro = new ResizeObserver(() => {
+          if (el.clientWidth > 0) { chart.applyOptions({ width: el.clientWidth }); chart.timeScale().fitContent(); }
+        });
+        ro.observe(el);
+        return () => { ro.disconnect(); chart.remove(); chartRef.current = null; };
+      }, [candles, isLight]);
 
       const handleSavePng = () => {
         if (!chartRef.current) return;
@@ -12344,47 +12895,59 @@ function PublicLandingPage({ onOpenLogin, onOpenRegister, onOpenLegal }) {
       };
 
       const chg = Number(stk.change_pct || 0);
+      const dispBar = hoverBar || (candles && candles.length ? candles[candles.length - 1] : null);
+      const pivPrice = (levelLine && levelLine.price > 0) ? levelLine.price : (candles && candles.length ? Math.max(...candles.slice(-26).map(c => c.high)) : null);
       return (
-        <div className="bg-[#0B101B] border border-white/[0.08] hover:border-cyan-500/35 rounded-xl p-3.5 flex flex-col gap-2 transition-colors">
+        <div className="bg-[#0E131D] border border-white/[0.08] hover:border-white/[0.18] rounded-lg p-3.5 flex flex-col gap-1.5 transition-colors">
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
-              <div className={`text-[10px] font-mono font-semibold ${eyebrowCls || 'text-cyan-400'}`}>
-                {eyebrow || (stk.isIpo ? 'IPO Base Setup' : (stk.ltp > stk.e50 ? 'HPS Alpha Uptrend' : 'Watchlist Candidate'))}
+              <div className={`text-[11px] font-normal ${eyebrowCls || 'text-slate-400'}`}>
+                {eyebrow || (stk.isIpo ? 'IPO Base Setup' : (stk.ltp > stk.e50 ? 'HPS Breakout' : 'Watchlist Candidate'))}
               </div>
               <div className="flex items-baseline gap-2 flex-wrap">
-                <span className="text-sm font-bold text-white truncate">{stk.name || stk.symbol}</span>
+                <span className="text-[14.5px] font-semibold tracking-tight text-white truncate">{stk.name || stk.symbol}</span>
                 <span className="text-[11px] font-mono text-slate-400">{stk.symbol}</span>
               </div>
-              <span className="text-[11px] text-emerald-400/90">{stk.sector || 'Equities'}</span>
+              <span className="text-[11.5px] text-emerald-400/90">{stk.sector || 'Equities'}</span>
             </div>
             <div className="text-right shrink-0">
-              <button type="button" onClick={() => onOpenTechChart(stk)} className="text-[11px] font-mono font-semibold text-cyan-400 hover:underline block ml-auto mb-0.5">
-                Tech Chart ›
+              <button type="button" onClick={() => onOpenTechChart(stk)} className="text-[11.5px] font-medium text-emerald-400 hover:underline block ml-auto mb-0.5">
+                Tech chart ›
               </button>
-              <div className="text-xs font-mono font-bold text-white">
+              <div className="text-[12.5px] font-mono font-semibold text-white">
                 ₹{Number(stk.ltp || 0).toLocaleString('en-IN')}{!hideChange && <span className={chg >= 0 ? ' text-emerald-400' : ' text-rose-400'}> ({chg >= 0 ? '+' : ''}{chg.toFixed(2)}%)</span>}
               </div>
             </div>
           </div>
-          <div className="flex items-center flex-wrap gap-3 text-[11px] font-mono text-slate-400 pb-1.5 border-b border-white/[0.05]">
-            {stats ? stats.map(([l, v]) => (
-              <span key={l}>{l} <strong className="text-slate-200">{v}</strong></span>
-            )) : (
+          <div className="flex items-center flex-wrap gap-x-2.5 gap-y-0.5 text-[11px] font-mono text-slate-400">
+            {dispBar && (
               <React.Fragment>
-                <span>Vol <strong className="text-slate-200">{stk.vol_x ? `${Number(stk.vol_x).toFixed(2)}x` : '—'}</strong></span>
-                <span>RSI <strong className="text-slate-200">{stk.rsi ? Number(stk.rsi).toFixed(1) : '—'}</strong></span>
+                <span>O <strong className="text-slate-200">{Number(dispBar.open).toFixed(1)}</strong></span>
+                <span>H <strong className="text-slate-200">{Number(dispBar.high).toFixed(1)}</strong></span>
+                <span>L <strong className="text-slate-200">{Number(dispBar.low).toFixed(1)}</strong></span>
+                <span>C <strong className="text-slate-200">{Number(dispBar.close).toFixed(1)}</strong></span>
               </React.Fragment>
             )}
+            {stats && stats.map(([l, v]) => (
+              <span key={l}>{l} <strong className="text-slate-200">{v}</strong></span>
+            ))}
           </div>
-          <div ref={boxRef} className="w-full h-[220px] bg-[#070B13] rounded-lg overflow-hidden border border-white/[0.05] flex items-center justify-center text-[11px] font-mono text-slate-500">
-            {!candles ? 'Loading chart...' : (candles.length === 0 ? 'No historical candles' : '')}
+          <div className="relative w-full h-[190px] sm:h-[230px] bg-[#0E131D] overflow-hidden mt-1">
+            {pivPrice != null && (
+              <div className={`absolute left-0 top-2 z-10 px-1.5 py-0.5 rounded text-[10px] font-mono font-semibold pointer-events-none ${levelLine ? 'bg-amber-600 text-white' : 'bg-emerald-700 text-white'}`}>
+                {levelLine ? `${levelLine.title || 'Support'} ₹${Number(pivPrice).toFixed(1)}` : `pivot ₹${Number(pivPrice).toFixed(1)}`}
+              </div>
+            )}
+            <div ref={boxRef} className="w-full h-full flex items-center justify-center text-[11px] font-mono text-slate-500">
+              {!candles ? 'Loading chart...' : (candles.length === 0 ? 'No historical candles' : '')}
+            </div>
           </div>
-          <div className="flex items-center justify-between pt-1.5 border-t border-white/[0.05]">
-            <button type="button" onClick={handleSavePng} className="px-2.5 py-1 rounded-md border border-white/[0.1] bg-[#070B13] text-slate-300 hover:text-cyan-300 hover:border-cyan-500/40 text-[11px] font-mono font-semibold transition-colors">
-              Save Chart PNG
+          <div className="flex items-center justify-between pt-2 mt-0.5 border-t border-white/[0.06] text-[11px]">
+            <button type="button" onClick={handleSavePng} className="text-slate-400 hover:text-white font-mono transition-colors">
+              Save PNG
             </button>
-            <button type="button" onClick={() => onOpenTechChart(stk)} className="px-2.5 py-1 rounded-md bg-cyan-500/10 text-cyan-300 border border-cyan-500/30 text-[10.5px] font-mono font-semibold">
-              Open Full Chart
+            <button type="button" onClick={() => onOpenTechChart(stk)} className="text-emerald-400 hover:underline font-medium">
+              Open Full Chart ›
             </button>
           </div>
         </div>
@@ -13455,5 +14018,43 @@ function PublicLandingPage({ onOpenLogin, onOpenRegister, onOpenLegal }) {
 
     ReactDOM.createRoot(document.getElementById('root')).render(<App />);
   </script>
+  <style>
+    /* Soft Institutional Paper Light Mode (low-glare alabaster/stone, zero harsh white) */
+    .aq-site-light{background:#EEF1F5!important;color:#161E29!important}
+    .aq-site-light .ticker-bar,.aq-site-light header,.aq-site-light aside{background:#F6F8FA!important;border-color:#D5DCE5!important;color:#161E29!important}
+    .aq-site-light #apple-main-viewport,.aq-site-light #apple-main-viewport > div{background:#EEF1F5!important;color:#161E29!important}
+    /* Catch ALL dark Tailwind arbitrary hex backgrounds cleanly */
+    .aq-site-light [class*="bg-[#0"]:not([style*="background"]),.aq-site-light [class*="bg-[#1"]:not([style*="background"]),.aq-site-light [class*="bg-slate-9"],.aq-site-light [class*="bg-slate-8"],.aq-site-light [class*="bg-gray-9"]{background:#F6F8FA!important;border-color:#D5DCE5!important}
+    .aq-site-light .bg-\[\#0A0E17\]{background:#EEF1F5!important}
+    .aq-site-light [class*="bg-white/"]{background:#E6EBF1!important;border-color:#D5DCE5!important;color:#161E29!important}
+    .aq-site-light .hover\:bg-white\/\[0\.08\]:hover,.aq-site-light .hover\:bg-white\/\[0\.05\]:hover,.aq-site-light tbody tr:hover{background:#EAEFF5!important}
+    /* Refined slate-charcoal typography (WCAG AA >= 4.5:1 — zero pale/smudged letters) */
+    .aq-site-light h1,.aq-site-light h2,.aq-site-light h3,.aq-site-light strong,.aq-site-light [class*="text-white"],.aq-site-light .text-slate-100{color:#161E29!important}
+    .aq-site-light .text-slate-200,.aq-site-light .text-slate-300{color:#1E293B!important}
+    .aq-site-light .text-slate-400,.aq-site-light .text-slate-500{color:#475569!important}
+    /* Soft hairline borders */
+    .aq-site-light [class*="border-white/"],.aq-site-light [class*="border-[#1"],.aq-site-light [class*="border-slate-"]{border-color:#D5DCE5!important}
+    .aq-site-light .border-white,.aq-site-light .border-cyan-400{border-color:#161E29!important}
+    /* Deep institutional semantic colors — darken ALL pastel dark-mode accents */
+    .aq-site-light .text-emerald-400,.aq-site-light .text-emerald-400\/90,.aq-site-light .text-emerald-300,.aq-site-light .text-green-400{color:#0F766E!important}
+    .aq-site-light .text-rose-400,.aq-site-light .text-rose-300,.aq-site-light .text-red-400{color:#BE123C!important}
+    .aq-site-light .text-cyan-400,.aq-site-light .text-cyan-300,.aq-site-light .text-sky-400,.aq-site-light .text-sky-300,.aq-site-light .text-blue-400,.aq-site-light .text-blue-300{color:#0369A1!important}
+    .aq-site-light [class*="text-amber-3"],.aq-site-light [class*="text-amber-4"],.aq-site-light .text-yellow-400,.aq-site-light .text-yellow-300{color:#B45309!important}
+    .aq-site-light .text-violet-400,.aq-site-light .text-violet-300,.aq-site-light .text-purple-400,.aq-site-light .text-purple-300{color:#6D28D9!important}
+    .aq-site-light .bg-emerald-700{background:#15803D!important;color:#F8FAFC!important}
+    .aq-site-light .bg-amber-600{background:#B45309!important;color:#F8FAFC!important}
+    .aq-site-light table{background:#F6F8FA!important}
+    .aq-site-light thead{background:#E6EBF1!important}
+    .aq-site-light input,.aq-site-light select,.aq-site-light textarea{background:#FFFFFF!important;color:#161E29!important;border-color:#CBD5E1!important}
+    .aq-site-light input::placeholder,.aq-site-light textarea::placeholder{color:#64748B!important}
+    .aq-site-light .bg-emerald-500\/10,.aq-site-light .bg-emerald-500\/20{background:rgba(15,118,110,0.12)!important;border-color:rgba(15,118,110,0.32)!important;color:#0F766E!important}
+    .aq-site-light .bg-rose-500\/10,.aq-site-light .bg-rose-500\/20{background:rgba(190,18,60,0.10)!important;border-color:rgba(190,18,60,0.30)!important;color:#BE123C!important}
+    .aq-site-light .bg-amber-500\/10,.aq-site-light .bg-amber-500\/20{background:rgba(180,83,9,0.12)!important;border-color:rgba(180,83,9,0.30)!important;color:#B45309!important}
+    .aq-site-light .bg-cyan-500\/10,.aq-site-light .bg-cyan-500\/20{background:rgba(3,105,161,0.10)!important;border-color:rgba(3,105,161,0.28)!important;color:#0369A1!important}
+    .aq-site-light .bg-purple-500\/20,.aq-site-light .bg-violet-500\/20{background:rgba(109,40,217,0.10)!important;border-color:rgba(109,40,217,0.28)!important;color:#6D28D9!important}
+    /* Preserve crisp white text inside colored Heatmap tiles & solid colored buttons */
+    .aq-site-light [style*="background"] *,.aq-site-light [style*="background"],.aq-site-light .bg-blue-600,.aq-site-light .bg-blue-600 *,.aq-site-light .bg-emerald-600,.aq-site-light .bg-emerald-600 *,.aq-site-light .bg-emerald-700,.aq-site-light .bg-emerald-700 *,.aq-site-light .bg-amber-600,.aq-site-light .bg-amber-600 *,.aq-site-light .bg-rose-600,.aq-site-light .bg-rose-600 *,.aq-site-light .bg-cyan-600,.aq-site-light .bg-cyan-600 *{color:#FFFFFF!important}
+    .aq-site-light [style*="background"] .bg-black\/30,.aq-site-light [style*="background"] [class*="bg-black/"]{background:rgba(0,0,0,0.24)!important;color:#FFFFFF!important}
+  </style>
 </body>
 </html>
