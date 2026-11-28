@@ -1784,13 +1784,16 @@ def evaluate_price_alerts(live_quotes: Dict[str, Any]):
                 if tg_settings is None:
                     tg_settings = TelegramAlertService.get_settings(db)
                 bot_tok = getattr(tg_settings, "bot_token", None)
-                chat_id = uchat or getattr(tg_settings, "chat_id", None)
+                chat_id = uchat or getattr(tg_settings, "default_channel_id", None) or getattr(tg_settings, "chat_id", None)
                 if bot_tok and chat_id:
+                    logger.info(f"Sending Price Alert Telegram for {sym} (ltp={ltp}, target={target}) to chat_id={chat_id}")
                     threading.Thread(
                         target=TelegramAlertService.send_message,
                         args=(bot_tok, chat_id, msg_tg),
                         daemon=True,
                     ).start()
+                else:
+                    logger.warning(f"Price Alert Telegram skipped for {sym}: bot_token={'set' if bot_tok else 'missing'}, chat_id={chat_id}")
 
             if want_em and uemail:
                 _send_email_async(uemail, f"AlphaQuant Alert: {sym} at ₹{ltp:,.2f}", msg_email)
